@@ -1,0 +1,74 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { projects } from "../data";
+
+export function generateStaticParams() {
+  return projects.map((project) => ({ slug: project.slug }));
+}
+
+export default function ProjectPage({ params }: { params: { slug: string } }) {
+  const project = projects.find((item) => item.slug === params.slug);
+
+  if (!project) {
+    notFound();
+  }
+
+  return (
+    <main className="project-page">
+      <div className="wrap detail-topbar">
+        <div className="detail-topbar-inner">
+          <Link href="/" className="brand detail-brand">
+            <img
+              src="/fera-logo.jpg"
+              alt="Fera AI Solutions logo"
+              className="brand-mark"
+            />
+            <span className="brand-text">Fera AI Solutions</span>
+          </Link>
+          <Link href="/" className="back-link">
+            ← Back to home
+          </Link>
+        </div>
+      </div>
+      <div className="wrap project-shell">
+        <div className="project-hero">
+          <div className="eyebrow">Case study</div>
+          <h1 className="h-section">{project.title}</h1>
+          <p className="lead">{project.summary}</p>
+          <div className="project-meta">
+            <span>{project.client}</span>
+            <span>{project.year}</span>
+            <span>{project.tags.join(" • ")}</span>
+          </div>
+        </div>
+
+        <section className="project-section">
+          <h2>The problem</h2>
+          <p>{project.problem}</p>
+        </section>
+
+        <section className="project-section">
+          <h2>What we built</h2>
+          <p>{project.solution}</p>
+          <ul>
+            {project.highlights.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="project-section">
+          <h2>Outcome</h2>
+          <p>{project.outcome}</p>
+          <div className="metrics-grid">
+            {project.metrics.map((metric) => (
+              <div className="metric-card" key={metric}>
+                <b>{metric}</b>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
