@@ -8,10 +8,13 @@ export default function ProjectsPage() {
       <section className="page-hero">
         <div className="wrap">
           <div className="eyebrow">Projects</div>
-          <h1 className="h-display">Selected work with measurable impact.</h1>
+          <h1 className="h-display">
+            Real client work we have launched and grown.
+          </h1>
           <p className="lead">
-            A portfolio of AI-powered platforms, enterprise software, and
-            digital products we have designed and shipped for ambitious clients.
+            A curated portfolio of live websites and digital experiences we have
+            designed and delivered for brands, businesses, creators, and modern
+            service companies.
           </p>
           <div className="hero-cta">
             <Link href="/contact" className="btn solid">
@@ -25,11 +28,7 @@ export default function ProjectsPage() {
         <div className="wrap">
           <div className="work-grid reveal">
             {projects.map((item) => (
-              <Link
-                href={`/projects/${item.slug}`}
-                className="work-card"
-                key={item.slug}
-              >
+              <div className="work-card" key={item.slug}>
                 <div className="work-card-top">
                   <div className="work-tags">
                     {item.tags.slice(0, 3).map((tag) => (
@@ -38,6 +37,12 @@ export default function ProjectsPage() {
                   </div>
                   <span className="work-year">{item.year}</span>
                 </div>
+                <img
+                  src={item.image}
+                  alt={`${item.title} homepage preview`}
+                  className="work-card-image"
+                  loading="lazy"
+                />
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <div className="work-card-bottom">
@@ -48,9 +53,21 @@ export default function ProjectsPage() {
                       </span>
                     ))}
                   </div>
-                  <span className="work-cta">View case study →</span>
+                  <div className="work-actions">
+                    <Link href={`/projects/${item.slug}`} className="work-cta">
+                      View case study →
+                    </Link>
+                    <a
+                      href={item.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="work-cta"
+                    >
+                      Visit live site →
+                    </a>
+                  </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>

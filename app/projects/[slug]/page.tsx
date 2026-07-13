@@ -40,6 +40,22 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
             <span>{project.year}</span>
             <span>{project.tags.join(" • ")}</span>
           </div>
+          <img
+            src={project.image}
+            alt={`${project.title} homepage preview`}
+            className="project-preview-image"
+            loading="lazy"
+          />
+          <div className="hero-cta">
+            <a
+              href={project.website}
+              target="_blank"
+              rel="noreferrer"
+              className="btn solid"
+            >
+              Visit live site
+            </a>
+          </div>
         </div>
 
         <section className="project-section">

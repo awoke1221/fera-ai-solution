@@ -1632,6 +1632,14 @@ section::before {
   font-size: 0.72rem;
   color: var(--muted);
 }
+.work-card-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(11, 127, 212, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
 .work-card h3 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -2355,6 +2363,15 @@ footer {
   border: 1px solid rgba(11, 127, 212, 0.2);
   color: var(--muted);
   font-size: 0.82rem;
+}
+.project-preview-image {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 20px;
+  margin-top: 18px;
+  border: 1px solid rgba(11, 127, 212, 0.2);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
 }
 .project-section h2 {
   margin-bottom: 12px;

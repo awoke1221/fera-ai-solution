@@ -4,6 +4,8 @@ export type Project = {
   client: string;
   year: string;
   tags: string[];
+  website: string;
+  image: string;
   description: string;
   summary: string;
   problem: string;
@@ -16,122 +18,194 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "northstar-ai-retail-platform",
-    title: "Northstar AI Retail Platform",
-    client: "Northstar Retail",
-    year: "2025",
-    tags: ["AI", "Retail", "Next.js", "Operations"],
+    slug: "adonay-tiktok-academy",
+    title: "Adonay TikTok Academy",
+    client: "Adonay TikTok Academy",
+    year: "2026",
+    tags: ["Education", "Creator Growth", "Lead Generation", "Web Design"],
+    website: "https://www.adonaytiktokacademy.com/",
+    image: "https://www.adonaytiktokacademy.com/logo-adlms.jpg",
     description:
-      "An AI-powered retail operations platform with intelligent inventory forecasting, automated order routing, and real-time team coordination.",
+      "A modern academy website for a TikTok-focused training brand that turns curiosity into course enrollments through a polished, conversion-first experience.",
     summary:
-      "We combined AI agents with a modern operations portal to help retail teams predict demand, coordinate orders, and manage inventory across 50+ locations.",
+      "We built a high-trust digital presence for a creator education brand, combining compelling storytelling, clear course pathways, and conversion-focused pages for enrollment and FAQs.",
     problem:
-      "Store managers were juggling spreadsheets, WhatsApp updates, and manual approvals — leading to stockouts, over-ordering, and a complete lack of operational visibility.",
+      "The academy needed a stronger online identity to explain its value, showcase its training offers, and encourage new learners to take action quickly.",
     solution:
-      "We built an AI-driven platform with predictive inventory analytics, automated reorder triggers, role-based dashboards, and mobile-first workflows designed for low-connectivity environments.",
+      "We designed and developed a clean, mobile-friendly experience with strong hero messaging, course-focused sections, testimonials, and clear calls to action that guide visitors from first impression to enrollment.",
     outcome:
-      "The client eliminated stockouts across their network, reduced manual ordering time by 75%, and gained real-time visibility into operations across all locations.",
+      "The brand now presents itself as a premium, professional learning platform with a clearer message, easier navigation, and stronger conversion flow.",
     metrics: [
-      "75% faster order processing",
-      "60% reduction in stockouts",
-      "50+ locations connected",
-      "3x faster approvals",
+      "Conversion-first landing experience",
+      "Course + about + FAQ structure",
+      "Mobile-friendly enrollment journey",
+      "Professional education branding",
     ],
     highlights: [
-      "AI-powered demand forecasting and inventory optimization",
-      "Role-based dashboards for supervisors and field agents",
-      "Offline-first design for real-world connectivity conditions",
-      "Automated reorder triggers with approval workflows",
+      "Clean academy positioning and offer storytelling",
+      "Conversion-focused landing and CTA design",
+      "Student trust through testimonials and structured content",
+      "Fast, elegant experience optimized for modern mobile viewership",
+    ],
+    meta: ["Launch", "2026"],
+  },
+  {
+    slug: "azmera-coffee",
+    title: "Azmera Coffee",
+    client: "Azmera Coffee",
+    year: "2026",
+    tags: ["Coffee Export", "B2B Commerce", "Branding", "Web Design"],
+    website: "https://www.azmeracoffee.com/",
+    image: "https://www.azmeracoffee.com/assets/hero-_t6F-NKp.jpg",
+    description:
+      "A premium B2B website for an Ethiopian specialty coffee exporter, highlighting sourcing quality, traceability, and export readiness for international buyers.",
+    summary:
+      "We created a refined digital presence for a specialty coffee business that wanted to communicate premium sourcing, global reach, and professional trust to buyers and partners.",
+    problem:
+      "Azmera needed a website that could present its origin story, quality standards, and export capabilities in a way that felt credible, modern, and commercially strong.",
+    solution:
+      "We built a polished, buyer-focused experience with strong brand storytelling, structured service sections, and clear pathways for wholesale inquiry and product discovery.",
+    outcome:
+      "The website now positions Azmera as a professional export partner with a strong international brand presence and a more persuasive buyer journey.",
+    metrics: [
+      "Premium sourcing storytelling",
+      "B2B buyer-focused experience",
+      "International trust signals",
+      "Modern inquiry-driven website",
+    ],
+    highlights: [
+      "Refined storytelling around Ethiopian coffee origins",
+      "Professional presentation for global buyers and partners",
+      "Clear service and export navigation",
+      "Modern design aligned with premium brand positioning",
+    ],
+    meta: ["Launch", "2026"],
+  },
+  {
+    slug: "teme-upholstery",
+    title: "Teme Upholstery",
+    client: "Teme Upholstery",
+    year: "2026",
+    tags: ["Auto Services", "Booking", "Luxury Brand", "Service Website"],
+    website: "https://www.temeupholstery.com/",
+    image: "https://www.temeupholstery.com/assets/carseat-D90_ro2m.jpg",
+    description:
+      "A premium auto upholstery website for a luxury interior transformation business, combining service showcases, training content, and strong booking calls to action.",
+    summary:
+      "We crafted a high-end online experience for a premium upholstery brand that wanted to reflect craftsmanship, luxury, and professionalism across every service page.",
+    problem:
+      "Teme needed a website that could clearly present its interior transformation services, training programs, and booking options while feeling luxurious and trustworthy.",
+    solution:
+      "We designed a visually rich, conversion-oriented website with elegant service storytelling, strong visual proof, and clear pathways for booking, gallery exploration, and training enrollment.",
+    outcome:
+      "The business now has a polished digital storefront that reinforces its premium positioning and makes it easier for clients to book and explore services.",
+    metrics: [
+      "Luxury service storytelling",
+      "Booking-ready experience",
+      "Visual galleries and transformation proof",
+      "Training and services integrated",
+    ],
+    highlights: [
+      "Elegant presentation for premium interior transformation",
+      "Clear booking and service discovery flow",
+      "Training and business services reflected in one platform",
+      "Strong visual quality aligned with the brand's craftsmanship",
+    ],
+    meta: ["Launch", "2026"],
+  },
+  {
+    slug: "nhatty-the-barber",
+    title: "Nhatty The Barber",
+    client: "Nhatty The Barber",
+    year: "2026",
+    tags: ["Barber Shop", "Booking", "Branding", "Luxury Services"],
+    website: "https://www.nhattythebarber.com/",
+    image: "https://www.nhattythebarber.com/assets/hairstyiling-CbwIRJhn.jpg",
+    description:
+      "A premium barber brand website crafted to showcase elite grooming services, modern styles, and a luxury experience that feels both exclusive and accessible.",
+    summary:
+      "We created a polished online experience for a high-end barber brand that wanted to reflect its reputation, premium service quality, and strong client trust.",
+    problem:
+      "The brand needed a digital presence that matched its premium positioning and made it easy for clients to discover services, book appointments, and connect with the business.",
+    solution:
+      "We developed a refined website with service-led storytelling, modern visual presentation, and clear booking pathways designed to support both local and international clients.",
+    outcome:
+      "The website now strengthens Nhatty's premium image and gives the business a more compelling, conversion-ready experience for new and returning customers.",
+    metrics: [
+      "Premium grooming brand experience",
+      "Appointment-ready conversion flow",
+      "Modern visual storytelling",
+      "Client trust and service clarity",
+    ],
+    highlights: [
+      "Luxury barber brand positioning",
+      "High-impact service presentation",
+      "Clear booking and appointment motivation",
+      "Modern design that reflects elite grooming culture",
+    ],
+    meta: ["Launch", "2026"],
+  },
+  {
+    slug: "denbegnaye-ai-platform",
+    title: "Denbegnaye",
+    client: "Denbegnaye",
+    year: "2025",
+    tags: ["AI SaaS", "Automation", "Product Launch", "No-Code"],
+    website: "https://denbegaye.vercel.app/",
+    image: "https://denbegaye.vercel.app/denbegnaye-logo.svg",
+    description:
+      "A sleek AI product website for a no-code automation platform, presenting workflow building as simple, scalable, and ready for modern teams.",
+    summary:
+      "We shaped a modern product experience for an AI workflow platform, highlighting its visual builder, automation capabilities, and fast path to adoption.",
+    problem:
+      "The product needed a clearer narrative around how users could design, automate, and scale AI workflows without complexity or technical friction.",
+    solution:
+      "We built a product-first website with a strong hero experience, structured feature storytelling, and clear pathways for sign-up and product exploration.",
+    outcome:
+      "The launch site now communicates the platform's value clearly and gives the product a more credible, modern presence in the AI automation space.",
+    metrics: [
+      "Product-led launch experience",
+      "Automation-first storytelling",
+      "Visual builder positioning",
+      "Modern SaaS presentation",
+    ],
+    highlights: [
+      "Compelling AI workflow product messaging",
+      "Clean onboarding and sign-up journey",
+      "Visual structure for complex product concepts",
+      "Modern design language for technical products",
     ],
     meta: ["Launch", "2025"],
   },
   {
-    slug: "lumenpay-fintech-erp",
-    title: "LumenPay Fintech ERP",
-    client: "LumenPay",
-    year: "2024",
-    tags: ["Fintech", "AI", "ERP", "Payments"],
-    description:
-      "A modular finance and operations platform with AI-powered reconciliation, fraud detection, and real-time audit reporting across multiple payment channels.",
-    summary:
-      "We engineered an intelligent finance workspace that automated reconciliation, detected anomalies, and gave leadership instant visibility into risk and cash flow.",
-    problem:
-      "The team processed millions in monthly payouts but relied on manual reconciliation across mobile money, bank transfers, and card payments — a slow, error-prone process with limited oversight.",
-    solution:
-      "We deployed an AI-enhanced ERP suite with automated transaction matching, anomaly detection, customizable approval flows, and a real-time compliance dashboard.",
-    outcome:
-      "Reconciliation time dropped from days to minutes, fraud detection improved by 85%, and the company passed their first regulatory audit with zero findings.",
-    metrics: [
-      "85% faster reconciliation",
-      "Zero audit findings",
-      "£4M+ processed monthly",
-      "85% fraud detection improvement",
-    ],
-    highlights: [
-      "AI-powered transaction matching and anomaly detection",
-      "Unified payout, approval, and reconciliation workflows",
-      "Real-time compliance and audit dashboard",
-      "Multi-channel payment support (mobile money, cards, bank)",
-    ],
-    meta: ["Launch", "2024"],
-  },
-  {
-    slug: "ethiologistics-ai-agent",
-    title: "EthioLogistics AI Operations Agent",
-    client: "EthioLogistics",
+    slug: "dr-feben-dental-clinic",
+    title: "Dr. Feben Dental Clinic",
+    client: "Dr. Feben Dental Clinic",
     year: "2025",
-    tags: ["AI Agents", "LangGraph", "Automation"],
+    tags: ["Healthcare", "Dental Clinic", "Booking", "Medical Brand"],
+    website: "https://dr-feben.vercel.app/",
+    image: "https://dr-feben.vercel.app/assets/hero-CZD6JFnb.jpg",
     description:
-      "An intelligent AI agent that automates customer inquiries, optimizes delivery routing, and handles exception management for a growing logistics company.",
+      "A calm, modern dental clinic website designed to make treatment services feel trustworthy, premium, and easy to book.",
     summary:
-      "We built a LangGraph-orchestrated AI agent that handles 70% of customer inquiries autonomously and optimizes last-mile delivery routing in real time.",
+      "We developed a patient-focused digital experience for a dental clinic that wanted to communicate comfort, professionalism, and modern care in one elegant platform.",
     problem:
-      "The customer service team was overwhelmed with tracking inquiries, delivery rescheduling, and exception handling — leading to long wait times and missed SLAs.",
+      "The clinic needed a more reassuring online presence that could explain its services, build trust, and support appointment bookings with clarity and confidence.",
     solution:
-      "We developed a multi-agent system using LangGraph: one agent handles customer inquiries via natural language, another optimizes delivery routes, and a third manages exceptions with human handoff protocols.",
+      "We created a refined clinic website with service-focused sections, patient-first messaging, and a straightforward path to consultation and booking.",
     outcome:
-      "Customer response time dropped by 70%, delivery efficiency improved by 25%, and the human team now focuses only on high-value exceptions.",
+      "The clinic now has a polished, reassuring digital front door that strengthens trust and makes its care offerings easier to understand and access.",
     metrics: [
-      "70% faster customer response",
-      "25% delivery efficiency gain",
-      "85% automated inquiry resolution",
-      "3 specialist agents deployed",
+      "Patient-first clinic experience",
+      "Service clarity and trust building",
+      "Modern medical web presentation",
+      "Appointment-friendly journey",
     ],
     highlights: [
-      "Multi-agent LangGraph architecture for complex workflows",
-      "Natural language customer interaction with context retention",
-      "Real-time route optimization with traffic awareness",
-      "Intelligent human handoff for exceptions",
-    ],
-    meta: ["Launch", "2025"],
-  },
-  {
-    slug: "chainledger-blockchain-platform",
-    title: "ChainLedger Blockchain Operations Platform",
-    client: "ChainLedger",
-    year: "2025",
-    tags: ["Blockchain", "Web3", "Security", "Custom Software"],
-    description:
-      "A secure blockchain-powered operations platform for digital asset workflows, compliance monitoring, and multi-party transaction coordination.",
-    summary:
-      "We built a custom blockchain platform that unified asset tracking, approval workflows, and compliance reporting for a fast-moving digital operations team.",
-    problem:
-      "The client needed a trusted digital system to manage sensitive transaction records, approvals, and audit trails without relying on fragmented spreadsheets or brittle legacy tools.",
-    solution:
-      "We designed a secure platform with role-based workflows, immutable transaction logging, audit dashboards, and integrations for compliance and operational reporting.",
-    outcome:
-      "The team reduced reconciliation time by 60%, improved audit readiness, and launched a scalable solution capable of supporting expanding blockchain workflows.",
-    metrics: [
-      "60% faster reconciliation",
-      "100% audit trail visibility",
-      "Enterprise-grade workflow controls",
-      "Scalable for multi-chain operations",
-    ],
-    highlights: [
-      "Secure blockchain-backed workflow engine",
-      "Immutable transaction and approval history",
-      "Compliance-ready reporting dashboards",
-      "Custom integrations for operational oversight",
+      "Gentle, premium healthcare storytelling",
+      "Clear presentation of dental services and treatments",
+      "Modern design built around patient confidence",
+      "Stronger conversion path from discovery to booking",
     ],
     meta: ["Launch", "2025"],
   },
