@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { FeraAIChat } from "./fera-ai-chat";
 
 const navItems = [
@@ -17,13 +17,36 @@ const navItems = [
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
   { href: "/insights", label: "Insights" },
+  { href: "/system-design", label: "Learn" },
+  { href: "/membership", label: "Membership" },
   { href: "/contact", label: "Contact" },
 ];
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [membership, setMembership] = useState<any>(null);
   const pathname = usePathname();
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/user");
+      const data = await res.json();
+      setUser(data.user);
+      setProfile(data.profile);
+      setMembership(data.membership);
+    } catch {
+      setUser(null);
+      setProfile(null);
+      setMembership(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   useEffect(() => {
     const updateScrollProgress = () => {
@@ -110,9 +133,40 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            {user ? (
+              <>
+                {membership && (
+                  <Link
+                    href="/system-design"
+                    className="btn solid"
+                    onClick={() => setMenuOpen(false)}
+                    style={{ fontSize: "0.72rem", padding: "8px 14px" }}
+                  >
+                    💎 Premium
+                  </Link>
+                )}
+                <Link
+                  href="/membership/dashboard"
+                  className={
+                    pathname === "/membership/dashboard" ? "active" : ""
+                  }
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="btn solid"
+                onClick={() => setMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
             <Link
               href="/book"
-              className="btn solid"
+              className="btn"
               onClick={() => setMenuOpen(false)}
             >
               Start a project
