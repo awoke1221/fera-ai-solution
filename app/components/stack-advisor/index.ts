@@ -10,6 +10,8 @@ export type {
   RecommendedStack,
   ProductionChecklistItem,
   AdvancedGuide,
+  ProjectToolMapping,
+  CategoryToolPriorities,
 } from "./types";
 
 export { projectTypes } from "./project-types";
@@ -26,6 +28,12 @@ export {
   checkCompatibility,
   generateStackExport,
   getToolScore,
-  getAlternativeRecommendation,
 } from "./tools/compatibility";
 export type { CompatibilityWarning, ToolScore } from "./tools/compatibility";
+export {
+  projectToolMappings,
+  getProjectMapping,
+  getOrderedCategories,
+  isCategoryRequired,
+  sortToolsForProject,
+} from "./project-tool-mappings";

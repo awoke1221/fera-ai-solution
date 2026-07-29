@@ -93,4 +93,32 @@ export const toolCategories: ToolCategory[] = [
     description: "Application monitoring, logging, and analytics",
     required: false,
   },
+  {
+    id: "css_ui",
+    label: "CSS & UI Framework",
+    icon: "🎨",
+    description: "Utility CSS, component libraries, and design systems",
+    required: false,
+  },
+  {
+    id: "state_mgmt",
+    label: "State Management & Data Fetching",
+    icon: "🔗",
+    description: "Client-state, server-state, and caching libraries",
+    required: false,
+  },
+  {
+    id: "search",
+    label: "Search Engine",
+    icon: "🔍",
+    description: "Full-text search, vector search, and discovery",
+    required: false,
+  },
+  {
+    id: "mobile",
+    label: "Mobile Framework",
+    icon: "📱",
+    description: "Cross-platform mobile app development",
+    required: false,
+  },
 ];

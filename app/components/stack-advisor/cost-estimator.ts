@@ -296,6 +296,204 @@ const costData: Record<
     breakEven: "1M events/month for cloud",
     ethiopianNote: "Self-hosted option for data residency",
   },
+
+  // ─── NEW FRONTEND TOOLS ─────────────────────────
+  vue: {
+    min: 0,
+    max: 0,
+    note: "Free — Nuxt hosting costs separate",
+    breakEven: "N/A — no platform cost",
+    ethiopianNote: "Free — lightweight, Nuxt on Vercel free tier",
+  },
+  svelte: {
+    min: 0,
+    max: 0,
+    note: "Free — compiled output, hosting costs separate",
+    breakEven: "N/A — no platform cost",
+    ethiopianNote: "Free — tiny bundle, ideal for slow connections",
+  },
+  remix: {
+    min: 0,
+    max: 20,
+    note: "Free — Vercel/Fly.io hosting costs apply",
+    breakEven: "Traffic exceeds free hosting quotas",
+    ethiopianNote: "Free framework — deploy on Vercel free tier",
+  },
+  astro: {
+    min: 0,
+    max: 0,
+    note: "Free — zero-JS output, minimal hosting costs",
+    breakEven: "N/A",
+    ethiopianNote: "Excellent — zero-JS default is ideal for Ethiopia",
+  },
+  nextjs_pages: {
+    min: 0,
+    max: 20,
+    note: "Free — same as Next.js App Router",
+    breakEven: "100k edge function invocations/mo",
+    ethiopianNote: "Free tier sufficient for most Ethiopian MVPs",
+  },
+
+  // ─── NEW BACKEND TOOLS ──────────────────────────
+  go_gin: {
+    min: 5,
+    max: 20,
+    note: "VPS $5-20/mo — Go binaries are resource-efficient",
+    breakEven: "Traffic exceeds single VPS capacity",
+    ethiopianNote: "Ideal for Ethiopian VPS — low resource usage",
+  },
+  laravel: {
+    min: 5,
+    max: 25,
+    note: "VPS $5-25/mo or Laravel Cloud",
+    breakEven: "CPU/memory limits on basic VPS",
+    ethiopianNote: "PHP is widely available on Ethiopian VPS providers",
+  },
+  rails: {
+    min: 7,
+    max: 25,
+    note: "Railway $7-20/mo or VPS $10-25/mo",
+    breakEven: "512MB RAM exceeded",
+    ethiopianNote: "Good — runs on standard VPS",
+  },
+  bun: {
+    min: 0,
+    max: 20,
+    note: "Free runtime — VPS $5-20/mo or Railway",
+    breakEven: "Need Node.js-compatible hosting",
+    ethiopianNote: "More efficient than Node.js on same hardware",
+  },
+
+  // ─── NEW DATABASE TOOLS ─────────────────────────
+  neon: {
+    min: 0,
+    max: 19,
+    note: "Free (500MB, 100hr compute) → Scale $19/mo",
+    breakEven: "500MB DB or 100 compute hours/mo",
+    ethiopianNote: "Serverless — no idle cost for small projects",
+  },
+  turso: {
+    min: 0,
+    max: 9,
+    note: "Free (9GB) → Scale $9/mo",
+    breakEven: "1B row reads or 3 locations exceeded",
+    ethiopianNote: "Edge replicas close to Ethiopia for fast reads",
+  },
+  d1: {
+    min: 0,
+    max: 0,
+    note: "Free (5GB) — pay-as-you-go per query",
+    breakEven: "5M reads or 100K writes/mo",
+    ethiopianNote: "Cloudflare edge network — great African PoPs",
+  },
+  sqlite: {
+    min: 0,
+    max: 0,
+    note: "Free — runs on existing VPS, no extra cost",
+    breakEven: "N/A",
+    ethiopianNote: "Best for Ethiopian MVPs — zero cost",
+  },
+  pinecone: {
+    min: 0,
+    max: 70,
+    note: "Free (5GB) → Standard pod from $70/mo",
+    breakEven: "5GB storage or free index limits",
+    ethiopianNote: "Free tier good for AI prototyping",
+  },
+
+  // ─── CSS & UI ───────────────────────────────────
+  tailwind: {
+    min: 0,
+    max: 0,
+    note: "Free and open-source",
+    breakEven: "N/A",
+    ethiopianNote: "Free — zero runtime cost",
+  },
+  shadcn: {
+    min: 0,
+    max: 0,
+    note: "Free and open-source",
+    breakEven: "N/A",
+    ethiopianNote: "Free — you own the components",
+  },
+  daisyui: {
+    min: 0,
+    max: 0,
+    note: "Free and open-source",
+    breakEven: "N/A",
+    ethiopianNote: "Free — lightweight CSS components",
+  },
+
+  // ─── STATE MANAGEMENT ──────────────────────────
+  tanstack_query: {
+    min: 0,
+    max: 0,
+    note: "Free and open-source",
+    breakEven: "N/A",
+    ethiopianNote: "Free — reduces API calls via caching",
+  },
+  zustand: {
+    min: 0,
+    max: 0,
+    note: "Free and open-source (~1KB)",
+    breakEven: "N/A",
+    ethiopianNote: "Free — tiny bundle, fast load",
+  },
+
+  // ─── SEARCH ────────────────────────────────────
+  meilisearch: {
+    min: 0,
+    max: 29,
+    note: "Free self-hosted → Cloud $29/mo",
+    breakEven: "250K docs or need for cloud hosting",
+    ethiopianNote: "Self-host on Ethiopian VPS for zero monthly cost",
+  },
+  algolia: {
+    min: 0,
+    max: 0,
+    note: "Free 10K records → pay per search operation",
+    breakEven: "10K records or 10K searches/mo exceeded",
+    ethiopianNote: "Free tier good for MVPs",
+  },
+  typesense: {
+    min: 0,
+    max: 70,
+    note: "Free self-hosted → Cloud $70/mo",
+    breakEven: "1M docs or need cloud hosting",
+    ethiopianNote: "Self-host on Ethiopian VPS via Docker",
+  },
+
+  // ─── MOBILE ────────────────────────────────────
+  react_native: {
+    min: 0,
+    max: 99,
+    note: "Free — Apple Developer $99/yr + Google $25 one-time",
+    breakEven: "N/A — app store fees are one-time/annual",
+    ethiopianNote: "Android-focused development saves Apple fee initially",
+  },
+  flutter: {
+    min: 0,
+    max: 99,
+    note: "Free — app store fees: Apple $99/yr, Google $25",
+    breakEven: "N/A — app store fees are one-time/annual",
+    ethiopianNote: "Android-first for Ethiopian market (90%+ Android)",
+  },
+
+  // ─── AUTH EXTRA ────────────────────────────────
+  clerk: {
+    min: 0,
+    max: 25,
+    note: "Free 10K MAU → Pro $25/mo",
+    breakEven: "10K monthly active users",
+    ethiopianNote: "Free tier generous for early stage",
+  },
+  auth0: {
+    min: 0,
+    max: 36,
+    note: "Free 7K MAU → B2C $36/mo (1K MAU)",
+    breakEven: "7K MAU exceeded",
+    ethiopianNote: "Free tier limited — Supabase Auth is better for Ethiopia",
+  },
 };
 
 export function calculateCost(selectedTools: ToolOption[]): TotalCostEstimate {

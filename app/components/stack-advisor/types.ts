@@ -90,3 +90,27 @@ export type AdvancedGuide = {
   scalabilityPatterns: string[];
   costOptimization: string;
 };
+
+// ─── Per-Project-Type Tool Mappings ─────────────────
+export type CategoryToolPriorities = {
+  /** Tool IDs to show first (recommended for this project type) */
+  prioritize: string[];
+  /** Tool IDs to hide (not relevant for this project type) */
+  hide: string[];
+  /** Tool IDs that get an Ethiopian priority boost */
+  ethiopianPriority: string[];
+};
+
+export type ProjectToolMapping = {
+  projectType: string;
+  /** Categories that become required for this project type (beyond default `required: true`) */
+  forceRequiredCategories: string[];
+  /** Categories to hide entirely */
+  hideCategories: string[];
+  /** Category-specific tool filtering */
+  categoryPriorities: Record<string, CategoryToolPriorities>;
+  /** Custom category order for this project type */
+  categoryOrder: string[];
+  /** Human-readable note about this project's tooling strategy */
+  note: string;
+};

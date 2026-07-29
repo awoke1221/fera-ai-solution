@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   projectTypes,
   toolCategories,
   tools,
   type ToolOption,
   type ProjectType,
+  getProjectMapping,
+  getOrderedCategories,
+  isCategoryRequired,
+  sortToolsForProject,
 } from ".";
 
 // ─── Props ──────────────────────────────────────────────
@@ -22,11 +26,38 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  // ─── Dynamic category/tool filtering ────────────────
+  const projectMapping = useMemo(
+    () => (selectedProject ? getProjectMapping(selectedProject.id) : undefined),
+    [selectedProject],
+  );
+
+  const filteredCategories = useMemo(
+    () => getOrderedCategories(projectMapping, toolCategories),
+    [projectMapping],
+  );
+
+  const getCategoryRequired = (catId: string): boolean => {
+    const cat = toolCategories.find((c) => c.id === catId);
+    return isCategoryRequired(catId, projectMapping, cat?.required ?? false);
+  };
+
+  const getSortedTools = (categoryId: string): ToolOption[] => {
+    const catTools = tools.filter((t) => t.category === categoryId);
+    return sortToolsForProject(
+      catTools,
+      categoryId,
+      projectMapping,
+      true,
+    ) as ToolOption[];
+  };
+
+  // ─── Handlers ───────────────────────────────────────
   const handleProjectSelect = (project: ProjectType) => {
     setSelectedProject(project);
     setSelections({});
-    const firstRequired = toolCategories.find((c) => c.required)?.id || null;
-    setActiveCategory(firstRequired);
+    const firstVisible = filteredCategories[0]?.id || null;
+    setActiveCategory(firstVisible);
     onSelectionsChange({});
   };
 
@@ -42,6 +73,39 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
     setActiveCategory(null);
     onSelectionsChange({});
   };
+
+  // ─── Navigation helpers (only visible categories) ───
+  const getNextCategory = () => {
+    const currentIdx = filteredCategories.findIndex(
+      (c) => c.id === activeCategory,
+    );
+    for (let i = currentIdx + 1; i < filteredCategories.length; i++) {
+      if (!selections[filteredCategories[i].id])
+        return filteredCategories[i].id;
+    }
+    return null;
+  };
+
+  const getPrevCategory = () => {
+    const currentIdx = filteredCategories.findIndex(
+      (c) => c.id === activeCategory,
+    );
+    for (let i = currentIdx - 1; i >= 0; i--) {
+      if (!selections[filteredCategories[i].id])
+        return filteredCategories[i].id;
+    }
+    return null;
+  };
+
+  const activeCatData = activeCategory
+    ? toolCategories.find((c) => c.id === activeCategory)!
+    : null;
+
+  const activeCatTools = activeCategory ? getSortedTools(activeCategory) : [];
+  const selectionsCount = Object.keys(selections).length;
+  const visibleCount = filteredCategories.length;
+  const progressPct =
+    visibleCount > 0 ? (selectionsCount / visibleCount) * 100 : 0;
 
   // If no project selected, show project type grid
   if (!selectedProject) {
@@ -69,73 +133,64 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
     );
   }
 
-  // ─── Navigation helpers ───
-  const getNextCategory = () => {
-    const currentIdx = toolCategories.findIndex((c) => c.id === activeCategory);
-    for (let i = currentIdx + 1; i < toolCategories.length; i++) {
-      if (!selections[toolCategories[i].id]) return toolCategories[i].id;
-    }
-    return null;
-  };
-  const getPrevCategory = () => {
-    const currentIdx = toolCategories.findIndex((c) => c.id === activeCategory);
-    for (let i = currentIdx - 1; i >= 0; i--) {
-      if (!selections[toolCategories[i].id]) return toolCategories[i].id;
-    }
-    return null;
-  };
-  const activeCatData = activeCategory
-    ? toolCategories.find((c) => c.id === activeCategory)!
-    : null;
-  const activeCatTools = activeCategory
-    ? tools.filter((t) => t.category === activeCategory)
-    : [];
-
   return (
     <div className="stack-selector-panel">
       {/* Header */}
       <div className="stack-selector-header">
         <div className="stack-selector-breadcrumb">
           <button className="breadcrumb-back" onClick={resetAll}>
-            ← Change project type
+            &larr; Change project type
           </button>
           <span className="breadcrumb-current">
             {selectedProject.icon} {selectedProject.label}
           </span>
         </div>
+
+        {/* Dynamic recommendation note */}
+        {projectMapping && (
+          <div className="dynamic-mapping-note">
+            &#x1f4a1; {projectMapping.note}
+          </div>
+        )}
+
         <div className="stack-selector-progress">
           <div className="progress-bar">
             <div
               className="progress-fill"
-              style={{
-                width: `${
-                  (Object.keys(selections).length / toolCategories.length) * 100
-                }%`,
-              }}
+              style={{ width: progressPct + "%" }}
             />
           </div>
           <span className="progress-text">
-            {Object.keys(selections).length} / {toolCategories.length} selected
+            {selectionsCount} / {visibleCount} categories selected
           </span>
         </div>
       </div>
 
       <div className="stack-selector-body">
-        {/* Category sidebar */}
+        {/* Category sidebar — only visible categories */}
         <div className="stack-category-sidebar">
           <h4>Categories</h4>
-          {toolCategories.map((cat) => {
+          {filteredCategories.map((cat) => {
+            const catData = toolCategories.find((c) => c.id === cat.id);
             const isSelected = selections[cat.id] !== undefined;
             const isActive = activeCategory === cat.id;
+            const required = getCategoryRequired(cat.id);
             return (
               <button
                 key={cat.id}
-                className={`stack-category-btn ${isActive ? "active" : ""} ${isSelected ? "done" : ""}`}
+                className={
+                  "stack-category-btn" +
+                  (isActive ? " active" : "") +
+                  (isSelected ? " done" : "")
+                }
                 onClick={() => setActiveCategory(cat.id)}
               >
-                <span className="cat-icon">{cat.icon}</span>
-                <span className="cat-label">{cat.label}</span>
-                {isSelected && <span className="cat-check">✓</span>}
+                <span className="cat-icon">{catData?.icon || "\u2022"}</span>
+                <span className="cat-label">
+                  {catData?.label || cat.id}
+                  {required && <span className="cat-req-mark">*</span>}
+                </span>
+                {isSelected && <span className="cat-check">&#x2713;</span>}
               </button>
             );
           })}
@@ -151,26 +206,52 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
                   <h4>{activeCatData.label}</h4>
                   <p className="cat-desc">{activeCatData.description}</p>
                 </div>
-                {activeCatData.required && (
+                {getCategoryRequired(activeCatData.id) ? (
                   <span className="required-badge">Required</span>
+                ) : (
+                  <span className="optional-badge-inline">Optional</span>
                 )}
               </div>
+
+              {/* Ethiopian context hint */}
+              {projectMapping?.categoryPriorities[activeCatData.id]
+                ?.ethiopianPriority?.length ? (
+                <div className="ethiopian-hint">
+                  &#x1f1ea;&#x1f1f9; Ethiopian-optimized tools recommended for
+                  this category
+                </div>
+              ) : null}
 
               <div className="stack-tool-grid">
                 {activeCatTools.map((tool) => {
                   const selectedToolId = selections[activeCatData.id];
                   const isSelected = selectedToolId === tool.id;
+                  const isEthiopianPriority =
+                    projectMapping?.categoryPriorities[
+                      activeCatData.id
+                    ]?.ethiopianPriority?.includes(tool.id);
                   return (
                     <button
                       key={tool.id}
-                      className={`stack-tool-card ${isSelected ? "selected" : ""} ${tool.recommended ? "recommended" : ""}`}
+                      className={
+                        "stack-tool-card" +
+                        (isSelected ? " selected" : "") +
+                        (tool.recommended || isEthiopianPriority
+                          ? " recommended"
+                          : "")
+                      }
                       onClick={() =>
                         handleToolSelect(activeCatData.id, tool.id)
                       }
                     >
-                      {tool.recommended && (
+                      {tool.recommended && !isEthiopianPriority && (
                         <span className="tool-recommended-badge">
-                          ★ Recommended
+                          &#9733; Recommended
+                        </span>
+                      )}
+                      {isEthiopianPriority && (
+                        <span className="ethiopian-badge">
+                          &#x1f1ea;&#x1f1f9; Ethiopian Best
                         </span>
                       )}
                       <span className="tool-icon">{tool.icon}</span>
@@ -178,7 +259,9 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
                       <span className="tool-desc">{tool.description}</span>
                       <span className="tool-free-badge">{tool.freeTier}</span>
                       {isSelected && (
-                        <span className="tool-selected-check">✓ Selected</span>
+                        <span className="tool-selected-check">
+                          &#x2713; Selected
+                        </span>
                       )}
                     </button>
                   );
@@ -197,11 +280,13 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
                     visibility: getPrevCategory() ? "visible" : "hidden",
                   }}
                 >
-                  ← Previous
+                  &larr; Previous
                 </button>
                 <span className="stack-nav-progress">
-                  {toolCategories.findIndex((c) => c.id === activeCategory) + 1}{" "}
-                  / {toolCategories.length}
+                  {filteredCategories.findIndex(
+                    (c) => c.id === activeCategory,
+                  ) + 1}{" "}
+                  / {visibleCount}
                 </span>
                 <button
                   className="btn solid"
@@ -213,7 +298,7 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
                     visibility: getNextCategory() ? "visible" : "hidden",
                   }}
                 >
-                  {selections[activeCategory!] ? "Next →" : "Skip →"}
+                  {selections[activeCategory!] ? "Next \u2192" : "Skip \u2192"}
                 </button>
               </div>
             </div>
