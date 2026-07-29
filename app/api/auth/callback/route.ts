@@ -42,7 +42,11 @@ export async function GET(request: Request) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error) {
-        return NextResponse.redirect(`${origin}${next}`);
+        // 307 preserves the redirect method and is faster than 302
+        const response = NextResponse.redirect(`${origin}${next}`, 307);
+        // Hint the browser to prefetch the target page immediately
+        response.headers.set("Cache-Control", "private, no-cache");
+        return response;
       }
     }
   }

@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { FeraAIChat } from "./fera-ai-chat";
 import { createClient } from "@/lib/supabase";
 
@@ -16,6 +16,15 @@ const navItems = [
   { href: "/projects", label: "Projects" },
   { href: "/stack-advisor", label: "Stack Advisor" },
 ];
+
+// Simple in-memory cache — persists across SPA route changes
+let cachedUserData: {
+  user: any;
+  profile: any;
+  membership: any;
+} | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 30_000; // 30 seconds
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,11 +37,26 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const fetchedRef = useRef(false);
 
-  const fetchUser = useCallback(async () => {
+  const fetchUser = useCallback(async (force = false) => {
+    // Use cached data if still fresh
+    const now = Date.now();
+    if (!force && cachedUserData && now - cacheTimestamp < CACHE_TTL) {
+      setUser(cachedUserData.user);
+      setProfile(cachedUserData.profile);
+      setMembership(cachedUserData.membership);
+      return;
+    }
     try {
       const res = await fetch("/api/auth/user");
       const data = await res.json();
+      cachedUserData = {
+        user: data.user,
+        profile: data.profile,
+        membership: data.membership,
+      };
+      cacheTimestamp = Date.now();
       setUser(data.user);
       setProfile(data.profile);
       setMembership(data.membership);
@@ -43,9 +67,18 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Fetch on mount, then refresh only when pathname changes (SPA navigation)
+  useEffect(() => {
+    if (!fetchedRef.current) {
+      fetchedRef.current = true;
+      fetchUser();
+    }
+  }, []);
+
+  // Refresh cache when navigating to a new page (e.g. after login redirect)
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {

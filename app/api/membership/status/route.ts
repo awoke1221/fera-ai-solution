@@ -4,6 +4,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 
+// Cache for 30s, stale for 2 min — reduces DB load on rapid navigation
+const CACHE_HEADERS = {
+  "Cache-Control": "private, max-age=30, stale-while-revalidate=120",
+  "Surrogate-Control": "private",
+};
+
 export async function GET() {
   try {
     const supabase = await createAdminClient();
@@ -12,54 +18,52 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ hasPremium: false, user: null });
+      return NextResponse.json(
+        { hasPremium: false, user: null },
+        { headers: CACHE_HEADERS },
+      );
     }
 
-    // Get profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    // Run all DB queries in parallel for speed
+    const [profileResult, membershipResult, paymentsResult] = await Promise.all(
+      [
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase
+          .from("memberships")
+          .select("*, membership_plans(id, name, slug)")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .gte("end_date", new Date().toISOString())
+          .maybeSingle(),
+        supabase
+          .from("payment_requests")
+          .select("*, membership_plans(name)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ],
+    );
 
-    // Get active membership
-    const { data: membership } = await supabase
-      .from("memberships")
-      .select("*, membership_plans(id, name, slug)")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
+    const profile = profileResult.data;
+    const membership = membershipResult.data;
+    const paymentRequests = paymentsResult.data || [];
+    const latestPayment = paymentRequests[0] || null;
 
-    // Get latest payment request
-    const { data: latestPayment } = await supabase
-      .from("payment_requests")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Get all payment requests for full history
-    const { data: paymentRequests } = await supabase
-      .from("payment_requests")
-      .select("*, membership_plans(name)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    return NextResponse.json({
-      hasPremium: !!membership,
-      hasPendingPayment:
-        latestPayment?.status === "pending" ||
-        paymentRequests?.some(
-          (pr: { status: string }) => pr.status === "pending",
-        ),
-      membership,
-      profile,
-      latestPayment,
-      paymentRequests: paymentRequests || [],
-      user,
-    });
+    return NextResponse.json(
+      {
+        hasPremium: !!membership,
+        hasPendingPayment:
+          latestPayment?.status === "pending" ||
+          paymentRequests.some(
+            (pr: { status: string }) => pr.status === "pending",
+          ),
+        membership,
+        profile,
+        latestPayment,
+        paymentRequests,
+        user,
+      },
+      { headers: CACHE_HEADERS },
+    );
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
