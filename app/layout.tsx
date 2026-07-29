@@ -1,9 +1,9 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Unbounded } from "next/font/google";
+import { Inter, JetBrains_Mono, Outfit } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], variable: "--body-font" });
-const unbounded = Unbounded({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--display-font",
 });
@@ -62,7 +62,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${unbounded.variable} ${jetBrainsMono.variable}`}
+      className={`${inter.variable} ${outfit.variable} ${jetBrainsMono.variable}`}
     >
       <body>{children}</body>
     </html>

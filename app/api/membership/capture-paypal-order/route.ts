@@ -23,12 +23,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    const PAYPAL_CLIENT_ID =
+      process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
     const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
     const PAYPAL_API =
       process.env.NEXT_PUBLIC_PAYPAL_SANDBOX === "true"
         ? "https://api-m.sandbox.paypal.com"
         : "https://api-m.paypal.com";
+
+    if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
+      return NextResponse.json(
+        { error: "PayPal not configured" },
+        { status: 500 },
+      );
+    }
 
     // Get access token
     const authResponse = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
@@ -58,24 +66,55 @@ export async function POST(request: Request) {
 
     if (!captureResponse.ok) {
       return NextResponse.json(
-        { error: "Failed to capture PayPal payment" },
+        {
+          error:
+            captureData?.message ||
+            captureData?.details?.[0]?.description ||
+            "Failed to capture PayPal payment",
+        },
         { status: 500 },
       );
     }
 
-    if (captureData.status !== "COMPLETED") {
+    const capture =
+      captureData.purchase_units?.[0]?.payments?.captures?.[0] ?? null;
+
+    if (!capture || capture.status !== "COMPLETED") {
       return NextResponse.json(
-        { error: `Payment not completed: ${captureData.status}` },
+        {
+          error: `Payment not completed: ${capture?.status ?? captureData.status}`,
+        },
         { status: 400 },
       );
     }
 
-    // Get plan for amount
+    // Get plan for amount and currency validation
     const { data: plan } = await supabase
       .from("membership_plans")
       .select("*")
       .eq("id", planId)
       .single();
+
+    if (!plan) {
+      return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+    }
+
+    const expectedAmount = Number(plan.price ?? 0).toFixed(2);
+    const expectedCurrency = plan.currency || "USD";
+    const capturedAmount = capture.amount?.value;
+    const capturedCurrency = capture.amount?.currency_code;
+
+    if (
+      capturedAmount !== expectedAmount ||
+      capturedCurrency !== expectedCurrency
+    ) {
+      return NextResponse.json(
+        {
+          error: `Captured payment metadata mismatch: expected ${expectedAmount} ${expectedCurrency}, got ${capturedAmount} ${capturedCurrency}`,
+        },
+        { status: 400 },
+      );
+    }
 
     // Create payment request (auto-approved for PayPal since payment is already captured)
     const { data: paymentRequest } = await supabase

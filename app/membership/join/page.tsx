@@ -31,6 +31,13 @@ function JoinContent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvalPolling, setApprovalPolling] = useState(false);
+
+  useEffect(() => {
+    if (profile?.region === "global") {
+      setPaymentMethod("paypal");
+    }
+  }, [profile?.region]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -62,6 +69,39 @@ function JoinContent() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!submitted) return;
+
+    const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
+
+    if (isPayPal) {
+      const redirectTimer = window.setTimeout(() => {
+        router.push("/system-design");
+      }, 3500);
+      return () => window.clearTimeout(redirectTimer);
+    }
+
+    setApprovalPolling(true);
+    const intervalId = window.setInterval(async () => {
+      try {
+        const res = await fetch("/api/membership/status");
+        const data = await res.json();
+
+        if (res.ok && data.hasPremium) {
+          window.clearInterval(intervalId);
+          router.push("/system-design");
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 10000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      setApprovalPolling(false);
+    };
+  }, [submitted, paymentMethod, profile?.region, router]);
 
   const handleAuthSuccess = () => {
     fetchData();
@@ -167,7 +207,7 @@ function JoinContent() {
   }
 
   if (submitted) {
-    const isPayPal = paymentMethod === "paypal";
+    const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
     return (
       <SiteShell>
         <div className="page-hero">
@@ -206,6 +246,12 @@ function JoinContent() {
                   View Dashboard
                 </button>
               </div>
+              {!isPayPal && approvalPolling && (
+                <p className="form-message info">
+                  Waiting for admin approval... We will redirect you to premium
+                  content once your receipt is approved.
+                </p>
+              )}
             </div>
           </div>
         </section>

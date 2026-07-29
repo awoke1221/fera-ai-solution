@@ -34,7 +34,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
 
-    const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    const PAYPAL_CLIENT_ID =
+      process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
     const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
     const PAYPAL_API =
       process.env.NEXT_PUBLIC_PAYPAL_SANDBOX === "true"
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     // Create order
+    const amountValue = Number(plan.price ?? 0).toFixed(2);
     const orderResponse = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
       method: "POST",
       headers: {
@@ -81,8 +83,8 @@ export async function POST(request: Request) {
             reference_id: planId,
             description: plan.name,
             amount: {
-              currency_code: plan.currency,
-              value: plan.price.toString(),
+              currency_code: plan.currency || "USD",
+              value: amountValue,
             },
             custom_id: `${user.id}::${planId}`,
           },
