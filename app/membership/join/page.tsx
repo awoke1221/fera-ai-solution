@@ -11,6 +11,9 @@ import { AuthModal } from "@/app/components/auth-modal";
 import { RequireAuth } from "@/app/components/require-auth";
 import type { MembershipPlan } from "@/lib/types";
 
+const localPlanSlug = "local-stack-guides";
+const diasporaPlanSlug = "diaspora-stack-guides";
+
 function JoinContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,6 +30,7 @@ function JoinContent() {
   const [paymentMethod, setPaymentMethod] = useState<
     "mobile_money" | "bank_transfer" | "paypal"
   >("mobile_money");
+  const [region, setRegion] = useState<"local" | "global" | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -35,8 +39,13 @@ function JoinContent() {
 
   useEffect(() => {
     if (profile?.region === "global") {
+      setRegion("global");
       setPaymentMethod("paypal");
+      return;
     }
+
+    setRegion("local");
+    setPaymentMethod("mobile_money");
   }, [profile?.region]);
 
   const fetchData = useCallback(async () => {
@@ -54,10 +63,15 @@ function JoinContent() {
       setProfile(userData.profile);
 
       if (planId) {
-        const found = plansData.plans?.find(
+        const found = (plansData.plans || []).find(
           (p: MembershipPlan) => p.id === planId,
         );
         if (found) setPlan(found);
+      } else {
+        const fallbackPlan = (plansData.plans || []).find(
+          (p: MembershipPlan) => p.slug === localPlanSlug,
+        );
+        if (fallbackPlan) setPlan(fallbackPlan);
       }
     } catch {
       // ignore
@@ -293,7 +307,10 @@ function JoinContent() {
     );
   }
 
-  const isGlobalUser = profile?.region === "global";
+  const isGlobalUser =
+    plan?.slug === diasporaPlanSlug ||
+    region === "global" ||
+    profile?.region === "global";
 
   // Plan selector if no plan selected
   if (!plan) {
@@ -302,8 +319,11 @@ function JoinContent() {
         <div className="page-hero">
           <div className="wrap">
             <div className="eyebrow">Membership</div>
-            <h1 className="h-display">Choose a plan</h1>
-            <p className="lead">Select a membership plan to get started.</p>
+            <h1 className="h-display">Choose your membership</h1>
+            <p className="lead">
+              Unlock unlimited Stack Guides access and AI support with a monthly
+              subscription.
+            </p>
           </div>
         </div>
         <section>
@@ -320,7 +340,7 @@ function JoinContent() {
                 >
                   <h3>{p.name}</h3>
                   <div className="plan-select-price">
-                    ${p.price}
+                    {p.currency === "ETB" ? "500 Birr" : "$10"}
                     <span>/month</span>
                   </div>
                   <p>{p.description}</p>
@@ -341,7 +361,11 @@ function JoinContent() {
           <h1 className="h-display">
             Join <span className="gradient-text">{plan.name}</span>
           </h1>
-          <p className="lead">{plan.description}</p>
+          <p className="lead">
+            {plan.slug === localPlanSlug
+              ? "Local Ethiopian members pay 500 birr per month and can access everything in the Stack Guides plus AI support."
+              : "Diaspora members pay $10 per month and receive unlimited access to the same Stack Guides and AI support tools."}
+          </p>
         </div>
       </div>
 
@@ -367,7 +391,9 @@ function JoinContent() {
                 <div className="summary-row total">
                   <span>Total</span>
                   <strong>
-                    ${plan.price} {plan.currency}
+                    {plan.currency === "ETB"
+                      ? `${plan.price} ETB / month`
+                      : `$${plan.price} USD / month`}
                   </strong>
                 </div>
               </div>
@@ -387,14 +413,15 @@ function JoinContent() {
               <h2>Payment Method</h2>
 
               {isGlobalUser ? (
-                // ─── PayPal for global users ──────────
+                // ─── PayPal for diaspora users ──────────
                 <div className="paypal-section">
                   <div className="payment-method-label">
                     <span>🌐</span> PayPal
                   </div>
                   <p className="payment-info">
-                    You are registered as a global user. Pay securely via PayPal
-                    for instant membership activation.
+                    This plan is billed through PayPal. Complete the secure
+                    payment and your Stack Guides membership will activate
+                    immediately.
                   </p>
                   <PayPalScriptProvider
                     options={{
@@ -436,8 +463,8 @@ function JoinContent() {
                     >
                       <span>📱</span>
                       <div>
-                        <strong>Mobile Money</strong>
-                        <small>Local mobile transfer</small>
+                        <strong>Telebirr / CBE Birr</strong>
+                        <small>Fast local mobile payment</small>
                       </div>
                     </button>
                     <button
@@ -477,7 +504,7 @@ function JoinContent() {
                           </div>
                           <div className="detail-row">
                             <span>Amount</span>
-                            <strong>${plan.price} USD</strong>
+                            <strong>500 birr</strong>
                           </div>
                         </div>
                       </>
@@ -502,7 +529,7 @@ function JoinContent() {
                           </div>
                           <div className="detail-row">
                             <span>Amount</span>
-                            <strong>${plan.price} USD</strong>
+                            <strong>500 birr</strong>
                           </div>
                         </div>
                       </>

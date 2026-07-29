@@ -40,8 +40,9 @@ export function PremiumGate({ hasPremium, user, children }: PremiumGateProps) {
       <div className="premium-gate-icon">⭐</div>
       <h3>Premium Content</h3>
       <p>
-        This content is available exclusively to premium members. Upgrade your
-        membership to unlock full access.
+        This content is available exclusively to premium members. Join the Stack
+        Guides membership to unlock unlimited access to the full Stack Guides
+        library and AI support tools.
       </p>
       <div className="premium-gate-actions">
         <Link href="/membership" className="btn solid">

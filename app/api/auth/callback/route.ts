@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/membership/dashboard";
+  const next = searchParams.get("next") || "/membership";
 
   // Use NEXT_PUBLIC_SITE_URL when set (production), otherwise derive from request.
   // Hard-code the production domain as a final fallback so users are never

@@ -206,6 +206,15 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     💎 Premium
                   </Link>
                 )}
+                {profile?.is_admin && (
+                  <Link
+                    href="/admin/memberships"
+                    className={pathname.startsWith("/admin") ? "active" : ""}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/membership/dashboard"
                   className={
@@ -254,6 +263,18 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     >
                       Dashboard
                     </Link>
+                    {profile?.is_admin && (
+                      <Link
+                        href="/admin/memberships"
+                        className="user-dropdown-item"
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <button
                       type="button"
                       className="user-dropdown-item logout"

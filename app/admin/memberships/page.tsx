@@ -27,6 +27,7 @@ export default function AdminMembershipsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("pending");
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
@@ -54,7 +55,42 @@ export default function AdminMembershipsPage() {
   };
 
   useEffect(() => {
-    fetchRequests(filter);
+    let cancelled = false;
+
+    const checkAdminAccess = async () => {
+      try {
+        const res = await fetch("/api/auth/user");
+        const data = await res.json();
+
+        if (cancelled) return;
+
+        const canAccess = Boolean(data.profile?.is_admin);
+        setIsAdmin(canAccess);
+
+        if (!canAccess) {
+          setRequests([]);
+          setLoading(false);
+          setError(
+            "You do not have admin access yet. Add your email to ADMIN_EMAILS in .env.local and sign in again.",
+          );
+          return;
+        }
+
+        fetchRequests(filter);
+      } catch {
+        if (!cancelled) {
+          setIsAdmin(false);
+          setLoading(false);
+          setError("Unable to verify admin access right now.");
+        }
+      }
+    };
+
+    checkAdminAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, [filter]);
 
   const handleApprove = async (requestId: string) => {
@@ -150,7 +186,11 @@ export default function AdminMembershipsPage() {
             </button>
           </div>
 
-          {loading ? (
+          {isAdmin === false ? (
+            <div className="error-shell">
+              <p>{error || "Admin access is required to review payments."}</p>
+            </div>
+          ) : loading ? (
             <div className="loading-shell">
               <div className="loading-spinner" />
               <p>Loading requests...</p>

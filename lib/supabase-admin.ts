@@ -6,6 +6,11 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
+type ProfileRow = {
+  id: string;
+  is_admin?: boolean | null;
+};
+
 // ── Service-role client (bypasses RLS) ──────────────
 // Used for admin operations: approving payments, managing memberships.
 let _serviceClient: ReturnType<typeof createClient> | null = null;
@@ -19,6 +24,14 @@ function getServiceClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   return _serviceClient;
+}
+
+function getConfiguredAdminEmails() {
+  const raw = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "";
+  return raw
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 // ── Authenticated server client (respects RLS) ──────
@@ -93,4 +106,86 @@ export async function createAdminClient() {
 // Returns null if SERVICE_ROLE_KEY is not configured.
 export function getAdminServiceClient() {
   return getServiceClient();
+}
+
+export async function ensureProfileForUser(
+  user:
+    | { id: string; email?: string | null; user_metadata?: Record<string, any> }
+    | null
+    | undefined,
+) {
+  if (!user?.id) return null;
+
+  const serviceClient = getAdminServiceClient();
+  if (!serviceClient) return null;
+
+  const normalizedEmail = (user.email || "").trim().toLowerCase();
+  const adminEmails = getConfiguredAdminEmails();
+  const isAdminEmail =
+    normalizedEmail.length > 0 && adminEmails.includes(normalizedEmail);
+
+  const { data: existingProfile, error: existingError } = await serviceClient
+    .from("profiles")
+    .select("id, is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profile = existingProfile as ProfileRow | null;
+
+  if (existingError && existingError.code !== "PGRST116") {
+    return null;
+  }
+
+  if (profile) {
+    if (isAdminEmail && !profile.is_admin) {
+      await (serviceClient.from("profiles") as any)
+        .update({ is_admin: true })
+        .eq("id", user.id);
+    }
+    return profile;
+  }
+
+  const fullName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email?.split("@")[0] ||
+    null;
+
+  const { data, error } = await serviceClient
+    .from("profiles")
+    .insert({
+      id: user.id,
+      email: user.email || null,
+      full_name: fullName,
+      region: "local",
+      is_admin: isAdminEmail,
+    } as any)
+    .select("id")
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+export async function isAdminUser(
+  user: { id: string; email?: string | null } | null | undefined,
+) {
+  if (!user?.id) return false;
+
+  const normalizedEmail = (user.email || "").trim().toLowerCase();
+  if (normalizedEmail && getConfiguredAdminEmails().includes(normalizedEmail)) {
+    return true;
+  }
+
+  const serviceClient = getAdminServiceClient();
+  if (!serviceClient) return false;
+
+  const { data, error } = await serviceClient
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profile = data as ProfileRow | null;
+  return !error && !!profile?.is_admin;
 }

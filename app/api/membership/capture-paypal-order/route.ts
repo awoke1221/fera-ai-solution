@@ -1,7 +1,7 @@
 // ─── POST /api/membership/capture-paypal-order ───────
 // Captures a PayPal order after user approval
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    await ensureProfileForUser(user);
 
     const { orderID, planId } = await request.json();
 
@@ -89,14 +91,26 @@ export async function POST(request: Request) {
     }
 
     // Get plan for amount and currency validation
-    const { data: plan } = await supabase
+    const planResult = await supabase
       .from("membership_plans")
       .select("*")
       .eq("id", planId)
-      .single();
+      .maybeSingle();
+
+    let plan = planResult.data;
 
     if (!plan) {
-      return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+      const fallback = await supabase
+        .from("membership_plans")
+        .select("*")
+        .eq("slug", planId)
+        .maybeSingle();
+
+      if (!fallback.data) {
+        return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+      }
+
+      plan = fallback.data;
     }
 
     const expectedAmount = Number(plan.price ?? 0).toFixed(2);

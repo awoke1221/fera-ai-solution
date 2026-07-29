@@ -26,6 +26,13 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
   const [visibleFeatures, setVisibleFeatures] = useState<number[]>([]);
   const [countUp, setCountUp] = useState(0);
 
+  const currencySymbol =
+    plan.currency === "ETB"
+      ? "ብር"
+      : plan.currency === "USD"
+        ? "$"
+        : plan.currency;
+
   // ── 3D Tilt ─────────────────────────────────────
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -137,7 +144,7 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
 
       {/* ── Animated Price ────────────────────── */}
       <div className="membership-price">
-        <span className="price-currency">$</span>
+        <span className="price-currency">{currencySymbol}</span>
         <span className="price-amount">{countUp}</span>
         <span className="price-period">
           / {plan.duration_days === 30 ? "month" : `${plan.duration_days}d`}

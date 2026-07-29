@@ -2,7 +2,7 @@
 // Returns the user's membership status, payment request history,
 // and whether they have premium access.
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
 
 // Cache for 30s, stale for 2 min — reduces DB load on rapid navigation
 const CACHE_HEADERS = {
@@ -24,26 +24,40 @@ export async function GET() {
       );
     }
 
-    // Run all DB queries in parallel for speed
-    const [profileResult, membershipResult, paymentsResult] = await Promise.all(
-      [
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase
-          .from("memberships")
-          .select("*, membership_plans(id, name, slug)")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .gte("end_date", new Date().toISOString())
-          .maybeSingle(),
-        supabase
-          .from("payment_requests")
-          .select("*, membership_plans(name)")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-      ],
-    );
+    let profile = null;
+    const profileResult = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    const profile = profileResult.data;
+    profile = profileResult.data;
+
+    if (!profile) {
+      await ensureProfileForUser(user);
+      const refreshedProfile = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      profile = refreshedProfile.data;
+    }
+
+    const [membershipResult, paymentsResult] = await Promise.all([
+      supabase
+        .from("memberships")
+        .select("*, membership_plans(id, name, slug)")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .gte("end_date", new Date().toISOString())
+        .maybeSingle(),
+      supabase
+        .from("payment_requests")
+        .select("*, membership_plans(name)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
     const membership = membershipResult.data;
     const paymentRequests = paymentsResult.data || [];
     const latestPayment = paymentRequests[0] || null;

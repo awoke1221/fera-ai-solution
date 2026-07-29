@@ -159,7 +159,6 @@ function CompareCard({
 export default function MembershipPage() {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -196,9 +195,9 @@ export default function MembershipPage() {
                 <span className="gradient-text">engineering future</span>
               </h1>
               <p className="m-hero-sub">
-                Master system design through structured tutorials, real-world
-                architecture reviews, and 1-on-1 mentorship from senior
-                engineers.
+                Unlock unlimited access to the Stack Guides plus AI support
+                tools with a monthly membership designed for Ethiopian learners
+                and diaspora professionals.
               </p>
 
               {/* ── Mini Stats ───────────────────── */}
@@ -221,36 +220,21 @@ export default function MembershipPage() {
           <div className="wrap">
             {/* ── Section header ──────────────────── */}
             <div className="m-section-head">
-              <div className="m-section-tag">Choose Your Plan</div>
+              <div className="m-section-tag">Membership Access</div>
               <h2 className="m-section-title">
-                Pick the perfect tier for your growth
+                Choose the plan that unlocks Stack Guides and AI support
               </h2>
               <p className="m-section-desc">
-                All plans include access to our core library. Premium tiers
-                unlock advanced content, reviews, and mentorship.
+                Both memberships include unlimited access to every Stack Guide,
+                architecture walkthroughs, and AI support tools. Ethiopian
+                members pay 500 birr per month, while diaspora members pay $10
+                per month.
               </p>
-
-              {/* ── Billing Toggle ────────────────── */}
-              <div className="billing-toggle">
-                <button
-                  className={`billing-opt ${billing === "monthly" ? "active" : ""}`}
-                  onClick={() => setBilling("monthly")}
-                >
-                  Monthly
-                </button>
-                <button
-                  className={`billing-opt ${billing === "annual" ? "active" : ""}`}
-                  onClick={() => setBilling("annual")}
-                >
-                  Annual <span className="billing-save">Save 20%</span>
-                </button>
-              </div>
             </div>
 
             {/* ── Loading Skeleton / Cards ────────── */}
             {loading ? (
               <div className="skeleton-grid">
-                <SkeletonCard />
                 <SkeletonCard />
                 <SkeletonCard />
               </div>
@@ -262,16 +246,7 @@ export default function MembershipPage() {
                     className="plan-card-wrapper"
                     style={{ animationDelay: `${i * 0.12}s` }}
                   >
-                    <MembershipCard
-                      plan={{
-                        ...plan,
-                        price:
-                          billing === "annual"
-                            ? Math.round(plan.price * 0.8)
-                            : plan.price,
-                      }}
-                      index={i}
-                    />
+                    <MembershipCard plan={plan} index={i} />
                   </div>
                 ))}
               </div>

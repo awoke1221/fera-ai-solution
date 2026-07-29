@@ -1,7 +1,12 @@
 // ─── POST /api/membership/approve (admin only) ───────
 // Approve or reject a payment request and activate membership
 import { NextResponse } from "next/server";
-import { createAdminClient, getAdminServiceClient } from "@/lib/supabase-admin";
+import {
+  createAdminClient,
+  ensureProfileForUser,
+  getAdminServiceClient,
+  isAdminUser,
+} from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
+    await ensureProfileForUser(user);
 
-    if (!profile?.is_admin) {
+    const isAdmin = await isAdminUser(user);
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

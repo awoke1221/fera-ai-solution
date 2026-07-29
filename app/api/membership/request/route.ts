@@ -1,7 +1,7 @@
 // ─── POST /api/membership/request ────────────────────
 // Submit a new payment request (screenshot or PayPal)
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    await ensureProfileForUser(user);
 
     const {
       planId,
@@ -30,11 +32,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const planLookup = await supabase
+      .from("membership_plans")
+      .select("id")
+      .eq("id", planId)
+      .maybeSingle();
+
+    const resolvedPlanId = planLookup.data?.id || planId;
+
     const { data, error } = await supabase
       .from("payment_requests")
       .insert({
         user_id: user.id,
-        plan_id: planId,
+        plan_id: resolvedPlanId,
         amount,
         currency: currency || "USD",
         payment_method: paymentMethod,
