@@ -4,7 +4,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SiteShell } from "@/app/components/site-shell";
-import { createClient } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -14,19 +13,9 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/api/auth/callback`,
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
+      // Use the server API so the redirect URL is built server-side
+      // with the production domain (NEXT_PUBLIC_SITE_URL), avoiding
+      // localhost redirects from the client-side PKCE flow.
       const res = await fetch("/api/auth/google", { method: "POST" });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Google sign-in failed");

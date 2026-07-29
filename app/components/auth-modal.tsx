@@ -69,28 +69,9 @@ export function AuthModal({
     setError(null);
 
     try {
-      const supabase = createClient();
-
-      // Try client-side redirect first
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/api/auth/callback`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-
-      if (error) throw new Error(error.message);
-
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-
-      // Fallback: call server API
+      // Use the server API so the redirect URL is built server-side
+      // with the production domain (NEXT_PUBLIC_SITE_URL), avoiding
+      // localhost redirects from the client-side PKCE flow.
       const res = await fetch("/api/auth/google", { method: "POST" });
       const d = await res.json();
 

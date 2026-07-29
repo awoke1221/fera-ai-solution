@@ -11,15 +11,29 @@ export async function POST() {
     const headersList = await headers();
     const host = headersList.get("host") || "www.feraaisolution.com";
     const protocol = headersList.get("x-forwarded-proto") || "https";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      `${protocol}://${host}` ||
-      "https://www.feraaisolution.com";
+      siteUrl || `${protocol}://${host}` || "https://www.feraaisolution.com";
+    const redirectTo = `${origin}/api/auth/callback`;
+
+    // Debug: log what redirect URL is being sent
+    console.log(
+      "[auth/google] siteUrl:",
+      siteUrl,
+      "host:",
+      host,
+      "protocol:",
+      protocol,
+      "origin:",
+      origin,
+      "redirectTo:",
+      redirectTo,
+    );
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/api/auth/callback`,
+        redirectTo,
         queryParams: {
           access_type: "offline",
           prompt: "consent",
