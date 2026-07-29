@@ -10,22 +10,17 @@ import { useEffect, useCallback, useState } from "react";
 import { FeraAIChat } from "./fera-ai-chat";
 
 const navItems = [
-  { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
-  { href: "/solutions", label: "Solutions" },
-  { href: "/process", label: "Process" },
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
-  { href: "/insights", label: "Insights" },
-  { href: "/system-design", label: "Learn" },
   { href: "/stack-advisor", label: "Stack Advisor" },
-  { href: "/membership", label: "Membership" },
-  { href: "/contact", label: "Contact" },
 ];
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [navHidden, setNavHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [membership, setMembership] = useState<any>(null);
@@ -50,19 +45,33 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [fetchUser]);
 
   useEffect(() => {
-    const updateScrollProgress = () => {
+    const handleScroll = () => {
       const scrollTop = window.scrollY;
+
+      // Scroll progress (0–1)
       const scrollHeight =
         document.documentElement.scrollHeight - window.innerHeight;
       const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
       setScrollProgress(progress);
+
+      // Smart nav: hide on scroll down, show on scroll up
+      if (scrollTop > 80 && scrollTop > lastScrollY) {
+        setNavHidden(true);
+      } else if (scrollTop < lastScrollY || scrollTop <= 80) {
+        setNavHidden(false);
+      }
+      setLastScrollY(scrollTop);
+
+      // Close mobile menu on scroll
+      if (menuOpen && scrollTop > 20) {
+        setMenuOpen(false);
+      }
     };
 
-    updateScrollProgress();
-    window.addEventListener("scroll", updateScrollProgress, { passive: true });
-
-    return () => window.removeEventListener("scroll", updateScrollProgress);
-  }, []);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY, menuOpen]);
 
   useEffect(() => {
     const revealItems = Array.from(
@@ -93,11 +102,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div
-        className="scroll-progress"
+        className={`scroll-progress ${navHidden ? "hidden" : ""}`}
         style={{ transform: `scaleX(${scrollProgress})` }}
       />
 
-      <header>
+      <header className={navHidden ? "nav-hidden" : ""}>
         <nav className="wrap">
           <Link href="/" className="brand" onClick={() => setMenuOpen(false)}>
             <img

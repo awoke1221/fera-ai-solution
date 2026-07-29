@@ -1,10 +1,12 @@
-// ─── Stack Advisor Page — Vibe Coder's Tech Stack Platform ──
+// ─── Stack Advisor Page — Premium Members Only ──────
 // This page provides an interactive wizard for vibe coders to
 // select their project type and tech stack, visualize connections,
 // and get detailed configuration + business recommendations.
+// Access requires an active premium membership.
 
 import { SiteShell } from "../components/site-shell";
 import { StackAdvisorClient } from "./client-page";
+import { MembershipCheck } from "../components/membership-check";
 
 export const metadata = {
   title: "Stack Advisor — Vibe Coder's Tech Stack Platform",
@@ -22,7 +24,7 @@ export default function StackAdvisorPage() {
     <SiteShell>
       <section className="page-hero">
         <div className="wrap">
-          <div className="eyebrow">Vibe Coder Tool</div>
+          <div className="eyebrow">Premium Tool</div>
           <h1 className="h-display">
             Stack <span className="gradient-text">Advisor</span>
           </h1>
@@ -37,7 +39,9 @@ export default function StackAdvisorPage() {
 
       <section style={{ borderBottom: "none" }}>
         <div className="wrap">
-          <StackAdvisorClient />
+          <MembershipCheck>
+            <StackAdvisorClient />
+          </MembershipCheck>
         </div>
       </section>
     </SiteShell>

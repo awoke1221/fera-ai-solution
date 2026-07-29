@@ -8,6 +8,7 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { SiteShell } from "@/app/components/site-shell";
 import { PaymentUpload } from "@/app/components/payment-upload";
 import { AuthModal } from "@/app/components/auth-modal";
+import { RequireAuth } from "@/app/components/require-auth";
 import type { MembershipPlan } from "@/lib/types";
 
 function JoinContent() {

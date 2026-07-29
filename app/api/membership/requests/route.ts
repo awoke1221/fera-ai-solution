@@ -1,10 +1,12 @@
 // ─── GET /api/membership/requests (admin only) ───────
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, getAdminServiceClient } from "@/lib/supabase-admin";
 
 export async function GET(request: Request) {
   try {
     const supabase = await createAdminClient();
+    const serviceClient = getAdminServiceClient();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -27,7 +29,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // optional filter
 
-    let query = supabase
+    // Use service client for admin reads (bypasses RLS to see all users)
+    const db = serviceClient || supabase;
+
+    let query = db
       .from("payment_requests")
       .select(
         "*, membership_plans(name), profiles!payment_requests_user_id_fkey(email, full_name)",

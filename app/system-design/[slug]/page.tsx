@@ -13,15 +13,19 @@ export default function TutorialDetailPage() {
 
   const [tutorial, setTutorial] = useState<any>(null);
   const [hasPremium, setHasPremium] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/tutorials")
-      .then((res) => res.json())
-      .then((data) => {
+    Promise.all([
+      fetch("/api/tutorials").then((r) => r.json()),
+      fetch("/api/auth/user").then((r) => r.json()),
+    ])
+      .then(([data, userData]) => {
         const found = data.tutorials?.find((t: any) => t.slug === slug);
         setTutorial(found || null);
         setHasPremium(data.hasPremium || false);
+        setUser(userData.user);
       })
       .catch(() => setTutorial(null))
       .finally(() => setLoading(false));
@@ -103,7 +107,7 @@ export default function TutorialDetailPage() {
       <section>
         <div className="wrap">
           {tutorial.is_locked ? (
-            <PremiumGate hasPremium={false}>
+            <PremiumGate hasPremium={hasPremium} user={user}>
               <div />
             </PremiumGate>
           ) : (

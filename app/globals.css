@@ -305,6 +305,10 @@ p.lead {
   z-index: 500;
   transform-origin: left center;
   transform: scaleX(0);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.scroll-progress.hidden {
+  transform: scaleX(0) !important;
 }
 
 header {
@@ -318,6 +322,10 @@ header {
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.16);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+header.nav-hidden {
+  transform: translateY(-100%);
 }
 nav.wrap {
   display: flex;
@@ -538,6 +546,7 @@ nav.wrap {
     transform: translateY(-12px);
     opacity: 0;
     pointer-events: none;
+    z-index: 450;
     transition:
       transform 0.25s ease,
       opacity 0.25s ease;
@@ -2273,7 +2282,7 @@ footer {
 
 /* PROJECT PAGE STYLES */
 .project-page {
-  padding: 20px 0 80px;
+  padding: 120px 0 80px;
   position: relative;
 }
 .project-page::before {
@@ -2294,18 +2303,15 @@ footer {
     );
   z-index: 0;
 }
-.detail-topbar {
-  padding-top: 80px;
-  padding-bottom: 10px;
-  position: relative;
-  z-index: 1;
-}
 .detail-topbar-inner {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+  padding-bottom: 16px;
+  position: relative;
+  z-index: 1;
 }
 .detail-brand {
   padding: 8px 12px;
@@ -4188,6 +4194,21 @@ footer {
 .auth-form-card h2 {
   font-size: 1.35rem;
   margin-bottom: 4px;
+}
+.auth-form-card .auth-description {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.auth-form-card.google-only {
+  text-align: center;
+  align-items: center;
+}
+.auth-form-card.google-only .google-btn {
+  width: 100%;
+  max-width: 320px;
+  margin-top: 8px;
 }
 .auth-form-card .field {
   display: flex;

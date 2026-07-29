@@ -1,11 +1,13 @@
 // ─── POST /api/membership/approve (admin only) ───────
 // Approve or reject a payment request and activate membership
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, getAdminServiceClient } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createAdminClient();
+    const serviceClient = getAdminServiceClient();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the payment request
+    // Get the payment request (using auth client for RLS)
     const { data: paymentRequest, error: fetchError } = await supabase
       .from("payment_requests")
       .select("*")
@@ -55,8 +57,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // Use service client for write operations (bypasses RLS)
+    const db = serviceClient || supabase;
+
     // Update payment request status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from("payment_requests")
       .update({
         status,
@@ -72,7 +77,7 @@ export async function POST(request: Request) {
 
     // If approved, create or update membership
     if (status === "approved") {
-      const { data: plan } = await supabase
+      const { data: plan } = await db
         .from("membership_plans")
         .select("duration_days")
         .eq("id", paymentRequest.plan_id)
@@ -84,7 +89,7 @@ export async function POST(request: Request) {
       endDate.setDate(endDate.getDate() + durationDays);
 
       // Check if user already has a membership
-      const { data: existingMembership } = await supabase
+      const { data: existingMembership } = await db
         .from("memberships")
         .select("id")
         .eq("user_id", paymentRequest.user_id)
@@ -92,7 +97,7 @@ export async function POST(request: Request) {
 
       if (existingMembership) {
         // Update existing membership
-        await supabase
+        await db
           .from("memberships")
           .update({
             plan_id: paymentRequest.plan_id,
@@ -104,7 +109,7 @@ export async function POST(request: Request) {
           .eq("id", existingMembership.id);
       } else {
         // Create new membership
-        await supabase.from("memberships").insert({
+        await db.from("memberships").insert({
           user_id: paymentRequest.user_id,
           plan_id: paymentRequest.plan_id,
           payment_request_id: paymentRequestId,

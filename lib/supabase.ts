@@ -11,18 +11,14 @@ export function createClient() {
         "Supabase: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.",
       );
     }
-    // Return a no-op client stub so the app doesn't crash
+    // Return a minimal no-op stub so the app doesn't crash
+    const noop = async () => ({
+      data: null,
+      error: { message: "Supabase not configured" },
+    });
     return {
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
-        signUp: async () => ({
-          data: { user: null },
-          error: { message: "Supabase not configured" },
-        }),
-        signInWithPassword: async () => ({
-          data: { user: null },
-          error: { message: "Supabase not configured" },
-        }),
         signInWithOAuth: async () => ({
           data: { provider: null, url: "" },
           error: { message: "Supabase not configured" },
@@ -31,60 +27,29 @@ export function createClient() {
       from: () => ({
         select: () => ({
           eq: () => ({
-            single: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-            maybeSingle: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-            order: () => ({
-              limit: async () => ({
-                data: null,
-                error: { message: "Supabase not configured" },
-              }),
-            }),
+            single: noop,
+            maybeSingle: noop,
+            order: () => ({ limit: noop }),
           }),
-          order: () => ({
-            limit: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-            maybeSingle: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-          }),
+          order: () => ({ limit: noop, maybeSingle: noop }),
         }),
-        insert: () => ({
-          select: () => ({
-            single: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-          }),
-        }),
-        update: () => ({
-          eq: () => ({
-            select: async () => ({
-              data: null,
-              error: { message: "Supabase not configured" },
-            }),
-          }),
-        }),
+        insert: () => ({ select: () => ({ single: noop }) }),
+        update: () => ({ eq: () => ({ select: noop }) }),
       }),
       storage: {
         from: () => ({
-          upload: async () => ({
-            data: null,
-            error: { message: "Supabase not configured" },
-          }),
+          upload: noop,
           getPublicUrl: () => ({ data: { publicUrl: "" } }),
         }),
       },
     } as any;
   }
 
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  return createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      flowType: "pkce",
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
 }

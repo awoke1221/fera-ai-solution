@@ -24,15 +24,19 @@ type Tutorial = {
 export default function SystemDesignPage() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   const [hasPremium, setHasPremium] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    fetch("/api/tutorials")
-      .then((res) => res.json())
-      .then((data) => {
-        setTutorials(data.tutorials || []);
-        setHasPremium(data.hasPremium || false);
+    Promise.all([
+      fetch("/api/tutorials").then((r) => r.json()),
+      fetch("/api/auth/user").then((r) => r.json()),
+    ])
+      .then(([tutorialsData, userData]) => {
+        setTutorials(tutorialsData.tutorials || []);
+        setHasPremium(tutorialsData.hasPremium || false);
+        setUser(userData.user);
       })
       .catch(() => setTutorials([]))
       .finally(() => setLoading(false));
@@ -117,7 +121,7 @@ export default function SystemDesignPage() {
                     <p>{tutorial.description}</p>
 
                     {tutorial.is_locked ? (
-                      <PremiumGate hasPremium={false}>
+                      <PremiumGate hasPremium={hasPremium} user={user}>
                         <div />
                       </PremiumGate>
                     ) : (
