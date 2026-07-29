@@ -5,9 +5,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useCallback, useState } from "react";
 import { FeraAIChat } from "./fera-ai-chat";
+import { createClient } from "@/lib/supabase";
 
 const navItems = [
   { href: "/services", label: "Services" },
@@ -24,7 +25,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [membership, setMembership] = useState<any>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const fetchUser = useCallback(async () => {
     try {
@@ -99,6 +102,21 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+      setMembership(null);
+      setProfileMenuOpen(false);
+      router.push("/");
+      router.refresh();
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <>
       <div
@@ -164,6 +182,57 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 >
                   Dashboard
                 </Link>
+                <div
+                  className={`user-profile-nav ${profileMenuOpen ? "open" : ""}`}
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                >
+                  <img
+                    src={
+                      user?.user_metadata?.avatar_url ||
+                      profile?.avatar_url ||
+                      "/default-avatar.png"
+                    }
+                    alt={profile?.full_name || user?.email || "User"}
+                    className="user-avatar-nav"
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="user-name-nav">
+                    {profile?.full_name ||
+                      user?.user_metadata?.full_name ||
+                      user?.email?.split("@")[0] ||
+                      "User"}
+                  </span>
+                  <div className="user-dropdown">
+                    <div className="user-dropdown-header">
+                      <strong>
+                        {profile?.full_name ||
+                          user?.user_metadata?.full_name ||
+                          "User"}
+                      </strong>
+                      <span>{user?.email}</span>
+                    </div>
+                    <Link
+                      href="/membership/dashboard"
+                      className="user-dropdown-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      type="button"
+                      className="user-dropdown-item logout"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLogout();
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <Link

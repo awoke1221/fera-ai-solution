@@ -50,6 +50,7 @@ export function createClient() {
       flowType: "pkce",
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   });
 }
