@@ -3532,6 +3532,25 @@ footer {
   align-items: baseline;
   gap: 2px;
 }
+.membership-plan-label {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(79, 209, 165, 0.08);
+  color: var(--teal);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.membership-plan-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  min-height: 2.2em;
+}
 .price-currency {
   font-family: var(--display);
   font-size: 1.3rem;

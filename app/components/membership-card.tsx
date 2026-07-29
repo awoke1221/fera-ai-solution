@@ -33,6 +33,14 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
         ? "$"
         : plan.currency;
 
+  const isLocalPlan = plan.slug === "local-stack-guides";
+  const isDiasporaPlan = plan.slug === "diaspora-stack-guides";
+  const labelText = isLocalPlan
+    ? "Local access"
+    : isDiasporaPlan
+      ? "Diaspora access"
+      : "Premium access";
+
   // ── 3D Tilt ─────────────────────────────────────
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -138,6 +146,7 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
           <span className="plan-icon">{icons[index]}</span>
           <div className="icon-ring" />
         </div>
+        <span className="membership-plan-label">{labelText}</span>
         <h3>{plan.name}</h3>
         <p className="membership-desc">{plan.description}</p>
       </div>
@@ -148,6 +157,13 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
         <span className="price-amount">{countUp}</span>
         <span className="price-period">
           / {plan.duration_days === 30 ? "month" : `${plan.duration_days}d`}
+        </span>
+      </div>
+      <div className="membership-plan-meta">
+        <span>
+          {isLocalPlan
+            ? "Telebirr, CBE Birr, or bank transfer"
+            : "PayPal monthly billing"}
         </span>
       </div>
 
@@ -188,7 +204,7 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
         href={`/membership/join?plan=${plan.id}`}
         className={`membership-cta-btn ${isPopular ? "primary" : ""}`}
       >
-        <span className="cta-text">Get Started</span>
+        <span className="cta-text">Join this plan</span>
         <span className="cta-arrow">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path

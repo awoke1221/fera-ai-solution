@@ -197,7 +197,8 @@ export default function MembershipPage() {
               <p className="m-hero-sub">
                 Unlock unlimited access to every Stack Guide and all AI support
                 tools with a monthly membership designed for Ethiopian learners
-                and diaspora professionals.
+                and diaspora professionals. Your subscription gives you full
+                access to the premium learning experience without limits.
               </p>
 
               {/* ── Mini Stats ───────────────────── */}
@@ -228,7 +229,7 @@ export default function MembershipPage() {
                 Both memberships include unlimited access to every Stack Guide,
                 architecture walkthroughs, and AI support tools. Ethiopian
                 members pay 500 birr per month, while diaspora members pay $10
-                per month for the same premium experience.
+                per month for the same premium experience and unlimited usage.
               </p>
             </div>
 

@@ -14,7 +14,7 @@ const defaultPlans: Omit<MembershipPlan, "id" | "created_at">[] = [
     name: "Local Stack Guides Membership",
     slug: "local-stack-guides",
     description:
-      "Unlimited access to stack guides, architecture walkthroughs, and AI support for Ethiopian members.",
+      "Unlimited access to Stack Guides, architecture walkthroughs, and AI support for Ethiopian members.",
     price: 500,
     currency: "ETB",
     duration_days: 30,
@@ -30,7 +30,7 @@ const defaultPlans: Omit<MembershipPlan, "id" | "created_at">[] = [
     name: "Diaspora Stack Guides Membership",
     slug: "diaspora-stack-guides",
     description:
-      "Unlimited access for diaspora members with secure PayPal billing and instant premium access.",
+      "Unlimited access for diaspora members with secure PayPal billing and instant premium access to the Stack Guides and AI tools.",
     price: 10,
     currency: "USD",
     duration_days: 30,
