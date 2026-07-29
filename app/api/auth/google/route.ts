@@ -7,11 +7,14 @@ export async function POST() {
   try {
     const supabase = await createAdminClient();
 
-    // Determine the origin dynamically: env var > Host header > localhost fallback
+    // Determine the origin dynamically: env var > Host header > production fallback
     const headersList = await headers();
-    const host = headersList.get("host") || "localhost:3000";
-    const protocol = headersList.get("x-forwarded-proto") || "http";
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    const host = headersList.get("host") || "www.feraaisolution.com";
+    const protocol = headersList.get("x-forwarded-proto") || "https";
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      `${protocol}://${host}` ||
+      "https://www.feraaisolution.com";
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",

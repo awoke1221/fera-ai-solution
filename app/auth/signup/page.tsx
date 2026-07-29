@@ -18,7 +18,7 @@ export default function SignupPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=/membership/dashboard`,
+          redirectTo: `${window.location.origin}/api/auth/callback`,
           queryParams: { access_type: "offline", prompt: "consent" },
         },
       });

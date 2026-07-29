@@ -8,9 +8,12 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") || "/membership/dashboard";
 
-  // Use NEXT_PUBLIC_SITE_URL when set (production), otherwise derive from request
+  // Use NEXT_PUBLIC_SITE_URL when set (production), otherwise derive from request.
+  // Hard-code the production domain as a final fallback so users are never
+  // redirected to localhost in production.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const origin = siteUrl || new URL(request.url).origin;
+  const origin =
+    siteUrl || new URL(request.url).origin || "https://www.feraaisolution.com";
 
   if (code) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
