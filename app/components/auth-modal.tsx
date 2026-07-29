@@ -72,7 +72,15 @@ export function AuthModal({
       // Use the server API so the redirect URL is built server-side
       // with the production domain (NEXT_PUBLIC_SITE_URL), avoiding
       // localhost redirects from the client-side PKCE flow.
-      const res = await fetch("/api/auth/google", { method: "POST" });
+      const next =
+        new URLSearchParams(window.location.search).get("next") ||
+        "/membership";
+      const res = await fetch(
+        `/api/auth/google?next=${encodeURIComponent(next)}`,
+        {
+          method: "POST",
+        },
+      );
       const d = await res.json();
 
       if (!res.ok) throw new Error(d.error || "Google sign-in failed");

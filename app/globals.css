@@ -5690,6 +5690,70 @@ footer {
   justify-content: center;
   flex-wrap: wrap;
 }
+.premium-gate-plans {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.premium-gate-plan-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+.premium-gate-plan-card strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.premium-gate-plan-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+.premium-gate-plan-card p {
+  margin: 0;
+  font-size: 0.86rem;
+}
+.fera-chat-gate {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  max-width: 320px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(244, 178, 75, 0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(244, 178, 75, 0.08),
+    rgba(10, 15, 12, 0.97)
+  );
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.28);
+  text-align: left;
+}
+.fera-chat-gate-icon {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.fera-chat-gate h3 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+.fera-chat-gate p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+.fera-chat-gate-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
 .search-bar {
   display: flex;
@@ -5745,6 +5809,15 @@ footer {
   }
   .premium-gate-actions {
     flex-direction: column;
+  }
+  .premium-gate-plans {
+    grid-template-columns: 1fr;
+  }
+  .fera-chat-gate {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    max-width: none;
   }
   .tutorials-cta-actions {
     flex-direction: column;

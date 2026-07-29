@@ -195,7 +195,7 @@ export default function MembershipPage() {
                 <span className="gradient-text">engineering future</span>
               </h1>
               <p className="m-hero-sub">
-                Unlock unlimited access to the Stack Guides plus AI support
+                Unlock unlimited access to every Stack Guide and all AI support
                 tools with a monthly membership designed for Ethiopian learners
                 and diaspora professionals.
               </p>
@@ -228,7 +228,7 @@ export default function MembershipPage() {
                 Both memberships include unlimited access to every Stack Guide,
                 architecture walkthroughs, and AI support tools. Ethiopian
                 members pay 500 birr per month, while diaspora members pay $10
-                per month.
+                per month for the same premium experience.
               </p>
             </div>
 

@@ -10,6 +10,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type ChatMessage = {
@@ -37,6 +38,10 @@ export function FeraAIChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState("");
+  const [membershipStatus, setMembershipStatus] = useState<{
+    hasPremium: boolean;
+    user: any | null;
+  } | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,6 +52,18 @@ export function FeraAIChat() {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  useEffect(() => {
+    fetch("/api/membership/status")
+      .then((res) => res.json())
+      .then((data) => {
+        setMembershipStatus({
+          hasPremium: data.hasPremium || false,
+          user: data.user || null,
+        });
+      })
+      .catch(() => setMembershipStatus({ hasPremium: false, user: null }));
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -127,6 +144,29 @@ export function FeraAIChat() {
       });
     });
   };
+
+  if (membershipStatus && !membershipStatus.hasPremium) {
+    return (
+      <div className="fera-chat-gate">
+        <div className="fera-chat-gate-icon">✨</div>
+        <h3>Premium AI support</h3>
+        <p>
+          Unlock the complete Stack Guides experience and AI support with a
+          monthly membership.
+        </p>
+        <div className="fera-chat-gate-actions">
+          <Link href="/membership" className="btn solid">
+            Join Membership
+          </Link>
+          {!membershipStatus.user && (
+            <Link href="/auth/login?next=/membership" className="btn">
+              Sign In
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

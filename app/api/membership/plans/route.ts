@@ -55,7 +55,27 @@ export async function GET() {
       .order("price", { ascending: true });
 
     if (!error && plans && plans.length > 0) {
-      return NextResponse.json({ plans }, { headers: CACHE_HEADERS });
+      const normalizedPlans = (plans as MembershipPlan[]).map((plan) => {
+        const defaultPlan = defaultPlans.find(
+          (item) => item.slug === plan.slug,
+        );
+        if (!defaultPlan) return plan;
+        return {
+          ...plan,
+          name: defaultPlan.name,
+          description: defaultPlan.description,
+          price: defaultPlan.price,
+          currency: defaultPlan.currency,
+          duration_days: defaultPlan.duration_days,
+          features: defaultPlan.features,
+          is_active: true,
+        } as MembershipPlan;
+      });
+
+      return NextResponse.json(
+        { plans: normalizedPlans },
+        { headers: CACHE_HEADERS },
+      );
     }
 
     const serviceClient = getAdminServiceClient();

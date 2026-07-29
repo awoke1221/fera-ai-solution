@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { headers } from "next/headers";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const next = searchParams.get("next") || "/membership";
     const supabase = await createAdminClient();
 
     // Determine the origin dynamically: env var > Host header > production fallback
@@ -14,7 +16,7 @@ export async function POST() {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     const origin =
       siteUrl || `${protocol}://${host}` || "https://www.feraaisolution.com";
-    const redirectTo = `${origin}/api/auth/callback`;
+    const redirectTo = `${origin}/api/auth/callback?next=${encodeURIComponent(next)}`;
 
     // Debug: log what redirect URL is being sent
     console.log(

@@ -14,6 +14,30 @@ import type { MembershipPlan } from "@/lib/types";
 const localPlanSlug = "local-stack-guides";
 const diasporaPlanSlug = "diaspora-stack-guides";
 
+function formatPlanPrice(plan: MembershipPlan | null) {
+  if (!plan) return "";
+
+  if (plan.currency === "ETB") {
+    return `${plan.price} ETB / month`;
+  }
+
+  if (plan.currency === "USD") {
+    return `$${plan.price} USD / month`;
+  }
+
+  return `${plan.price} ${plan.currency} / month`;
+}
+
+function formatPaymentAmount(plan: MembershipPlan | null, currency: string) {
+  if (!plan) return "";
+
+  if (currency === "ETB") {
+    return `${plan.price} birr`;
+  }
+
+  return `$${plan.price}`;
+}
+
 function JoinContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -47,6 +71,20 @@ function JoinContent() {
     setRegion("local");
     setPaymentMethod("mobile_money");
   }, [profile?.region]);
+
+  useEffect(() => {
+    if (!plans.length) return;
+
+    const preferredPlan =
+      (profile?.region === "global"
+        ? plans.find((p) => p.slug === diasporaPlanSlug)
+        : plans.find((p) => p.slug === localPlanSlug)) || plans[0];
+
+    if (preferredPlan && (!planId || !plans.some((p) => p.id === planId))) {
+      setPlan(preferredPlan);
+      router.replace(`/membership/join?plan=${preferredPlan.id}`);
+    }
+  }, [plans, profile?.region, planId, router]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -390,11 +428,7 @@ function JoinContent() {
                 </div>
                 <div className="summary-row total">
                   <span>Total</span>
-                  <strong>
-                    {plan.currency === "ETB"
-                      ? `${plan.price} ETB / month`
-                      : `$${plan.price} USD / month`}
-                  </strong>
+                  <strong>{formatPlanPrice(plan)}</strong>
                 </div>
               </div>
 
@@ -486,8 +520,9 @@ function JoinContent() {
                     {paymentMethod === "mobile_money" ? (
                       <>
                         <p>
-                          Send <strong>${plan.price}</strong> to the following
-                          mobile money account:
+                          Send{" "}
+                          <strong>{formatPaymentAmount(plan, "ETB")}</strong> to
+                          the following mobile money account:
                         </p>
                         <div className="payment-details-card">
                           <div className="detail-row">
@@ -511,8 +546,9 @@ function JoinContent() {
                     ) : (
                       <>
                         <p>
-                          Transfer <strong>${plan.price}</strong> to our bank
-                          account:
+                          Transfer{" "}
+                          <strong>{formatPaymentAmount(plan, "ETB")}</strong> to
+                          our bank account:
                         </p>
                         <div className="payment-details-card">
                           <div className="detail-row">
