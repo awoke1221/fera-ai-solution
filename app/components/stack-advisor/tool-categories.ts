@@ -1,0 +1,96 @@
+// ─── Tool Categories ───────────────────────────────────
+import type { ToolCategory } from "./types";
+
+export const toolCategories: ToolCategory[] = [
+  {
+    id: "frontend",
+    label: "Frontend Framework",
+    icon: "🖥️",
+    description: "The UI framework for building the user interface",
+    required: true,
+  },
+  {
+    id: "backend",
+    label: "Backend / API",
+    icon: "⚙️",
+    description: "Server-side runtime and API framework",
+    required: true,
+  },
+  {
+    id: "database",
+    label: "Database",
+    icon: "🗄️",
+    description: "Primary data storage and query engine",
+    required: true,
+  },
+  {
+    id: "auth",
+    label: "Authentication & Authorization",
+    icon: "🔐",
+    description: "User identity, login, and access control",
+    required: true,
+  },
+  {
+    id: "storage",
+    label: "File & Media Storage",
+    icon: "📁",
+    description: "Image, video, and file hosting",
+    required: false,
+  },
+  {
+    id: "deploy_frontend",
+    label: "Frontend Deployment",
+    icon: "🚀",
+    description: "Hosting and delivery of the frontend app",
+    required: true,
+  },
+  {
+    id: "deploy_backend",
+    label: "Backend Deployment",
+    icon: "☁️",
+    description: "Server hosting and infrastructure",
+    required: true,
+  },
+  {
+    id: "cicd",
+    label: "CI/CD Pipeline",
+    icon: "🔄",
+    description: "Automated testing, building, and deployment",
+    required: false,
+  },
+  {
+    id: "payment",
+    label: "Payment Gateway",
+    icon: "💳",
+    description: "Payment processing and money handling",
+    required: false,
+  },
+  {
+    id: "email",
+    label: "Email Service",
+    icon: "📧",
+    description: "Transactional and marketing emails",
+    required: false,
+  },
+  {
+    id: "cache",
+    label: "Caching & Rate Limiting",
+    icon: "⚡",
+    description: "Performance optimization and request throttling",
+    required: false,
+  },
+  {
+    id: "testing",
+    label: "Testing Framework",
+    icon: "🧪",
+    description: "Automated testing for quality assurance",
+    required: false,
+  },
+  {
+    id: "monitoring",
+    label: "Monitoring & Analytics",
+    icon: "📊",
+    description: "Application monitoring, logging, and analytics",
+    required: false,
+  },
+];

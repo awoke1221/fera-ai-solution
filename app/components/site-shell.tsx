@@ -18,6 +18,7 @@ const navItems = [
   { href: "/projects", label: "Projects" },
   { href: "/insights", label: "Insights" },
   { href: "/system-design", label: "Learn" },
+  { href: "/stack-advisor", label: "Stack Advisor" },
   { href: "/membership", label: "Membership" },
   { href: "/contact", label: "Contact" },
 ];
