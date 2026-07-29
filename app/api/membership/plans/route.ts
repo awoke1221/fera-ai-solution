@@ -46,38 +46,6 @@ const defaultPlans: Omit<MembershipPlan, "id" | "created_at">[] = [
 
 export async function GET() {
   try {
-    const supabase = await createAdminClient();
-
-    const { data: plans, error } = await supabase
-      .from("membership_plans")
-      .select("*")
-      .eq("is_active", true)
-      .order("price", { ascending: true });
-
-    if (!error && plans && plans.length > 0) {
-      const normalizedPlans = (plans as MembershipPlan[]).map((plan) => {
-        const defaultPlan = defaultPlans.find(
-          (item) => item.slug === plan.slug,
-        );
-        if (!defaultPlan) return plan;
-        return {
-          ...plan,
-          name: defaultPlan.name,
-          description: defaultPlan.description,
-          price: defaultPlan.price,
-          currency: defaultPlan.currency,
-          duration_days: defaultPlan.duration_days,
-          features: defaultPlan.features,
-          is_active: true,
-        } as MembershipPlan;
-      });
-
-      return NextResponse.json(
-        { plans: normalizedPlans },
-        { headers: CACHE_HEADERS },
-      );
-    }
-
     const serviceClient = getAdminServiceClient();
     const seededPlans: MembershipPlan[] = [];
 
@@ -94,23 +62,60 @@ export async function GET() {
           is_active: true,
         };
 
-        const { data, error: insertError } = await serviceClient
+        const { data, error: upsertError } = await serviceClient
           .from("membership_plans")
-          .insert(upsertPayload as any)
+          .upsert(upsertPayload as any, { onConflict: "slug" })
           .select("*")
           .single();
 
-        if (!insertError && data) {
+        if (!upsertError && data) {
           seededPlans.push(data as MembershipPlan);
         }
       }
+
+      if (seededPlans.length > 0) {
+        return NextResponse.json(
+          { plans: seededPlans },
+          { headers: CACHE_HEADERS },
+        );
+      }
     }
 
-    if (seededPlans.length > 0) {
-      return NextResponse.json(
-        { plans: seededPlans },
-        { headers: CACHE_HEADERS },
-      );
+    const supabase = await createAdminClient();
+    const { data: plans, error } = await supabase
+      .from("membership_plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("price", { ascending: true });
+
+    if (!error && plans && plans.length > 0) {
+      const normalizedPlans = (plans as MembershipPlan[])
+        .filter((plan) =>
+          defaultPlans.some((item) => item.slug === plan.slug),
+        )
+        .map((plan) => {
+          const defaultPlan = defaultPlans.find(
+            (item) => item.slug === plan.slug,
+          );
+          if (!defaultPlan) return plan;
+          return {
+            ...plan,
+            name: defaultPlan.name,
+            description: defaultPlan.description,
+            price: defaultPlan.price,
+            currency: defaultPlan.currency,
+            duration_days: defaultPlan.duration_days,
+            features: defaultPlan.features,
+            is_active: true,
+          } as MembershipPlan;
+        });
+
+      if (normalizedPlans.length > 0) {
+        return NextResponse.json(
+          { plans: normalizedPlans },
+          { headers: CACHE_HEADERS },
+        );
+      }
     }
 
     return NextResponse.json(
