@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     const writeClient = serviceClient;
 
-    const { data, error } = await writeClient
+    const { data, error } = await (writeClient as any)
       .from("payment_requests")
       .insert({
         user_id: user.id,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         screenshot_url: screenshotUrl || null,
         paypal_order_id: paypalOrderId || null,
         status: "pending",
-      })
+      } as any)
       .select()
       .single();
 
