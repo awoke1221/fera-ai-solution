@@ -64,7 +64,9 @@ export default function AdminMembershipsPage() {
 
         if (cancelled) return;
 
-        const canAccess = Boolean(data.profile?.is_admin);
+        const canAccess = Boolean(
+          data.profile?.is_admin || data.profile?.role === "admin",
+        );
         setIsAdmin(canAccess);
 
         if (!canAccess) {

@@ -125,13 +125,35 @@ export async function ensureProfileForUser(
   const isAdminEmail =
     normalizedEmail.length > 0 && adminEmails.includes(normalizedEmail);
 
-  const { data: existingProfile, error: existingError } = await serviceClient
+  let roleSupported = true;
+  let profile: ProfileRow | null = null;
+  let existingError: any = null;
+
+  const { data: existingProfile, error: initialError } = await serviceClient
     .from("profiles")
     .select("id, is_admin, role")
     .eq("id", user.id)
     .maybeSingle();
 
-  const profile = existingProfile as ProfileRow | null;
+  if (initialError) {
+    if (
+      initialError.message?.includes("column") &&
+      initialError.message?.includes("does not exist")
+    ) {
+      roleSupported = false;
+      const fallback = await serviceClient
+        .from("profiles")
+        .select("id, is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      profile = fallback.data as ProfileRow | null;
+      existingError = fallback.error;
+    } else {
+      existingError = initialError;
+    }
+  } else {
+    profile = existingProfile as ProfileRow | null;
+  }
 
   if (existingError && existingError.code !== "PGRST116") {
     return null;
@@ -139,15 +161,22 @@ export async function ensureProfileForUser(
 
   if (profile) {
     const shouldBeAdmin = isAdminEmail || !!profile.is_admin;
-    const roleUpdate = shouldBeAdmin ? "admin" : "user";
+    const updatePayload: Record<string, any> = { is_admin: shouldBeAdmin };
+
+    if (roleSupported) {
+      updatePayload.role = shouldBeAdmin ? "admin" : "user";
+    }
 
     if (isAdminEmail && !profile.is_admin) {
       await (serviceClient.from("profiles") as any)
-        .update({ is_admin: true, role: roleUpdate })
+        .update(updatePayload)
         .eq("id", user.id);
-    } else if (profile.role !== roleUpdate) {
+    } else if (
+      roleSupported &&
+      profile.role !== (shouldBeAdmin ? "admin" : "user")
+    ) {
       await (serviceClient.from("profiles") as any)
-        .update({ role: roleUpdate })
+        .update({ role: shouldBeAdmin ? "admin" : "user" })
         .eq("id", user.id);
     }
     return profile;
@@ -159,17 +188,22 @@ export async function ensureProfileForUser(
     user.email?.split("@")[0] ||
     null;
 
+  const insertPayload: Record<string, any> = {
+    id: user.id,
+    email: user.email || null,
+    full_name: fullName,
+    avatar_url: null,
+    region: "local",
+    is_admin: isAdminEmail,
+  };
+
+  if (roleSupported) {
+    insertPayload.role = isAdminEmail ? "admin" : "user";
+  }
+
   const { data, error } = await serviceClient
     .from("profiles")
-    .insert({
-      id: user.id,
-      email: user.email || null,
-      full_name: fullName,
-      avatar_url: null,
-      region: "local",
-      is_admin: isAdminEmail,
-      role: isAdminEmail ? "admin" : "user",
-    } as any)
+    .insert(insertPayload)
     .select("id")
     .single();
 
@@ -192,10 +226,10 @@ export async function isAdminUser(
 
   const { data, error } = await serviceClient
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, role")
     .eq("id", user.id)
     .maybeSingle();
 
   const profile = data as ProfileRow | null;
-  return !error && !!profile?.is_admin;
+  return !error && (!!profile?.is_admin || profile?.role === "admin");
 }

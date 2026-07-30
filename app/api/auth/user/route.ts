@@ -1,6 +1,10 @@
 // ─── GET /api/auth/user — current user & profile ─────
 import { NextResponse } from "next/server";
-import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
+import {
+  createAdminClient,
+  ensureProfileForUser,
+  isAdminUser,
+} from "@/lib/supabase-admin";
 
 // Cache for 10s, stale for 1 min — quick enough for nav bar but avoids repeated DB hits
 const CACHE_HEADERS = {
@@ -45,6 +49,12 @@ export async function GET() {
       .eq("is_active", true)
       .gte("end_date", new Date().toISOString())
       .maybeSingle();
+
+    const adminStatus = await isAdminUser(user);
+    if (profile) {
+      profile.is_admin = adminStatus;
+      profile.role = profile.role || (adminStatus ? "admin" : "user");
+    }
 
     return NextResponse.json(
       {

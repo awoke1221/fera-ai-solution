@@ -17,15 +17,6 @@ const navItems = [
   { href: "/stack-advisor", label: "Stack Advisor" },
 ];
 
-// Simple in-memory cache — persists across SPA route changes
-let cachedUserData: {
-  user: any;
-  profile: any;
-  membership: any;
-} | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 30_000; // 30 seconds
-
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -38,25 +29,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const fetchedRef = useRef(false);
+  const isAdmin = profile?.is_admin || profile?.role === "admin";
 
-  const fetchUser = useCallback(async (force = false) => {
-    // Use cached data if still fresh
-    const now = Date.now();
-    if (!force && cachedUserData && now - cacheTimestamp < CACHE_TTL) {
-      setUser(cachedUserData.user);
-      setProfile(cachedUserData.profile);
-      setMembership(cachedUserData.membership);
-      return;
-    }
+  const fetchUser = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/user");
       const data = await res.json();
-      cachedUserData = {
-        user: data.user,
-        profile: data.profile,
-        membership: data.membership,
-      };
-      cacheTimestamp = Date.now();
       setUser(data.user);
       setProfile(data.profile);
       setMembership(data.membership);
@@ -206,7 +184,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     💎 Premium
                   </Link>
                 )}
-                {profile?.is_admin && (
+                {isAdmin && (
                   <Link
                     href="/admin/memberships"
                     className={pathname.startsWith("/admin") ? "active" : ""}
@@ -253,7 +231,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                       </strong>
                       <span>{user?.email}</span>
                       <span className="user-role-label">
-                        {profile?.role === "admin" ? "Admin" : "User"}
+                        {isAdmin ? "Admin" : "User"}
                       </span>
                     </div>
                     <Link

@@ -21,6 +21,10 @@ create table if not exists profiles (
   created_at timestamptz default now()
 );
 
+alter table profiles add column if not exists role text default 'user' check (role in ('user', 'admin'));
+update profiles set role = 'admin' where is_admin = true;
+update profiles set role = 'user' where role is null;
+
 -- Auto-create profile on signup
 create or replace function public.handle_new_user()
 returns trigger
@@ -154,46 +158,56 @@ alter table memberships enable row level security;
 alter table system_design_tutorials enable row level security;
 
 -- Profiles: users can read own profile, admins can read all
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 create policy "Users can view own profile"
   on profiles for select
   using (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 create policy "Admins can view all profiles"
   on profiles for select
   using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
 
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 create policy "Users can update own profile"
   on profiles for update
   using (auth.uid() = id);
 
 -- Membership plans: anyone can read active plans
+DROP POLICY IF EXISTS "Anyone can view active plans" ON membership_plans;
 create policy "Anyone can view active plans"
   on membership_plans for select
   using (is_active = true);
 
 -- Payment requests: users can view own, admins can view all
+DROP POLICY IF EXISTS "Users can view own payment requests" ON payment_requests;
 create policy "Users can view own payment requests"
   on payment_requests for select
   using (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all payment requests" ON payment_requests;
 create policy "Admins can view all payment requests"
   on payment_requests for select
   using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
 
+DROP POLICY IF EXISTS "Users can insert own payment requests" ON payment_requests;
 create policy "Users can insert own payment requests"
   on payment_requests for insert
   with check (auth.uid() = user_id);
 
 -- Memberships: users can view own, admins can view all
+DROP POLICY IF EXISTS "Users can view own membership" ON memberships;
 create policy "Users can view own membership"
   on memberships for select
   using (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all memberships" ON memberships;
 create policy "Admins can view all memberships"
   on memberships for select
   using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
 
 -- Tutorials: any authenticated user can view, but premium content gating is done in app
+DROP POLICY IF EXISTS "Authenticated users can view tutorials" ON system_design_tutorials;
 create policy "Authenticated users can view tutorials"
   on system_design_tutorials for select
   using (auth.role() = 'authenticated');
