@@ -41,8 +41,8 @@ export async function POST(request: Request) {
     const resolvedPlanId = planLookup.data?.id || planId;
 
     // Use the admin service client for writes that require bypassing RLS
-    const serviceClient = await import("@/lib/supabase-admin").then(
-      (m) => m.getAdminServiceClient(),
+    const serviceClient = await import("@/lib/supabase-admin").then((m) =>
+      m.getAdminServiceClient(),
     );
 
     const writeClient = serviceClient || supabase;
