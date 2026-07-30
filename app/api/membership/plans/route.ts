@@ -90,9 +90,7 @@ export async function GET() {
 
     if (!error && plans && plans.length > 0) {
       const normalizedPlans = (plans as MembershipPlan[])
-        .filter((plan) =>
-          defaultPlans.some((item) => item.slug === plan.slug),
-        )
+        .filter((plan) => defaultPlans.some((item) => item.slug === plan.slug))
         .map((plan) => {
           const defaultPlan = defaultPlans.find(
             (item) => item.slug === plan.slug,
@@ -111,8 +109,13 @@ export async function GET() {
         });
 
       if (normalizedPlans.length > 0) {
+        // Ensure plans are returned in the default order (local first, diaspora second)
+        const ordered = defaultPlans
+          .map((dp) => normalizedPlans.find((np) => np.slug === dp.slug))
+          .filter(Boolean) as MembershipPlan[];
+
         return NextResponse.json(
-          { plans: normalizedPlans },
+          { plans: ordered },
           { headers: CACHE_HEADERS },
         );
       }

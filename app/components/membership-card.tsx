@@ -16,7 +16,8 @@ type Plan = {
 };
 
 export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
-  const isPopular = index === 1;
+  // Mark the Local Stack Guides plan as the most popular explicitly
+  const isPopular = plan.slug === "local-stack-guides";
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
