@@ -203,7 +203,7 @@ export async function ensureProfileForUser(
 
   const { data, error } = await serviceClient
     .from("profiles")
-    .insert(insertPayload)
+    .insert(insertPayload as any)
     .select("id")
     .single();
 
