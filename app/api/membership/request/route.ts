@@ -1,7 +1,11 @@
 // ─── POST /api/membership/request ────────────────────
 // Submit a new payment request (screenshot or PayPal)
 import { NextResponse } from "next/server";
-import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
+import {
+  createAdminClient,
+  ensureProfileForUser,
+  getAdminServiceClient,
+} from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -41,11 +45,19 @@ export async function POST(request: Request) {
     const resolvedPlanId = planLookup.data?.id || planId;
 
     // Use the admin service client for writes that require bypassing RLS
-    const serviceClient = await import("@/lib/supabase-admin").then((m) =>
-      m.getAdminServiceClient(),
-    );
+    const serviceClient = getAdminServiceClient();
 
-    const writeClient = serviceClient || supabase;
+    if (!serviceClient) {
+      return NextResponse.json(
+        {
+          error:
+            "Server misconfiguration: SUPABASE_SERVICE_ROLE_KEY not set. Admin client required to create payment requests.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const writeClient = serviceClient;
 
     const { data, error } = await writeClient
       .from("payment_requests")
