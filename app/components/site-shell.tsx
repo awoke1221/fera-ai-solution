@@ -51,12 +51,28 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       fetchedRef.current = true;
       fetchUser();
     }
-  }, []);
+  }, [fetchUser]);
 
   // Refresh cache when navigating to a new page (e.g. after login redirect)
   useEffect(() => {
     fetchUser();
-  }, [pathname]);
+  }, [pathname, fetchUser]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshAccess = () => {
+      fetchUser();
+    };
+
+    const intervalId = window.setInterval(refreshAccess, 5000);
+    window.addEventListener("focus", refreshAccess);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshAccess);
+    };
+  }, [user, fetchUser]);
 
   useEffect(() => {
     const handleScroll = () => {

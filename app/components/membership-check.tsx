@@ -16,17 +16,29 @@ export function MembershipCheck({ children }: MembershipCheckProps) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    fetch("/api/membership/status")
-      .then((res) => res.json())
-      .then((data) => {
-        setUser(data.user);
-        setHasPremium(data.hasPremium);
-      })
-      .catch(() => {
-        setUser(null);
-        setHasPremium(false);
-      })
-      .finally(() => setChecking(false));
+    const refreshMembership = () => {
+      fetch("/api/membership/status")
+        .then((res) => res.json())
+        .then((data) => {
+          setUser(data.user);
+          setHasPremium(data.hasPremium);
+        })
+        .catch(() => {
+          setUser(null);
+          setHasPremium(false);
+        })
+        .finally(() => setChecking(false));
+    };
+
+    refreshMembership();
+
+    const intervalId = window.setInterval(refreshMembership, 5000);
+    window.addEventListener("focus", refreshMembership);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshMembership);
+    };
   }, []);
 
   if (checking) {

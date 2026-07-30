@@ -6,9 +6,11 @@ import {
   isAdminUser,
 } from "@/lib/supabase-admin";
 
-// Cache for 10s, stale for 1 min — quick enough for nav bar but avoids repeated DB hits
+// Avoid stale membership state so premium access updates immediately after approval.
 const CACHE_HEADERS = {
-  "Cache-Control": "private, max-age=10, stale-while-revalidate=60",
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
   "Surrogate-Control": "private",
 };
 

@@ -3,6 +3,34 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, getAdminServiceClient } from "@/lib/supabase-admin";
 
+const STORAGE_BUCKET = "payment-screenshots";
+
+async function ensureStorageBucket(bucketName: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) return false;
+
+  try {
+    const response = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceRoleKey}`,
+        apikey: serviceRoleKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: bucketName, public: true }),
+    });
+
+    if (response.ok) return true;
+    if (response.status === 409) return true;
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createAdminClient();
@@ -62,21 +90,39 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await storageClient.storage
-      .from("payment-screenshots")
+    let uploadResult = await storageClient.storage
+      .from(STORAGE_BUCKET)
       .upload(fileName, buffer, {
         contentType: file.type,
         upsert: false,
       });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (
+      uploadResult.error?.message?.includes("Bucket not found") ||
+      uploadResult.error?.message?.includes("NoSuchBucket")
+    ) {
+      const bucketReady = await ensureStorageBucket(STORAGE_BUCKET);
+      if (bucketReady) {
+        uploadResult = await storageClient.storage
+          .from(STORAGE_BUCKET)
+          .upload(fileName, buffer, {
+            contentType: file.type,
+            upsert: false,
+          });
+      }
+    }
+
+    if (uploadResult.error) {
+      return NextResponse.json(
+        { error: uploadResult.error.message },
+        { status: 500 },
+      );
     }
 
     // Attempt to return a public URL. If the bucket is private, create a
     // signed URL that expires in 7 days.
     const publicResult = await storageClient.storage
-      .from("payment-screenshots")
+      .from(STORAGE_BUCKET)
       .getPublicUrl(fileName);
 
     // If public URL is available and non-empty, use it.
@@ -86,7 +132,7 @@ export async function POST(request: Request) {
 
     // Fallback: create signed url (expires in 7 days)
     const signed = await storageClient.storage
-      .from("payment-screenshots")
+      .from(STORAGE_BUCKET)
       .createSignedUrl(fileName, 60 * 60 * 24 * 7);
 
     if (signed.error) {

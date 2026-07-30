@@ -4,9 +4,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
 
-// Cache for 30s, stale for 2 min — reduces DB load on rapid navigation
+// Avoid stale membership state so premium access updates immediately after approval.
 const CACHE_HEADERS = {
-  "Cache-Control": "private, max-age=30, stale-while-revalidate=120",
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
   "Surrogate-Control": "private",
 };
 

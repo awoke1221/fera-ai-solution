@@ -251,14 +251,26 @@ export default function AdminMembershipsPage() {
                       </td>
                       <td>
                         {req.screenshot_url ? (
-                          <a
-                            href={req.screenshot_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="view-screenshot"
-                          >
-                            📸 View
-                          </a>
+                          <div className="screenshot-cell">
+                            <a
+                              href={req.screenshot_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="view-screenshot"
+                            >
+                              <img
+                                src={req.screenshot_url}
+                                alt="Payment screenshot"
+                                style={{
+                                  maxWidth: 120,
+                                  maxHeight: 90,
+                                  objectFit: "cover",
+                                  borderRadius: 6,
+                                }}
+                              />
+                            </a>
+                            <div className="screenshot-link">📸 View</div>
+                          </div>
                         ) : req.paypal_order_id ? (
                           <span className="paypal-confirmed">✅ Auto</span>
                         ) : (
