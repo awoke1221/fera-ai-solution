@@ -48,6 +48,7 @@ function JoinContent() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [membership, setMembership] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
 
   // Payment state
@@ -89,8 +90,8 @@ function JoinContent() {
   const fetchData = useCallback(async () => {
     try {
       const [plansRes, userRes] = await Promise.all([
-        fetch("/api/membership/plans"),
-        fetch("/api/auth/user"),
+        fetch("/api/membership/plans", { cache: "no-store" }),
+        fetch("/api/auth/user", { cache: "no-store" }),
       ]);
 
       const plansData = await plansRes.json();
@@ -99,6 +100,7 @@ function JoinContent() {
       setPlans(plansData.plans || []);
       setUser(userData.user);
       setProfile(userData.profile);
+      setMembership(userData.membership || null);
 
       if (planId) {
         const found = (plansData.plans || []).find(
@@ -123,31 +125,44 @@ function JoinContent() {
   }, [fetchData]);
 
   useEffect(() => {
+    if (!loading && user && membership) {
+      router.replace("/stack-advisor");
+    }
+  }, [loading, user, membership, router]);
+
+  useEffect(() => {
     if (!submitted) return;
 
     const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
 
     if (isPayPal) {
       const redirectTimer = window.setTimeout(() => {
-        router.push("/system-design");
+        router.push("/stack-advisor");
       }, 3500);
       return () => window.clearTimeout(redirectTimer);
     }
 
     setApprovalPolling(true);
-    const intervalId = window.setInterval(async () => {
+
+    const checkMembership = async () => {
       try {
-        const res = await fetch("/api/membership/status");
+        const res = await fetch("/api/membership/status", {
+          cache: "no-store",
+        });
         const data = await res.json();
 
         if (res.ok && data.hasPremium) {
-          window.clearInterval(intervalId);
-          router.push("/system-design");
+          router.push("/stack-advisor");
+          return true;
         }
       } catch {
         // ignore polling errors
       }
-    }, 10000);
+      return false;
+    };
+
+    checkMembership();
+    const intervalId = window.setInterval(checkMembership, 3000);
 
     return () => {
       window.clearInterval(intervalId);
@@ -281,15 +296,15 @@ function JoinContent() {
               </h2>
               <p>
                 {isPayPal
-                  ? "You now have full premium access. Start exploring system design tutorials now."
+                  ? "You now have full premium access. Start exploring the Stack Guide now."
                   : "An admin will review your payment within 24 hours. Once approved, your premium access will be activated automatically."}
               </p>
               <div className="join-success-actions">
                 <button
                   className="btn solid"
-                  onClick={() => router.push("/system-design")}
+                  onClick={() => router.push("/stack-advisor")}
                 >
-                  {isPayPal ? "Start Learning" : "Browse Tutorials"}
+                  {isPayPal ? "Start Learning" : "Visit Stack Guide"}
                 </button>
                 <button
                   className="btn"

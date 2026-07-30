@@ -48,7 +48,7 @@ export default function MembershipDashboardPage() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch("/api/membership/status");
+      const res = await fetch("/api/membership/status", { cache: "no-store" });
       const d = await res.json();
       setData(d);
     } catch {
@@ -61,6 +61,18 @@ export default function MembershipDashboardPage() {
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const isPendingPayment =
+      !data.membership && data.latestPayment?.status === "pending";
+
+    if (!isPendingPayment) return;
+
+    const intervalId = window.setInterval(fetchStatus, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [data]);
 
   const handleAuthSuccess = () => {
     fetchStatus();
@@ -201,6 +213,11 @@ export default function MembershipDashboardPage() {
                     ? "Global Region"
                     : "Local Region"}
                 </span>
+                {membership && (
+                  <span className="dash-profile-pill dash-profile-pill-paid">
+                    Paid User
+                  </span>
+                )}
               </div>
             </div>
             <button
@@ -335,10 +352,10 @@ export default function MembershipDashboardPage() {
                       </div>
                     </div>
                     <Link
-                      href="/system-design"
+                      href="/stack-advisor"
                       className="btn solid dash-card-action"
                     >
-                      Access Premium Content →
+                      Access Stack Guide →
                     </Link>
                   </div>
                 ) : (

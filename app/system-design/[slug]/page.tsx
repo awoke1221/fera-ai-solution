@@ -18,8 +18,8 @@ export default function TutorialDetailPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/tutorials").then((r) => r.json()),
-      fetch("/api/auth/user").then((r) => r.json()),
+      fetch("/api/tutorials", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/auth/user", { cache: "no-store" }).then((r) => r.json()),
     ])
       .then(([data, userData]) => {
         const found = data.tutorials?.find((t: any) => t.slug === slug);

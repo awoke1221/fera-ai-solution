@@ -17,7 +17,7 @@ export function MembershipCheck({ children }: MembershipCheckProps) {
 
   useEffect(() => {
     const refreshMembership = () => {
-      fetch("/api/membership/status")
+      fetch("/api/membership/status", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           setUser(data.user);
