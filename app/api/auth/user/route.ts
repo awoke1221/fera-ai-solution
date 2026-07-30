@@ -54,6 +54,15 @@ export async function GET() {
     if (profile) {
       profile.is_admin = adminStatus;
       profile.role = profile.role || (adminStatus ? "admin" : "user");
+    } else if (adminStatus) {
+      profile = {
+        id: user.id,
+        email: user.email ?? null,
+        full_name:
+          user.user_metadata?.full_name || user.user_metadata?.name || null,
+        is_admin: true,
+        role: "admin",
+      } as any;
     }
 
     return NextResponse.json(

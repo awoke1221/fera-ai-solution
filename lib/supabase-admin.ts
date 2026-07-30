@@ -27,12 +27,20 @@ function getServiceClient() {
   return _serviceClient;
 }
 
+const DEFAULT_ADMIN_EMAILS = [
+  "ethio1221new@gmail.com",
+  "awokezemenu9@gmail.com",
+  "ethiozemen9@gmail.com",
+];
+
 function getConfiguredAdminEmails() {
   const raw = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "";
-  return raw
+  const configuredEmails = raw
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
+
+  return Array.from(new Set([...configuredEmails, ...DEFAULT_ADMIN_EMAILS]));
 }
 
 // ── Authenticated server client (respects RLS) ──────
