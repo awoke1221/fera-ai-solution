@@ -75,6 +75,7 @@ export type UserProfile = {
   full_name: string;
   avatar_url: string | null;
   is_admin: boolean;
+  role: "user" | "admin";
   region: "local" | "global";
   created_at: string;
 };

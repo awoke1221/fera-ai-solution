@@ -252,6 +252,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                           "User"}
                       </strong>
                       <span>{user?.email}</span>
+                      <span className="user-role-label">
+                        {profile?.role === "admin" ? "Admin" : "User"}
+                      </span>
                     </div>
                     <Link
                       href="/membership/dashboard"

@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 type ProfileRow = {
   id: string;
   is_admin?: boolean | null;
+  role?: "user" | "admin" | null;
 };
 
 // ── Service-role client (bypasses RLS) ──────────────
@@ -126,7 +127,7 @@ export async function ensureProfileForUser(
 
   const { data: existingProfile, error: existingError } = await serviceClient
     .from("profiles")
-    .select("id, is_admin")
+    .select("id, is_admin, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -137,9 +138,16 @@ export async function ensureProfileForUser(
   }
 
   if (profile) {
+    const shouldBeAdmin = isAdminEmail || !!profile.is_admin;
+    const roleUpdate = shouldBeAdmin ? "admin" : "user";
+
     if (isAdminEmail && !profile.is_admin) {
       await (serviceClient.from("profiles") as any)
-        .update({ is_admin: true })
+        .update({ is_admin: true, role: roleUpdate })
+        .eq("id", user.id);
+    } else if (profile.role !== roleUpdate) {
+      await (serviceClient.from("profiles") as any)
+        .update({ role: roleUpdate })
         .eq("id", user.id);
     }
     return profile;
@@ -157,8 +165,10 @@ export async function ensureProfileForUser(
       id: user.id,
       email: user.email || null,
       full_name: fullName,
+      avatar_url: null,
       region: "local",
       is_admin: isAdminEmail,
+      role: isAdminEmail ? "admin" : "user",
     } as any)
     .select("id")
     .single();

@@ -16,6 +16,7 @@ create table if not exists profiles (
   full_name text,
   avatar_url text,
   is_admin boolean default false,
+  role text default 'user' check (role in ('user', 'admin')),
   region text default 'local' check (region in ('local', 'global')),
   created_at timestamptz default now()
 );
@@ -27,11 +28,12 @@ language plpgsql
 security definer set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, email, full_name)
+  insert into public.profiles (id, email, full_name, role)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1))
+    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
+    'user'
   );
   return new;
 end;

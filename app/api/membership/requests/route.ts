@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     let query = db
       .from("payment_requests")
       .select(
-        "*, membership_plans(name), profiles!payment_requests_user_id_fkey(email, full_name)",
+        "*, membership_plans(name), profiles!payment_requests_user_id_fkey(email, full_name, role)",
       )
       .order("created_at", { ascending: false });
 

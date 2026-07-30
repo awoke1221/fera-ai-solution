@@ -572,6 +572,12 @@ export default function MembershipDashboardPage() {
                     </span>
                   </div>
                   <div className="dash-account-row">
+                    <span className="dash-account-label">Role</span>
+                    <span className="dash-account-value dash-account-role">
+                      {profile?.role === "admin" ? "Admin" : "User"}
+                    </span>
+                  </div>
+                  <div className="dash-account-row">
                     <span className="dash-account-label">Joined</span>
                     <span className="dash-account-value">
                       {formatDate(memberSince)}

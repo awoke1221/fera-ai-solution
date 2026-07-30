@@ -19,7 +19,7 @@ type PaymentRequest = {
   reviewed_at: string | null;
   created_at: string;
   membership_plans: { name: string } | null;
-  profiles: { email: string; full_name: string } | null;
+  profiles: { email: string; full_name: string; role?: string } | null;
 };
 
 export default function AdminMembershipsPage() {
@@ -229,6 +229,9 @@ export default function AdminMembershipsPage() {
                         <div className="admin-user-info">
                           <strong>{req.profiles?.full_name || "N/A"}</strong>
                           <small>{req.profiles?.email}</small>
+                          <span className="admin-user-role">
+                            {req.profiles?.role === "admin" ? "Admin" : "User"}
+                          </span>
                         </div>
                       </td>
                       <td>{req.membership_plans?.name || "N/A"}</td>
