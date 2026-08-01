@@ -441,11 +441,11 @@ export default function MembershipDashboardPage() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="dash-card-body dash-card-body-compact">
-                  <Link href="/system-design" className="dash-action-row">
-                    <span className="dash-action-icon">📚</span>
+                  <Link href="/stack-advisor" className="dash-action-row">
+                    <span className="dash-action-icon">🧠</span>
                     <div>
-                      <strong>System Design Tutorials</strong>
-                      <small>Learn architecture &amp; design patterns</small>
+                      <strong>Stack Advisor</strong>
+                      <small>Design your next technology stack</small>
                     </div>
                     <svg
                       className="dash-action-arrow"

@@ -14,7 +14,6 @@ const navItems = [
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
-  { href: "/stack-advisor", label: "Stack Advisor" },
 ];
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
@@ -25,10 +24,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [membership, setMembership] = useState<any>(null);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const fetchedRef = useRef(false);
+  const navRef = useRef<HTMLElement>(null);
   const isAdmin = profile?.is_admin || profile?.role === "admin";
 
   const fetchUser = useCallback(async () => {
@@ -104,6 +103,27 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [lastScrollY, menuOpen]);
 
   useEffect(() => {
+    const handleNavigationKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleNavigationKeys);
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("keydown", handleNavigationKeys);
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
+
+  useEffect(() => {
     const revealItems = Array.from(
       document.querySelectorAll<HTMLElement>(".reveal"),
     );
@@ -136,7 +156,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       setUser(null);
       setProfile(null);
       setMembership(null);
-      setProfileMenuOpen(false);
       router.push("/");
       router.refresh();
     } catch {
@@ -152,7 +171,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       />
 
       <header className={navHidden ? "nav-hidden" : ""}>
-        <nav className="wrap">
+        <nav className="wrap nav-shell" ref={navRef}>
           <Link href="/" className="brand" onClick={() => setMenuOpen(false)}>
             <img
               src="/fera-logo.jpg"
@@ -162,21 +181,13 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             <span className="brand-text">Fera AI Solutions</span>
           </Link>
 
-          <button
-            className="menu-toggle"
-            aria-label="Toggle menu"
-            onClick={() => setMenuOpen((open) => !open)}
+          <div
+            id="primary-navigation"
+            className={`nav-links ${menuOpen ? "open" : ""}`}
           >
-            <span className={`hamburger ${menuOpen ? "active" : ""}`}>
-              <span />
-              <span />
-              <span />
-            </span>
-          </button>
-
-          <div className={`nav-links ${menuOpen ? "open" : ""}`}>
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -188,22 +199,25 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            {user ? (
-              <>
-                {membership && (
-                  <Link
-                    href="/system-design"
-                    className="btn solid"
-                    onClick={() => setMenuOpen(false)}
-                    style={{ fontSize: "0.72rem", padding: "8px 14px" }}
-                  >
-                    💎 Premium
-                  </Link>
-                )}
+            {!user && (
+              <Link
+                href="/stack-advisor"
+                className={`nav-menu-link ${
+                  pathname.startsWith("/stack-advisor") ? "active" : ""
+                }`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Stack Advisor
+              </Link>
+            )}
+            {user && (
+              <div className="nav-auth-cluster">
                 {isAdmin && (
                   <Link
                     href="/admin/memberships"
-                    className={pathname.startsWith("/admin") ? "active" : ""}
+                    className={`nav-secondary-link ${
+                      pathname.startsWith("/admin") ? "active" : ""
+                    }`}
                     onClick={() => setMenuOpen(false)}
                   >
                     Admin
@@ -211,17 +225,45 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                 )}
                 <Link
                   href="/membership/dashboard"
-                  className={
+                  className={`nav-secondary-link ${
                     pathname === "/membership/dashboard" ? "active" : ""
-                  }
+                  }`}
                   onClick={() => setMenuOpen(false)}
                 >
                   Dashboard
                 </Link>
-                <div
-                  className={`user-profile-nav ${profileMenuOpen ? "open" : ""}`}
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                <button
+                  type="button"
+                  className="user-dropdown-item logout"
+                  onClick={handleLogout}
                 >
+                  Sign Out
+                </button>
+              </div>
+            )}
+            <Link
+              href="/book"
+              className="btn nav-menu-cta"
+              onClick={() => setMenuOpen(false)}
+            >
+              Start a project
+            </Link>
+          </div>
+
+          <div className="nav-visible-actions">
+            {user ? (
+              <>
+                <Link
+                  href="/stack-advisor"
+                  className={`nav-feature-link ${
+                    pathname.startsWith("/stack-advisor") ? "active" : ""
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span className="nav-feature-icon">✦</span>
+                  Stack Advisor
+                </Link>
+                <div className="user-profile-nav" aria-label="User profile">
                   <img
                     src={
                       user?.user_metadata?.avatar_url ||
@@ -232,76 +274,41 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     className="user-avatar-nav"
                     referrerPolicy="no-referrer"
                   />
-                  <span className="user-name-nav">
-                    {profile?.full_name ||
-                      user?.user_metadata?.full_name ||
-                      user?.email?.split("@")[0] ||
-                      "User"}
-                  </span>
-                  <div className="user-dropdown">
-                    <div className="user-dropdown-header">
-                      <strong>
-                        {profile?.full_name ||
-                          user?.user_metadata?.full_name ||
-                          "User"}
-                      </strong>
-                      <span>{user?.email}</span>
-                      <span className="user-role-label">
-                        {isAdmin ? "Admin" : "User"}
-                      </span>
-                    </div>
-                    <Link
-                      href="/membership/dashboard"
-                      className="user-dropdown-item"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        setMenuOpen(false);
-                      }}
-                    >
-                      Dashboard
-                    </Link>
-                    {profile?.is_admin && (
-                      <Link
-                        href="/admin/memberships"
-                        className="user-dropdown-item"
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          setMenuOpen(false);
-                        }}
-                      >
-                        Admin Panel
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      className="user-dropdown-item logout"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLogout();
-                      }}
-                    >
-                      Sign Out
-                    </button>
-                  </div>
                 </div>
               </>
             ) : (
-              <Link
-                href="/auth/login"
-                className="btn solid"
-                onClick={() => setMenuOpen(false)}
-              >
-                Sign In
-              </Link>
+              <>
+                <Link
+                  href="/auth/login"
+                  className="nav-login-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="btn solid nav-signup-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
-            <Link
-              href="/book"
-              className="btn"
-              onClick={() => setMenuOpen(false)}
-            >
-              Start a project
-            </Link>
           </div>
+
+          <button
+            className="menu-toggle"
+            aria-label="Open navigation menu"
+            aria-controls="primary-navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className={`hamburger ${menuOpen ? "active" : ""}`}>
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
         </nav>
       </header>
 

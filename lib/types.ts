@@ -54,20 +54,6 @@ export type Membership = {
   plan_name?: string;
 };
 
-export type SystemDesignTutorial = {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  category: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  icon: string;
-  content: string;
-  is_premium: boolean;
-  order_index: number;
-  created_at: string;
-};
-
 // ─── Profile / User types ──────────────────────────
 export type UserProfile = {
   id: string;

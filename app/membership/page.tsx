@@ -171,7 +171,7 @@ export default function MembershipPage() {
 
   const stats = [
     { value: 24, suffix: "/7", label: "Support" },
-    { value: 50, suffix: "+", label: "Tutorials" },
+    { value: 10, suffix: "+", label: "AI tools" },
     { value: 500, suffix: "+", label: "Active Members" },
     { value: 98, suffix: "%", label: "Satisfaction" },
   ];
@@ -264,87 +264,30 @@ export default function MembershipPage() {
                 Premium access unlocks your full potential
               </h2>
               <p className="m-section-desc">
-                Beyond tutorials, you get the tools, feedback, and guidance to
-                architect systems with confidence.
+                Get the tools, feedback, and guidance to architect systems with
+                confidence.
               </p>
             </div>
 
             <div className="compare-grid">
               <CompareCard
-                icon="📚"
-                title="Full Tutorial Library"
-                desc="Access all system design tutorials from beginner to advanced, with detailed architecture guides and code examples."
-                index={0}
-              />
-              <CompareCard
                 icon="🎨"
                 title="Premium Templates"
                 desc="Download production-ready architecture diagrams, design documents, and project blueprints."
-                index={1}
+                index={0}
               />
               <CompareCard
                 icon="👨‍🏫"
                 title="Project Reviews"
                 desc="Get your system design reviewed by senior engineers with actionable feedback."
-                index={2}
+                index={1}
               />
               <CompareCard
                 icon="🎯"
                 title="Mentorship Calls"
                 desc="Book 1-on-1 sessions with experienced architects to discuss your design challenges."
-                index={3}
+                index={2}
               />
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Tutorial Preview ───────────────────────── */}
-        <section className="m-preview-section">
-          <div className="wrap">
-            <div className="preview-banner">
-              <div className="preview-banner-glow" />
-              <div className="preview-banner-content">
-                <div className="preview-badge">📖 Sample Content</div>
-                <h2>Try before you buy</h2>
-                <p>
-                  Not sure yet? Browse our free tutorials — including a full
-                  Introduction to System Design and a URL Shortener walkthrough.
-                </p>
-                <Link href="/system-design" className="preview-btn">
-                  Browse Free Tutorials
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M5 12H19M19 12L12 5M19 12L12 19"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </Link>
-              </div>
-              <div className="preview-banner-visual">
-                <div className="preview-code-block">
-                  <div className="preview-code-dots">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  <div className="preview-code-line">
-                    <span className="kw">function</span>{" "}
-                    <span className="fn">designSystem</span>() {"{"}
-                  </div>
-                  <div className="preview-code-line indent">
-                    <span className="kw">const</span> architecture ={" "}
-                    <span className="str">"scalable"</span>;
-                  </div>
-                  <div className="preview-code-line indent">
-                    <span className="kw">return</span>{" "}
-                    <span className="fn">deploy</span>(architecture);
-                  </div>
-                  <div className="preview-code-line">{"}"}</div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -373,10 +316,6 @@ export default function MembershipPage() {
               <FAQItem
                 question="What if I need a custom plan for my team?"
                 answer="We offer custom enterprise plans for teams and organizations. Contact us for volume pricing, dedicated onboarding, and custom workshop sessions."
-              />
-              <FAQItem
-                question="Is there a free trial?"
-                answer="Yes! You can access our free tutorials anytime without an account. Premium content requires an active membership — but there's no long-term commitment."
               />
             </div>
           </div>

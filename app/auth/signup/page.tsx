@@ -43,7 +43,7 @@ export default function SignupPage() {
           <h1 className="h-display">Create your account</h1>
           <p className="lead">
             Join Fera AI Solutions with your Google account and unlock premium
-            system design tutorials, templates, and expert guidance.
+            the Stack Advisor, templates, and expert guidance.
           </p>
         </div>
       </div>

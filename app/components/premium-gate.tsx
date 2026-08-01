@@ -77,9 +77,6 @@ export function PremiumGate({ hasPremium, user, children }: PremiumGateProps) {
         <Link href="/membership" className="btn solid">
           View Membership Plans
         </Link>
-        <Link href="/system-design" className="btn">
-          Browse Free Tutorials
-        </Link>
       </div>
     </div>
   );

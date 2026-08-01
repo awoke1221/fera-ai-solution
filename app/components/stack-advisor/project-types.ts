@@ -51,7 +51,7 @@ export const projectTypes: ProjectType[] = [
     description:
       "A subscription-based software service with user accounts, billing, and scalable cloud infrastructure.",
     businessFeatures: [
-      "User onboarding wizard & tutorials",
+      "User onboarding wizard & guidance",
       "Subscription & billing management (Stripe/PayPal)",
       "Multi-tenant architecture",
       "Role-based access control (RBAC)",
