@@ -39,6 +39,15 @@ const methodIcon = (m?: string) =>
         ? "🏦"
         : "❓";
 
+const paymentStatusLabel = (status?: string) =>
+  status === "approved"
+    ? "Payment Approved"
+    : status === "rejected"
+      ? "Payment Rejected"
+      : status === "pending"
+        ? "Payment Pending"
+        : status || "—";
+
 // ── Component ─────────────────────────────────────────
 export default function MembershipDashboardPage() {
   const router = useRouter();
@@ -524,7 +533,7 @@ export default function MembershipDashboardPage() {
                     <span
                       className={`dash-badge dash-badge-${latestPayment.status}`}
                     >
-                      {latestPayment.status}
+                      {paymentStatusLabel(latestPayment.status)}
                     </span>
                   )}
                 </div>

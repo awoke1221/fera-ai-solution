@@ -59,6 +59,35 @@ export async function POST(request: Request) {
 
     const writeClient = serviceClient;
 
+    const { data: existingRequest } = await (writeClient as any)
+      .from("payment_requests")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .in("status", ["pending", "approved"])
+      .maybeSingle();
+
+    if (existingRequest?.status === "pending") {
+      return NextResponse.json(
+        {
+          error:
+            "Your payment request is already pending review. You do not need to submit it again.",
+          status: "pending",
+          paymentRequestId: existingRequest.id,
+        },
+        { status: 409 },
+      );
+    }
+
+    if (existingRequest?.status === "approved") {
+      return NextResponse.json(
+        {
+          error: "Your membership is already approved and active.",
+          status: "approved",
+        },
+        { status: 409 },
+      );
+    }
+
     const { data, error } = await (writeClient as any)
       .from("payment_requests")
       .insert({

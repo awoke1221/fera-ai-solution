@@ -59,6 +59,9 @@ function JoinContent() {
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "pending" | "approved" | "rejected" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [approvalPolling, setApprovalPolling] = useState(false);
 
@@ -89,18 +92,29 @@ function JoinContent() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [plansRes, userRes] = await Promise.all([
+      const [plansRes, userRes, statusRes] = await Promise.all([
         fetch("/api/membership/plans", { cache: "no-store" }),
         fetch("/api/auth/user", { cache: "no-store" }),
+        fetch("/api/membership/status", { cache: "no-store" }),
       ]);
 
       const plansData = await plansRes.json();
       const userData = await userRes.json();
+      const statusData = await statusRes.json();
 
       setPlans(plansData.plans || []);
       setUser(userData.user);
       setProfile(userData.profile);
       setMembership(userData.membership || null);
+      const latestStatus = statusData.latestPayment?.status;
+      if (latestStatus === "pending" || latestStatus === "rejected") {
+        setPaymentStatus(latestStatus);
+        setSubmitted(true);
+      }
+
+      if (statusData.hasPremium || userData.membership) {
+        router.replace("/stack-advisor");
+      }
 
       if (planId) {
         const found = (plansData.plans || []).find(
@@ -118,7 +132,7 @@ function JoinContent() {
     } finally {
       setLoading(false);
     }
-  }, [planId]);
+  }, [planId, router]);
 
   useEffect(() => {
     fetchData();
@@ -152,7 +166,14 @@ function JoinContent() {
         const data = await res.json();
 
         if (res.ok && data.hasPremium) {
+          setPaymentStatus("approved");
           router.push("/stack-advisor");
+          return true;
+        }
+
+        if (data.latestPayment?.status === "rejected") {
+          setPaymentStatus("rejected");
+          setApprovalPolling(false);
           return true;
         }
       } catch {
@@ -203,6 +224,7 @@ function JoinContent() {
         throw new Error(data.error || "Failed to submit payment request");
       }
 
+      setPaymentStatus("pending");
       setSubmitted(true);
     } catch (err) {
       setError(
@@ -235,6 +257,7 @@ function JoinContent() {
         throw new Error(data.error || "PayPal payment failed");
       }
 
+      setPaymentStatus("approved");
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PayPal payment failed");
@@ -275,13 +298,27 @@ function JoinContent() {
 
   if (submitted) {
     const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
+    const isRejected = paymentStatus === "rejected";
+    const isPending = paymentStatus === "pending";
     return (
       <SiteShell>
         <div className="page-hero">
           <div className="wrap">
-            <div className="eyebrow">Success</div>
+            <div className={`eyebrow ${isRejected ? "status-rejected" : ""}`}>
+              {isRejected
+                ? "Payment Rejected"
+                : isPending
+                  ? "Payment Pending"
+                  : "Payment Approved"}
+            </div>
             <h1 className="h-display">
-              {isPayPal ? "Payment Successful! 🎉" : "Payment Submitted! 📸"}
+              {isRejected
+                ? "Your payment was rejected"
+                : isPending
+                  ? "Your payment is pending review"
+                  : isPayPal
+                    ? "Payment approved! 🎉"
+                    : "Payment approved! 🎉"}
             </h1>
           </div>
         </div>
@@ -290,9 +327,11 @@ function JoinContent() {
             <div className="join-success">
               <div className="success-icon">{isPayPal ? "🎉" : "📸"}</div>
               <h2>
-                {isPayPal
-                  ? "Your membership is now active!"
-                  : "Your payment screenshot has been submitted for review."}
+                {isRejected
+                  ? "The admin rejected this payment request. You can review the details below and submit a new screenshot if needed."
+                  : isPending
+                    ? "Your payment screenshot was received successfully. It is already in the admin review queue, so you do not need to submit it again."
+                    : "Your membership is approved and full Stack Advisor access is now active."}
               </h2>
               <p>
                 {isPayPal
@@ -304,16 +343,31 @@ function JoinContent() {
                   className="btn solid"
                   onClick={() => router.push("/stack-advisor")}
                 >
-                  {isPayPal ? "Start Learning" : "Visit Stack Guide"}
+                  {isRejected ? "Submit a new request" : "Open Stack Advisor"}
                 </button>
+                {!isRejected && (
+                  <button
+                    className="btn"
+                    onClick={() => router.push("/membership/dashboard")}
+                  >
+                    View Dashboard
+                  </button>
+                )}
+              </div>
+              {isRejected && (
                 <button
                   className="btn"
-                  onClick={() => router.push("/membership/dashboard")}
+                  onClick={() => {
+                    setSubmitted(false);
+                    setPaymentStatus(null);
+                    setScreenshotUrl(null);
+                    setError(null);
+                  }}
                 >
-                  View Dashboard
+                  Return to payment form
                 </button>
-              </div>
-              {!isPayPal && approvalPolling && (
+              )}
+              {isPending && approvalPolling && (
                 <p className="form-message info">
                   Waiting for admin approval... We will redirect you to premium
                   content once your receipt is approved.
