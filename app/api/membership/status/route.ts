@@ -2,7 +2,11 @@
 // Returns the user's membership status, payment request history,
 // and whether they have premium access.
 import { NextResponse } from "next/server";
-import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
+import {
+  createAdminClient,
+  ensureProfileForUser,
+  isAdminUser,
+} from "@/lib/supabase-admin";
 
 // Avoid stale membership state so premium access updates immediately after approval.
 const CACHE_HEADERS = {
@@ -61,12 +65,13 @@ export async function GET() {
     ]);
 
     const membership = membershipResult.data;
+    const hasPremium = !!membership || (await isAdminUser(user));
     const paymentRequests = paymentsResult.data || [];
     const latestPayment = paymentRequests[0] || null;
 
     return NextResponse.json(
       {
-        hasPremium: !!membership,
+        hasPremium,
         hasPendingPayment:
           latestPayment?.status === "pending" ||
           paymentRequests.some(

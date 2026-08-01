@@ -2,7 +2,7 @@
 // Returns tutorials. Premium content is only returned
 // if the user has an active membership.
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient, isAdminUser } from "@/lib/supabase-admin";
 
 export async function GET() {
   try {
@@ -22,7 +22,7 @@ export async function GET() {
         .gte("end_date", new Date().toISOString())
         .maybeSingle();
 
-      hasPremium = !!membership;
+      hasPremium = !!membership || (await isAdminUser(user));
     }
 
     // Get all tutorials
