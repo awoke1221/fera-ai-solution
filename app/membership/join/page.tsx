@@ -447,7 +447,7 @@ function JoinContent() {
                 >
                   <h3>{p.name}</h3>
                   <div className="plan-select-price">
-                    {p.currency === "ETB" ? "500 Birr" : "$10"}
+                    {p.currency === "ETB" ? `${p.price} Birr` : `$${p.price}`}
                     <span>/month</span>
                   </div>
                   <p>{p.description}</p>
@@ -470,8 +470,8 @@ function JoinContent() {
           </h1>
           <p className="lead">
             {plan.slug === localPlanSlug
-              ? "Local Ethiopian members pay 500 birr per month and can access everything in the Stack Guides plus AI support."
-              : "Diaspora members pay $10 per month and receive unlimited access to the same Stack Guides and AI support tools."}
+              ? `Local Ethiopian members pay ${plan.price} birr per month and can access everything in the Stack Guides plus AI support.`
+              : `Diaspora members pay $${plan.price} per month and receive unlimited access to the same Stack Guides and AI support tools.`}
           </p>
         </div>
       </div>
@@ -600,15 +600,17 @@ function JoinContent() {
                           </div>
                           <div className="detail-row">
                             <span>Account</span>
-                            <strong>+251-91-234-5678</strong>
+                            <strong>
+                              Telebirr: 0957580465 — CBE Birr: 0961214623
+                            </strong>
                           </div>
                           <div className="detail-row">
                             <span>Name</span>
-                            <strong>Fera AI Solutions</strong>
+                            <strong>Awoke Zemenu</strong>
                           </div>
                           <div className="detail-row">
                             <span>Amount</span>
-                            <strong>500 birr</strong>
+                            <strong>{formatPaymentAmount(plan, "ETB")}</strong>
                           </div>
                         </div>
                       </>
@@ -626,15 +628,15 @@ function JoinContent() {
                           </div>
                           <div className="detail-row">
                             <span>Account</span>
-                            <strong>1000 1234 5678</strong>
+                            <strong>1000273018844</strong>
                           </div>
                           <div className="detail-row">
                             <span>Name</span>
-                            <strong>Fera AI Solutions</strong>
+                            <strong>Awoke Zemenu</strong>
                           </div>
                           <div className="detail-row">
                             <span>Amount</span>
-                            <strong>500 birr</strong>
+                            <strong>{formatPaymentAmount(plan, "ETB")}</strong>
                           </div>
                         </div>
                       </>

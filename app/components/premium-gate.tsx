@@ -59,12 +59,12 @@ export function PremiumGate({ hasPremium, user, children }: PremiumGateProps) {
       <p>
         Your membership unlocks unlimited access to every Stack Guide,
         architecture walkthroughs, and AI support tools. Ethiopian members pay
-        500 birr per month and diaspora members pay $10 per month.
+        1000 birr per month and diaspora members pay $10 per month.
       </p>
       <div className="premium-gate-plans">
         <PlanHighlight
           title="Local members"
-          price="500 birr / month"
+          price="1000 birr / month"
           description="Telebirr, CBE Birr, or bank transfer"
         />
         <PlanHighlight

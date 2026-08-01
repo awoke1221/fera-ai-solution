@@ -15,7 +15,7 @@ const defaultPlans: Omit<MembershipPlan, "id" | "created_at">[] = [
     slug: "local-stack-guides",
     description:
       "Unlimited access to Stack Guides, architecture walkthroughs, and AI support for Ethiopian members.",
-    price: 500,
+    price: 1000,
     currency: "ETB",
     duration_days: 30,
     features: [

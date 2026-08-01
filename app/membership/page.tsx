@@ -228,7 +228,7 @@ export default function MembershipPage() {
               <p className="m-section-desc">
                 Both memberships include unlimited access to every Stack Guide,
                 architecture walkthroughs, and AI support tools. Ethiopian
-                members pay 500 birr per month, while diaspora members pay $10
+                members pay 1000 birr per month, while diaspora members pay $10
                 per month for the same premium experience and unlimited usage.
               </p>
             </div>
