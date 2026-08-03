@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useAuth from "@/app/store/useAuth";
 import { SiteShell } from "@/app/components/site-shell";
 
 type PaymentRequest = {
@@ -21,6 +22,94 @@ type PaymentRequest = {
   membership_plans: { name: string } | null;
   profiles: { email: string; full_name: string; role?: string } | null;
 };
+
+function PaymentScreenshotCell({
+  screenshotUrl,
+  paypalOrderId,
+}: {
+  screenshotUrl: string | null;
+  paypalOrderId: string | null;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  if (!screenshotUrl) {
+    return paypalOrderId ? (
+      <span className="paypal-confirmed">✅ Auto</span>
+    ) : (
+      <span className="no-file">—</span>
+    );
+  }
+
+  if (imageError) {
+    return (
+      <div className="screenshot-cell">
+        <span className="preview-unavailable">Preview unavailable</span>
+        <a
+          href={screenshotUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="view-screenshot"
+        >
+          Open image
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screenshot-cell">
+      <button
+        type="button"
+        className="screenshot-thumbnail-button"
+        onClick={() => setIsPreviewOpen(true)}
+        aria-label="Open payment screenshot preview"
+      >
+        <img
+          src={screenshotUrl}
+          alt="Payment screenshot"
+          className="screenshot-thumbnail"
+          loading="lazy"
+          onError={() => setImageError(true)}
+        />
+      </button>
+      <div className="screenshot-link">Preview</div>
+
+      {isPreviewOpen && (
+        <div
+          className="screenshot-modal"
+          onClick={() => setIsPreviewOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Payment screenshot preview"
+        >
+          <div
+            className="screenshot-modal-card"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="screenshot-modal-close"
+              onClick={() => setIsPreviewOpen(false)}
+              aria-label="Close screenshot preview"
+            >
+              ×
+            </button>
+            <img src={screenshotUrl} alt="Payment screenshot preview" />
+            <a
+              href={screenshotUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="view-screenshot"
+            >
+              Open full image
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminMembershipsPage() {
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
@@ -59,14 +148,12 @@ export default function AdminMembershipsPage() {
 
     const checkAdminAccess = async () => {
       try {
-        const res = await fetch("/api/auth/user");
-        const data = await res.json();
-
-        if (cancelled) return;
+        const profile = useAuth.getState().profile as any;
 
         const canAccess = Boolean(
-          data.profile?.is_admin || data.profile?.role === "admin",
+          profile?.is_admin || profile?.role === "admin",
         );
+        if (cancelled) return;
         setIsAdmin(canAccess);
 
         if (!canAccess) {
@@ -250,32 +337,10 @@ export default function AdminMembershipsPage() {
                         </span>
                       </td>
                       <td>
-                        {req.screenshot_url ? (
-                          <div className="screenshot-cell">
-                            <a
-                              href={req.screenshot_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="view-screenshot"
-                            >
-                              <img
-                                src={req.screenshot_url}
-                                alt="Payment screenshot"
-                                style={{
-                                  maxWidth: 120,
-                                  maxHeight: 90,
-                                  objectFit: "cover",
-                                  borderRadius: 6,
-                                }}
-                              />
-                            </a>
-                            <div className="screenshot-link">📸 View</div>
-                          </div>
-                        ) : req.paypal_order_id ? (
-                          <span className="paypal-confirmed">✅ Auto</span>
-                        ) : (
-                          <span className="no-file">—</span>
-                        )}
+                        <PaymentScreenshotCell
+                          screenshotUrl={req.screenshot_url}
+                          paypalOrderId={req.paypal_order_id}
+                        />
                       </td>
                       <td>{new Date(req.created_at).toLocaleDateString()}</td>
                       <td>

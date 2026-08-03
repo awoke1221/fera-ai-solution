@@ -11,9 +11,12 @@
     "@paypal/react-paypal-js": "^10.2.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.110.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "next": "14.2.15",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/node": "26.1.0",

@@ -9,6 +9,7 @@ import { SiteShell } from "@/app/components/site-shell";
 import { PaymentUpload } from "@/app/components/payment-upload";
 import { AuthModal } from "@/app/components/auth-modal";
 import { RequireAuth } from "@/app/components/require-auth";
+import useAuth from "@/app/store/useAuth";
 import type { MembershipPlan } from "@/lib/types";
 
 const localPlanSlug = "local-stack-guides";
@@ -46,9 +47,10 @@ function JoinContent() {
   const [plan, setPlan] = useState<MembershipPlan | null>(null);
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [membership, setMembership] = useState<any>(null);
+  const user = useAuth((s: any) => s.user);
+  const profile = useAuth((s: any) => s.profile);
+  const membership = useAuth((s: any) => s.membership);
+  const fetchUser = useAuth((s: any) => s.fetchUser);
   const [showAuth, setShowAuth] = useState(false);
 
   // Payment state
@@ -92,27 +94,23 @@ function JoinContent() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [plansRes, userRes, statusRes] = await Promise.all([
+      const [plansRes, statusRes] = await Promise.all([
         fetch("/api/membership/plans", { cache: "no-store" }),
-        fetch("/api/auth/user", { cache: "no-store" }),
         fetch("/api/membership/status", { cache: "no-store" }),
       ]);
 
       const plansData = await plansRes.json();
-      const userData = await userRes.json();
       const statusData = await statusRes.json();
 
       setPlans(plansData.plans || []);
-      setUser(userData.user);
-      setProfile(userData.profile);
-      setMembership(userData.membership || null);
+
       const latestStatus = statusData.latestPayment?.status;
       if (latestStatus === "pending" || latestStatus === "rejected") {
         setPaymentStatus(latestStatus);
         setSubmitted(true);
       }
 
-      if (statusData.hasPremium || userData.membership) {
+      if (statusData.hasPremium || membership) {
         router.replace("/stack-advisor");
       }
 
@@ -132,11 +130,18 @@ function JoinContent() {
     } finally {
       setLoading(false);
     }
-  }, [planId, router]);
+  }, [planId, router, membership]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // ensure auth store is loaded then fetch page data
+    if (user === undefined) {
+      fetchUser()
+        .then(fetchData)
+        .catch(() => fetchData());
+    } else {
+      fetchData();
+    }
+  }, [fetchData, user, fetchUser]);
 
   useEffect(() => {
     if (!loading && user && membership) {

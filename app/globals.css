@@ -5352,6 +5352,84 @@ footer {
 .method-badge {
   font-size: 0.85rem;
 }
+.screenshot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.screenshot-thumbnail-button {
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.screenshot-thumbnail-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+.screenshot-thumbnail {
+  display: block;
+  width: 140px;
+  height: 100px;
+  object-fit: cover;
+}
+.preview-unavailable {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.screenshot-link {
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal);
+}
+.screenshot-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.8);
+}
+.screenshot-modal-card {
+  position: relative;
+  max-width: min(90vw, 920px);
+  max-height: 90vh;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(9, 13, 20, 0.96);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+.screenshot-modal-card img {
+  display: block;
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.screenshot-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
 .view-screenshot {
   color: var(--teal);
   text-decoration: underline;

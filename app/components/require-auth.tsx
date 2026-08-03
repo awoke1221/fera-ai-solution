@@ -2,28 +2,25 @@
 // Wraps pages that require login. Shows sign-in prompt if not authenticated.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
+import useAuth from "../store/useAuth";
 
 type RequireAuthProps = {
   children: React.ReactNode;
 };
 
 export function RequireAuth({ children }: RequireAuthProps) {
-  const [user, setUser] = useState<any | null>(undefined); // undefined = loading
-  const [checking, setChecking] = useState(true);
+  const user = useAuth((s) => s.user);
+  const loading = useAuth((s) => s.loading);
+  const fetchUser = useAuth((s) => s.fetchUser);
 
   useEffect(() => {
-    fetch("/api/auth/user")
-      .then((res) => res.json())
-      .then((data) => {
-        setUser(data.user);
-      })
-      .catch(() => setUser(null))
-      .finally(() => setChecking(false));
-  }, []);
+    // If user is still undefined (initial state), fetch the current session
+    if (user === undefined) fetchUser();
+  }, [user, fetchUser]);
 
-  if (checking) {
+  if (loading || user === undefined) {
     return (
       <div style={{ padding: "120px 0", textAlign: "center" }}>
         <div className="loading-spinner" />

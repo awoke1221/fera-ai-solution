@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   projectTypes,
+  recommendedStacks,
   toolCategories,
   tools,
   type ToolOption,
@@ -16,10 +17,14 @@ import {
 // ─── Props ──────────────────────────────────────────────
 interface ToolSelectorProps {
   onSelectionsChange: (selections: Record<string, string>) => void;
+  onProjectChange?: (projectId: string | null) => void;
 }
 
 // ─── Component ──────────────────────────────────────────
-export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
+export function ToolSelector({
+  onSelectionsChange,
+  onProjectChange,
+}: ToolSelectorProps) {
   const [selectedProject, setSelectedProject] = useState<ProjectType | null>(
     null,
   );
@@ -59,6 +64,7 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
     const firstVisible = filteredCategories[0]?.id || null;
     setActiveCategory(firstVisible);
     onSelectionsChange({});
+    onProjectChange?.(project.id);
   };
 
   const handleToolSelect = (categoryId: string, toolId: string) => {
@@ -72,6 +78,7 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
     setSelections({});
     setActiveCategory(null);
     onSelectionsChange({});
+    onProjectChange?.(null);
   };
 
   // ─── Navigation helpers (only visible categories) ───
@@ -117,17 +124,29 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
           <p>Select the type of platform you want to create.</p>
         </div>
         <div className="stack-project-grid">
-          {projectTypes.map((project) => (
-            <button
-              key={project.id}
-              className="stack-project-card"
-              onClick={() => handleProjectSelect(project)}
-            >
-              <span className="stack-project-icon">{project.icon}</span>
-              <span className="stack-project-name">{project.label}</span>
-              <span className="stack-project-desc">{project.description}</span>
-            </button>
-          ))}
+          {projectTypes.map((project) => {
+            const bestStack = recommendedStacks.find(
+              (stack) => stack.projectType === project.id && stack.isPrimary,
+            );
+            return (
+              <button
+                key={project.id}
+                className="stack-project-card"
+                onClick={() => handleProjectSelect(project)}
+              >
+                <span className="stack-project-icon">{project.icon}</span>
+                <span className="stack-project-name">{project.label}</span>
+                <span className="stack-project-desc">
+                  {project.description}
+                </span>
+                {bestStack && (
+                  <span className="stack-project-hint">
+                    <strong>Advanced path:</strong> {bestStack.name}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -150,6 +169,41 @@ export function ToolSelector({ onSelectionsChange }: ToolSelectorProps) {
         {projectMapping && (
           <div className="dynamic-mapping-note">
             &#x1f4a1; {projectMapping.note}
+          </div>
+        )}
+
+        {projectMapping && (
+          <div className="project-advanced-summary">
+            <p>
+              <strong>Advanced project strategy:</strong> Choose tools in the
+              highlighted categories first, then refine for local payment, media
+              delivery, and launch readiness.
+            </p>
+          </div>
+        )}
+
+        {projectMapping && (
+          <div className="stack-project-strategy">
+            <div className="strategy-line">
+              <strong>Primary advanced stack:</strong>{" "}
+              {recommendedStacks.find(
+                (stack) =>
+                  stack.projectType === projectMapping.projectType &&
+                  stack.isPrimary,
+              )?.name || "Review recommended stack"}
+            </div>
+            <div className="strategy-line">
+              <strong>Required categories:</strong>{" "}
+              {projectMapping.forceRequiredCategories.length > 0
+                ? projectMapping.forceRequiredCategories
+                    .map(
+                      (id) =>
+                        toolCategories.find((cat) => cat.id === id)?.label ||
+                        id,
+                    )
+                    .join(", ")
+                : "Core stack only"}
+            </div>
           </div>
         )}
 

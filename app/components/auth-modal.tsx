@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
+import useAuth from "@/app/store/useAuth";
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -56,6 +57,12 @@ export function AuthModal({
       }
 
       onAuthSuccess();
+      try {
+        const fetchUser = useAuth.getState().fetchUser;
+        fetchUser && (await fetchUser());
+      } catch {
+        // ignore
+      }
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

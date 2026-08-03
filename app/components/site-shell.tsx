@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useCallback, useState, useRef } from "react";
 import { FeraAIChat } from "./fera-ai-chat";
 import { createClient } from "@/lib/supabase";
+import useAuth from "../store/useAuth";
 
 const navItems = [
   { href: "/services", label: "Services" },
@@ -21,36 +22,30 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [membership, setMembership] = useState<any>(null);
+  const user = useAuth((s: any) => s.user);
+  const profile = useAuth((s: any) => s.profile);
+  const membership = useAuth((s: any) => s.membership);
+  const loading = useAuth((s: any) => s.loading);
+  const fetchUser = useAuth((s: any) => s.fetchUser);
   const pathname = usePathname();
   const router = useRouter();
   const fetchedRef = useRef(false);
   const navRef = useRef<HTMLElement>(null);
   const isAdmin = profile?.is_admin || profile?.role === "admin";
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/user");
-      const data = await res.json();
-      setUser(data.user);
-      setProfile(data.profile);
-      setMembership(data.membership);
-    } catch {
-      setUser(null);
-      setProfile(null);
-      setMembership(null);
-    }
-  }, []);
+  // ensure auth store is populated
+  useEffect(() => {
+    if (user === undefined) fetchUser();
+    // refresh on navigation to pick up post-login redirects
+  }, [user, fetchUser]);
 
   // Fetch on mount, then refresh only when pathname changes (SPA navigation)
   useEffect(() => {
     if (!fetchedRef.current) {
       fetchedRef.current = true;
-      fetchUser();
+      if (user === undefined) fetchUser();
     }
-  }, [fetchUser]);
+  }, [user, fetchUser]);
 
   // Refresh cache when navigating to a new page (e.g. after login redirect)
   useEffect(() => {
@@ -153,9 +148,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      setMembership(null);
+      // update global store
+      const signOut = useAuth.getState().signOut;
+      await signOut();
       router.push("/");
       router.refresh();
     } catch {
