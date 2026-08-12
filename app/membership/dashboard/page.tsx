@@ -533,6 +533,18 @@ export default function MembershipDashboardPage() {
                   </div>
                   <div className="dash-card-body">
                     <ZoomIntegration />
+                    <div style={{ marginTop: 12 }}>
+                      <a className="btn" href="/membership/sessions">
+                        Group Sessions
+                      </a>
+                      <a
+                        className="btn"
+                        style={{ marginLeft: 8 }}
+                        href="/membership/one-to-one"
+                      >
+                        Request 1:1
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
