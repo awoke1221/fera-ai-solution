@@ -1,5 +1,4 @@
-Running migrations
-------------------
+## Running migrations
 
 This folder contains SQL migrations and small runner scripts to apply them to your Postgres (Supabase) database.
 
