@@ -21,53 +21,61 @@ type AuthState = {
 // Zustand store with devtools + persist. Keep the config minimal to avoid parser issues.
 export const useAuth = create<AuthState>()(
   devtools(
-    persist(
-      (set, get) => ({
-        user: undefined,
-        profile: null,
-        membership: null,
-        loading: false,
-        error: null,
+    (set, get) => ({
+      user: undefined,
+      profile: null,
+      membership: null,
+      loading: false,
+      error: null,
 
-        setUser: (u: User) => set({ user: u, loading: false, error: null }),
-        setProfile: (p: any | null) => set({ profile: p }),
-        setMembership: (m: any | null) => set({ membership: m }),
+      setUser: (u: User) => set({ user: u, loading: false, error: null }),
+      setProfile: (p: any | null) => set({ profile: p }),
+      setMembership: (m: any | null) => set({ membership: m }),
 
-        fetchUser: async () => {
-          const { loading } = get() as any;
-          if (loading) return;
-          set({ loading: true } as any);
-          try {
-            const res = await fetch("/api/auth/user", { cache: "no-store" });
-            if (!res.ok) throw new Error("Failed to fetch user");
-            const data = await res.json();
-            set({
-              user: data?.user ?? null,
-              profile: data?.profile ?? null,
-              membership: data?.membership ?? null,
-              loading: false,
-              error: null,
-            } as any);
-          } catch (err) {
-            const message = err && typeof err === "object" && "message" in err ? (err as any).message : String(err);
-            set({ user: null, profile: null, membership: null, loading: false, error: message ?? "unknown" } as any);
-          }
-        },
-
-        signOut: async () => {
-          try {
-            await fetch("/api/auth/logout", { method: "POST" });
-          } catch (e) {
-            // ignore
-          }
-          set({ user: null, profile: null, membership: null, loading: false } as any);
-        },
-      }),
-      {
-        name: "auth-storage",
-        partialize: (state: any) => ({ user: state.user === null ? null : undefined }),
+      fetchUser: async () => {
+        const { loading } = get() as any;
+        if (loading) return;
+        set({ loading: true } as any);
+        try {
+          const res = await fetch("/api/auth/user", { cache: "no-store" });
+          if (!res.ok) throw new Error("Failed to fetch user");
+          const data = await res.json();
+          set({
+            user: data?.user ?? null,
+            profile: data?.profile ?? null,
+            membership: data?.membership ?? null,
+            loading: false,
+            error: null,
+          } as any);
+        } catch (err) {
+          const message =
+            err && typeof err === "object" && "message" in err
+              ? (err as any).message
+              : String(err);
+          set({
+            user: null,
+            profile: null,
+            membership: null,
+            loading: false,
+            error: message ?? "unknown",
+          } as any);
+        }
       },
-    ),
+
+      signOut: async () => {
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } catch (e) {
+          // ignore
+        }
+        set({
+          user: null,
+          profile: null,
+          membership: null,
+          loading: false,
+        } as any);
+      },
+    }),
     { name: "useAuth-devtools" },
   ),
 );

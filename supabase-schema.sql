@@ -217,3 +217,34 @@ insert into membership_plans (name, slug, description, price, currency, duration
   '["All Professional features", "Full Stack Advisor access", "Unlimited project reviews", "1-on-1 mentorship calls", "Custom workshop sessions", "Team dashboard & reporting", "White-label certifications", "Dedicated account manager"]'
 ) on conflict (slug) do nothing;
 
+  -- ══════════════════════════════════════════════════════
+  -- 9. ZOOM INTEGRATION
+  -- Stores OAuth tokens and scheduled meetings for premium users
+  -- ══════════════════════════════════════════════════════
+  create table if not exists zoom_tokens (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references profiles(id) on delete cascade,
+    access_token text not null,
+    refresh_token text not null,
+    scope text,
+    expires_at timestamptz,
+    created_at timestamptz default now()
+  );
+
+  create index if not exists idx_zoom_tokens_user on zoom_tokens(user_id);
+
+  create table if not exists zoom_meetings (
+    id uuid primary key default gen_random_uuid(),
+    zoom_meeting_id text not null,
+    user_id uuid not null references profiles(id) on delete cascade,
+    topic text,
+    start_time timestamptz,
+    duration_minutes integer,
+    join_url text,
+    start_url text,
+    raw_response jsonb,
+    created_at timestamptz default now()
+  );
+
+  create index if not exists idx_zoom_meetings_user on zoom_meetings(user_id);
+

@@ -30,26 +30,28 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const fetchedRef = useRef(false);
+  const lastFetchRef = useRef<number>(0);
   const navRef = useRef<HTMLElement>(null);
   const isAdmin = profile?.is_admin || profile?.role === "admin";
 
-  // ensure auth store is populated
-  useEffect(() => {
-    if (user === undefined) fetchUser();
-    // refresh on navigation to pick up post-login redirects
-  }, [user, fetchUser]);
-
-  // Fetch on mount, then refresh only when pathname changes (SPA navigation)
+  // ensure auth store is populated on mount (once)
   useEffect(() => {
     if (!fetchedRef.current) {
       fetchedRef.current = true;
-      if (user === undefined) fetchUser();
+      if (user === undefined) {
+        fetchUser();
+        lastFetchRef.current = Date.now();
+      }
     }
   }, [user, fetchUser]);
 
-  // Refresh cache when navigating to a new page (e.g. after login redirect)
+  // Refresh cache when navigating to a new page, but at most once every 30s
   useEffect(() => {
-    fetchUser();
+    const now = Date.now();
+    if (now - lastFetchRef.current > 30_000) {
+      fetchUser();
+      lastFetchRef.current = now;
+    }
   }, [pathname, fetchUser]);
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       fetchUser();
     };
 
-    const intervalId = window.setInterval(refreshAccess, 5000);
+    const intervalId = window.setInterval(refreshAccess, 60_000);
     window.addEventListener("focus", refreshAccess);
 
     return () => {

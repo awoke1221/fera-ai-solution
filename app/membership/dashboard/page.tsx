@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteShell } from "@/app/components/site-shell";
 import { AuthModal } from "@/app/components/auth-modal";
+import ZoomIntegration from "@/app/components/zoom-integration";
 
 // ── Helpers ───────────────────────────────────────────
 const formatDate = (d: string | number | Date) =>
@@ -524,6 +525,17 @@ export default function MembershipDashboardPage() {
                   </Link>
                 </div>
               </div>
+
+              {membership && (
+                <div className="dash-card">
+                  <div className="dash-card-header">
+                    <h3>Coaching (Zoom)</h3>
+                  </div>
+                  <div className="dash-card-body">
+                    <ZoomIntegration />
+                  </div>
+                </div>
+              )}
 
               {/* Latest Payment Detail */}
               <div className="dash-card">
