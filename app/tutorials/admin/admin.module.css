@@ -1,0 +1,72 @@
+.container {
+  max-width: var(--form-max);
+  margin: 48px auto;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+.header {
+  margin-bottom: 18px;
+}
+.unauth {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+.signIn {
+  color: var(--brand-blue);
+}
+.form {
+  display: grid;
+  gap: 12px;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rowInline {
+  display: flex;
+  align-items: center;
+}
+.label {
+  font-weight: 600;
+  color: var(--muted);
+}
+.input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+}
+.textarea {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 220px;
+}
+.checkboxLabel {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.previewSection {
+  margin-top: 18px;
+}
+.preview {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
