@@ -1,7 +1,7 @@
 // ─── Membership Plan Card — Advanced Glassmorphic ────
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
 type Plan = {
@@ -19,62 +19,90 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
   // Mark the Local Stack Guides plan as the most popular explicitly
   const isPopular = plan.slug === "local-stack-guides";
   const cardRef = useRef<HTMLDivElement>(null);
+  const mouseMovePendingRef = useRef(false);
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
-  const [glowX, setGlowX] = useState(50);
-  const [glowY, setGlowY] = useState(50);
   const [isHovered, setIsHovered] = useState(false);
-  const [visibleFeatures, setVisibleFeatures] = useState<number[]>([]);
   const [countUp, setCountUp] = useState(0);
 
-  const currencySymbol =
-    plan.currency === "ETB"
-      ? "ብር"
-      : plan.currency === "USD"
-        ? "$"
-        : plan.currency;
+  const currencySymbol = useMemo(
+    () =>
+      plan.currency === "ETB"
+        ? "ብር"
+        : plan.currency === "USD"
+          ? "$"
+          : plan.currency,
+    [plan.currency],
+  );
 
-  const isLocalPlan = plan.slug === "local-stack-guides";
-  const isDiasporaPlan = plan.slug === "diaspora-stack-guides";
-  const labelText = isLocalPlan
-    ? "Local access"
-    : isDiasporaPlan
-      ? "Diaspora access"
-      : "Premium access";
+  const isLocalPlan = useMemo(
+    () => plan.slug === "local-stack-guides",
+    [plan.slug],
+  );
+  const isDiasporaPlan = useMemo(
+    () => plan.slug === "diaspora-stack-guides",
+    [plan.slug],
+  );
+  const labelText = useMemo(
+    () =>
+      isLocalPlan
+        ? "Local access"
+        : isDiasporaPlan
+          ? "Diaspora access"
+          : "Premium access",
+    [isLocalPlan, isDiasporaPlan],
+  );
 
-  // ── 3D Tilt ─────────────────────────────────────
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    setRotateX(((y - centerY) / centerY) * -8);
-    setRotateY(((x - centerX) / centerX) * 8);
-    setGlowX((x / rect.width) * 100);
-    setGlowY((y / rect.height) * 100);
-  };
+  // ── Throttled 3D Tilt ─────────────────────────────────────
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current || mouseMovePendingRef.current) return;
 
-  const handleMouseLeave = () => {
+    mouseMovePendingRef.current = true;
+    requestAnimationFrame(() => {
+      const rect = cardRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      setRotateX(((y - centerY) / centerY) * -8);
+      setRotateY(((x - centerX) / centerX) * 8);
+
+      // Update CSS custom properties for glow instead of state
+      cardRef.current?.style.setProperty(
+        "--glow-x",
+        `${(x / rect.width) * 100}%`,
+      );
+      cardRef.current?.style.setProperty(
+        "--glow-y",
+        `${(y / rect.height) * 100}%`,
+      );
+
+      mouseMovePendingRef.current = false;
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
     setRotateX(0);
     setRotateY(0);
-    setGlowX(50);
-    setGlowY(50);
     setIsHovered(false);
-    setVisibleFeatures([]);
-  };
+    if (cardRef.current) {
+      cardRef.current.style.setProperty("--glow-x", "50%");
+      cardRef.current.style.setProperty("--glow-y", "50%");
+    }
+  }, []);
 
-  // ── Staggered feature reveal on hover ───────────
+  // ── Initialize CSS custom properties ───────────────
   useEffect(() => {
-    if (!isHovered) return;
-    plan.features.forEach((_, i) => {
-      setTimeout(() => setVisibleFeatures((prev) => [...prev, i]), i * 80);
-    });
-    return () => setVisibleFeatures([]);
-  }, [isHovered, plan.features.length]);
+    if (cardRef.current) {
+      cardRef.current.style.setProperty("--glow-x", "50%");
+      cardRef.current.style.setProperty("--glow-y", "50%");
+    }
+  }, []);
 
-  // ── Animated price counter ──────────────────────
+  // ── Animated price counter (only first render) ──────────────────────
   useEffect(() => {
     let frame: number;
     const start = performance.now();
@@ -106,32 +134,18 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
           : "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
-      {/* ── Animated glow overlay ──────────────── */}
+      {/* ── Optimized glow using CSS custom properties ─────────── */}
       <div
         className="card-glow"
         style={{
-          background: `radial-gradient(circle at ${glowX}% ${glowY}%, rgba(79,209,165,0.15), transparent 60%)`,
+          background: `radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(79,209,165,0.15), transparent 60%)`,
           opacity: isHovered ? 1 : 0,
+          transition: "opacity 0.3s ease-out",
         }}
       />
 
-      {/* ── Floating particles on hover ───────── */}
-      {isHovered && (
-        <div className="card-particles">
-          {[...Array(8)].map((_, i) => (
-            <span
-              key={i}
-              className="particle"
-              style={{
-                left: `${20 + Math.random() * 60}%`,
-                top: `${20 + Math.random() * 60}%`,
-                animationDelay: `${i * 0.15}s`,
-                animationDuration: `${1.5 + Math.random()}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* ── Minimal particle effect (CSS-based pulse instead of DOM) ─ */}
+      {isHovered && <div className="card-particles-pulse" />}
 
       {/* ── Popular badge ─────────────────────── */}
       {isPopular && (
@@ -168,20 +182,16 @@ export function MembershipCard({ plan, index }: { plan: Plan; index: number }) {
         </span>
       </div>
 
-      {/* ── Staggered Features ────────────────── */}
-      <ul className="membership-features">
+      {/* ── Features with CSS-based animation ────────────────── */}
+      <ul
+        className={`membership-features ${isHovered || isPopular ? "revealed" : ""}`}
+      >
         {plan.features.map((feature, i) => (
           <li
             key={i}
-            className={`feature-item ${visibleFeatures.includes(i) || isPopular ? "visible" : ""}`}
+            className="feature-item"
             style={{
-              transitionDelay: `${i * 60}ms`,
-              opacity: isPopular ? 1 : visibleFeatures.includes(i) ? 1 : 0,
-              transform: isPopular
-                ? "translateX(0)"
-                : visibleFeatures.includes(i)
-                  ? "translateX(0)"
-                  : "translateX(-12px)",
+              transitionDelay: `${i * 40}ms`,
             }}
           >
             <span className="feature-check">

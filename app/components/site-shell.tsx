@@ -5,11 +5,19 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useCallback, useState, useRef } from "react";
-import { FeraAIChat } from "./fera-ai-chat";
+import { memo, useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import useAuth from "../store/useAuth";
+
+const FeraAIChat = dynamic(
+  () => import("./fera-ai-chat").then((module) => module.FeraAIChat),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 const navItems = [
   { href: "/services", label: "Services" },
@@ -20,45 +28,37 @@ const navItems = [
   { href: "/membership/one-to-one", label: "1:1" },
 ];
 
-export function SiteShell({ children }: { children: React.ReactNode }) {
+export const SiteShell = memo(function SiteShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
+  const navHiddenRef = useRef(false);
   const user = useAuth((s: any) => s.user);
   const profile = useAuth((s: any) => s.profile);
-  const membership = useAuth((s: any) => s.membership);
   const loading = useAuth((s: any) => s.loading);
   const fetchUser = useAuth((s: any) => s.fetchUser);
   const pathname = usePathname();
   const router = useRouter();
-  const fetchedRef = useRef(false);
-  const lastFetchRef = useRef<number>(0);
   const navRef = useRef<HTMLElement>(null);
   const isAdmin = profile?.is_admin || profile?.role === "admin";
 
-  // ensure auth store is populated on mount (once)
   useEffect(() => {
-    if (!fetchedRef.current) {
-      fetchedRef.current = true;
-      if (user === undefined) {
-        fetchUser();
-        lastFetchRef.current = Date.now();
-      }
-    }
-  }, [user, fetchUser]);
+    navHiddenRef.current = navHidden;
+  }, [navHidden]);
 
-  // Refresh cache when navigating to a new page, but at most once every 30s
   useEffect(() => {
-    const now = Date.now();
-    if (now - lastFetchRef.current > 30_000) {
+    if (user === undefined && !loading) {
       fetchUser();
-      lastFetchRef.current = now;
     }
-  }, [pathname, fetchUser]);
+  }, [user, loading, fetchUser]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || loading) return;
 
     const refreshAccess = () => {
       fetchUser();
@@ -71,36 +71,52 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       window.clearInterval(intervalId);
       window.removeEventListener("focus", refreshAccess);
     };
-  }, [user, fetchUser]);
+  }, [user, loading, fetchUser]);
 
   useEffect(() => {
+    let animationFrameId = 0;
+
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
+      if (animationFrameId) return;
 
-      // Scroll progress (0–1)
-      const scrollHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
-      setScrollProgress(progress);
+      animationFrameId = window.requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const scrollHeight =
+          document.documentElement.scrollHeight - window.innerHeight;
+        const progress = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
 
-      // Smart nav: hide on scroll down, show on scroll up
-      if (scrollTop > 80 && scrollTop > lastScrollY) {
-        setNavHidden(true);
-      } else if (scrollTop < lastScrollY || scrollTop <= 80) {
-        setNavHidden(false);
-      }
-      setLastScrollY(scrollTop);
+        setScrollProgress(progress);
 
-      // Close mobile menu on scroll
-      if (menuOpen && scrollTop > 20) {
-        setMenuOpen(false);
-      }
+        const shouldHide = scrollTop > 80 && scrollTop > lastScrollYRef.current;
+        const shouldShow =
+          scrollTop < lastScrollYRef.current || scrollTop <= 80;
+
+        if (shouldHide && !navHiddenRef.current) {
+          setNavHidden(true);
+        } else if (shouldShow && navHiddenRef.current) {
+          setNavHidden(false);
+        }
+
+        lastScrollYRef.current = scrollTop;
+
+        if (menuOpen && scrollTop > 20) {
+          setMenuOpen(false);
+        }
+
+        animationFrameId = 0;
+      });
     };
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY, menuOpen]);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     const handleNavigationKeys = (event: KeyboardEvent) => {
@@ -363,4 +379,4 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <FeraAIChat />
     </>
   );
-}
+});

@@ -1,9 +1,12 @@
 "use client";
 
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools } from "zustand/middleware";
 
 type User = any | null | undefined;
+
+let authFetchInFlight: Promise<void> | null = null;
+let lastAuthFetchAt = 0;
 
 type AuthState = {
   user: User; // undefined = loading, null = not authenticated, object = authenticated
@@ -33,33 +36,49 @@ export const useAuth = create<AuthState>()(
       setMembership: (m: any | null) => set({ membership: m }),
 
       fetchUser: async () => {
-        const { loading } = get() as any;
+        const { loading, user } = get() as any;
+        const now = Date.now();
+
         if (loading) return;
-        set({ loading: true } as any);
-        try {
-          const res = await fetch("/api/auth/user", { cache: "no-store" });
-          if (!res.ok) throw new Error("Failed to fetch user");
-          const data = await res.json();
-          set({
-            user: data?.user ?? null,
-            profile: data?.profile ?? null,
-            membership: data?.membership ?? null,
-            loading: false,
-            error: null,
-          } as any);
-        } catch (err) {
-          const message =
-            err && typeof err === "object" && "message" in err
-              ? (err as any).message
-              : String(err);
-          set({
-            user: null,
-            profile: null,
-            membership: null,
-            loading: false,
-            error: message ?? "unknown",
-          } as any);
+        if (user !== undefined && now - lastAuthFetchAt < 30_000) return;
+        if (authFetchInFlight) {
+          await authFetchInFlight;
+          return;
         }
+
+        authFetchInFlight = (async () => {
+          set({ loading: true } as any);
+          try {
+            const res = await fetch("/api/auth/user", { cache: "no-store" });
+            if (!res.ok) throw new Error("Failed to fetch user");
+            const data = await res.json();
+            set({
+              user: data?.user ?? null,
+              profile: data?.profile ?? null,
+              membership: data?.membership ?? null,
+              loading: false,
+              error: null,
+            } as any);
+            lastAuthFetchAt = Date.now();
+          } catch (err) {
+            const message =
+              err && typeof err === "object" && "message" in err
+                ? (err as any).message
+                : String(err);
+            set({
+              user: null,
+              profile: null,
+              membership: null,
+              loading: false,
+              error: message ?? "unknown",
+            } as any);
+            lastAuthFetchAt = Date.now();
+          } finally {
+            authFetchInFlight = null;
+          }
+        })();
+
+        await authFetchInFlight;
       },
 
       signOut: async () => {

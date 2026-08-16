@@ -4,9 +4,28 @@
 // and get detailed configuration + business recommendations.
 // Access requires an active premium membership.
 
+import dynamic from "next/dynamic";
 import { SiteShell } from "../components/site-shell";
-import { StackAdvisorClient } from "./client-page";
 import { MembershipCheck } from "../components/membership-check";
+
+const StackAdvisorClient = dynamic(
+  () => import("./client-page").then((module) => module.StackAdvisorClient),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          minHeight: 420,
+          display: "grid",
+          placeItems: "center",
+          color: "var(--muted)",
+        }}
+      >
+        Loading Stack Advisor...
+      </div>
+    ),
+  },
+);
 
 export const metadata = {
   title: "Stack Advisor — Vibe Coder's Tech Stack Platform",

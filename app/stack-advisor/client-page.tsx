@@ -1,17 +1,81 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { ToolSelector } from "../components/stack-advisor/tool-selector";
-import { StackDiagram } from "../components/stack-advisor/stack-diagram";
-import { ToolDetails } from "../components/stack-advisor/tool-details";
-import { AiRecommendation } from "../components/stack-advisor/ai-recommendation";
-import { ToolComparison } from "../components/stack-advisor/tool-comparison";
-import { CostProjections } from "../components/stack-advisor/cost-projections";
-import { CodeScaffolding } from "../components/stack-advisor/code-scaffolding";
 import {
   ShareStack,
   getSelectionsFromUrl,
 } from "../components/stack-advisor/share-stack";
+
+const ToolSelector = dynamic(
+  () =>
+    import("../components/stack-advisor/tool-selector").then(
+      (module) => module.ToolSelector,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          minHeight: 300,
+          display: "grid",
+          placeItems: "center",
+          color: "var(--muted)",
+        }}
+      >
+        Loading tool selector...
+      </div>
+    ),
+  },
+);
+
+const StackDiagram = dynamic(
+  () =>
+    import("../components/stack-advisor/stack-diagram").then(
+      (module) => module.StackDiagram,
+    ),
+  { ssr: false },
+);
+
+const ToolDetails = dynamic(
+  () =>
+    import("../components/stack-advisor/tool-details").then(
+      (module) => module.ToolDetails,
+    ),
+  { ssr: false },
+);
+
+const AiRecommendation = dynamic(
+  () =>
+    import("../components/stack-advisor/ai-recommendation").then(
+      (module) => module.AiRecommendation,
+    ),
+  { ssr: false },
+);
+
+const ToolComparison = dynamic(
+  () =>
+    import("../components/stack-advisor/tool-comparison").then(
+      (module) => module.ToolComparison,
+    ),
+  { ssr: false },
+);
+
+const CostProjections = dynamic(
+  () =>
+    import("../components/stack-advisor/cost-projections").then(
+      (module) => module.CostProjections,
+    ),
+  { ssr: false },
+);
+
+const CodeScaffolding = dynamic(
+  () =>
+    import("../components/stack-advisor/code-scaffolding").then(
+      (module) => module.CodeScaffolding,
+    ),
+  { ssr: false },
+);
 import {
   tools,
   projectTypes,
