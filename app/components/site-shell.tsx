@@ -48,18 +48,48 @@ const navGroups = [
     label: "Company",
     description: "Who we are and how we work",
     items: [
-      { href: "/about", label: "About", description: "Our mission and expertise", icon: "◌" },
-      { href: "/process", label: "Process", description: "How delivery stays sharp", icon: "↗" },
-      { href: "/contact", label: "Contact us", description: "Book a discovery call", icon: "✉" },
+      {
+        href: "/about",
+        label: "About",
+        description: "Our mission and expertise",
+        icon: "◌",
+      },
+      {
+        href: "/process",
+        label: "Process",
+        description: "How delivery stays sharp",
+        icon: "↗",
+      },
+      {
+        href: "/contact",
+        label: "Contact us",
+        description: "Book a discovery call",
+        icon: "✉",
+      },
     ],
   },
   {
     label: "Learn",
     description: "Insights, coaching, and hands-on learning",
     items: [
-      { href: "/tutorials", label: "Tutorials", description: "Practical learning resources", icon: "▤" },
-      { href: "/membership/sessions", label: "Sessions", description: "Live group learning and workshops", icon: "◈" },
-      { href: "/membership/one-to-one", label: "1:1", description: "Direct advisory and mentoring", icon: "◎" },
+      {
+        href: "/tutorials",
+        label: "Tutorials",
+        description: "Practical learning resources",
+        icon: "▤",
+      },
+      {
+        href: "/membership/sessions",
+        label: "Sessions",
+        description: "Live group learning and workshops",
+        icon: "◈",
+      },
+      {
+        href: "/membership/one-to-one",
+        label: "1:1",
+        description: "Direct advisory and mentoring",
+        icon: "◎",
+      },
     ],
   },
 ];
@@ -313,7 +343,9 @@ export const SiteShell = memo(function SiteShell({
                               setOpenDropdown(null);
                             }}
                           >
-                            <span className="nav-dropdown-icon">{item.icon}</span>
+                            <span className="nav-dropdown-icon">
+                              {item.icon}
+                            </span>
                             <span className="nav-dropdown-copy">
                               <strong>{item.label}</strong>
                               <small>{item.description}</small>
