@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { projects } from "./data";
 import { SiteShell } from "../components/site-shell";
 
@@ -26,7 +27,7 @@ export default function ProjectsPage() {
 
       <section>
         <div className="wrap">
-          <div className="work-grid reveal">
+          <div className="work-grid">
             {projects.map((item) => (
               <div className="work-card" key={item.slug}>
                 <div className="work-card-top">
@@ -37,11 +38,14 @@ export default function ProjectsPage() {
                   </div>
                   <span className="work-year">{item.year}</span>
                 </div>
-                <img
+                <Image
                   src={item.image}
                   alt={`${item.title} homepage preview`}
                   className="work-card-image"
-                  loading="lazy"
+                  width={500}
+                  height={300}
+                  priority
+                  quality={85}
                 />
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>

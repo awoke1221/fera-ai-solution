@@ -15,6 +15,18 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.googleusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "*.adonaytiktokacademy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.azmeracoffee.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.temeupholstery.com",
+      },
     ],
   },
 };
