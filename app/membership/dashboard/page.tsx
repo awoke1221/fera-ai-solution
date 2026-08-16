@@ -164,9 +164,16 @@ export default function MembershipDashboardPage() {
 
   return (
     <SiteShell>
-      {/* ── Profile Hero ────────────────────────── */}
       <div className="dash-hero">
         <div className="wrap">
+          <div className="dash-page-head">
+            <span className="eyebrow">Member portal</span>
+            <h1 className="h-display">Your premium dashboard</h1>
+            <p className="lead">
+              Track your subscription, active learning access, and next actions
+              from one place.
+            </p>
+          </div>
           <div className="dash-profile-card">
             <div className="dash-profile-avatar-wrap">
               {avatarUrl ? (

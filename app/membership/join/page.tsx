@@ -200,8 +200,22 @@ function JoinContent() {
     fetchData();
   };
 
+  const handlePlanSelect = (selectedPlan: MembershipPlan) => {
+    setPlan(selectedPlan);
+    setError(null);
+    router.replace(`/membership/join?plan=${selectedPlan.id}`);
+  };
+
+  const handlePaymentMethodChange = (
+    nextMethod: "mobile_money" | "bank_transfer",
+  ) => {
+    setPaymentMethod(nextMethod);
+    setError(null);
+  };
+
   const handleScreenshotUpload = (url: string) => {
-    setScreenshotUrl(url);
+    setScreenshotUrl(url || null);
+    if (url) setError(null);
   };
 
   const handleSubmitPaymentRequest = async () => {
@@ -445,12 +459,12 @@ function JoinContent() {
                 <button
                   key={p.id}
                   className="plan-select-card"
-                  onClick={() => {
-                    setPlan(p);
-                    router.replace(`/membership/join?plan=${p.id}`);
-                  }}
+                  onClick={() => handlePlanSelect(p)}
                 >
-                  <h3>{p.name}</h3>
+                  <div className="plan-select-header">
+                    <h3>{p.name}</h3>
+                    <span className="plan-badge">Monthly</span>
+                  </div>
                   <div className="plan-select-price">
                     {p.currency === "ETB" ? `${p.price} Birr` : `$${p.price}`}
                     <span>/month</span>
@@ -467,9 +481,9 @@ function JoinContent() {
 
   return (
     <SiteShell>
-      <div className="page-hero">
+      <div className="page-hero join-hero">
         <div className="wrap">
-          <div className="eyebrow">Complete Payment</div>
+          <div className="eyebrow">Complete payment</div>
           <h1 className="h-display">
             Join <span className="gradient-text">{plan.name}</span>
           </h1>
@@ -481,12 +495,17 @@ function JoinContent() {
         </div>
       </div>
 
-      <section>
+      <section className="sessions-section">
         <div className="wrap">
           <div className="join-layout">
-            {/* Order Summary */}
-            <div className="join-summary">
-              <h2>Order Summary</h2>
+            <div className="join-summary card">
+              <div className="summary-header">
+                <div>
+                  <span className="admin-mini-tag">Order</span>
+                  <h2>Order Summary</h2>
+                </div>
+              </div>
+
               <div className="summary-card">
                 <div className="summary-row">
                   <span>Plan</span>
@@ -507,7 +526,7 @@ function JoinContent() {
               </div>
 
               <div className="summary-features">
-                <h3>Features included:</h3>
+                <h3>Included benefits</h3>
                 <ul>
                   {plan.features.map((f, i) => (
                     <li key={i}>✓ {f}</li>
@@ -516,13 +535,16 @@ function JoinContent() {
               </div>
             </div>
 
-            {/* Payment Form */}
-            <div className="join-payment">
-              <h2>Payment Method</h2>
+            <div className="join-payment card">
+              <div className="summary-header">
+                <div>
+                  <span className="admin-mini-tag">Payment</span>
+                  <h2>Choose your method</h2>
+                </div>
+              </div>
 
               {isGlobalUser ? (
-                // ─── PayPal for diaspora users ──────────
-                <div className="paypal-section">
+                <div className="paypal-section payment-panel">
                   <div className="payment-method-label">
                     <span>🌐</span> PayPal
                   </div>
@@ -560,16 +582,15 @@ function JoinContent() {
                   </PayPalScriptProvider>
                 </div>
               ) : (
-                // ─── Local payment methods ────────────
-                <div className="local-payment-section">
+                <div className="local-payment-section payment-panel">
                   <div className="payment-method-selector">
                     <button
                       className={`payment-method-option ${
                         paymentMethod === "mobile_money" ? "active" : ""
                       }`}
-                      onClick={() => setPaymentMethod("mobile_money")}
+                      onClick={() => handlePaymentMethodChange("mobile_money")}
                     >
-                      <span>📱</span>
+                      <span className="payment-method-icon">📱</span>
                       <div>
                         <strong>Telebirr / CBE Birr</strong>
                         <small>Fast local mobile payment</small>
@@ -579,9 +600,9 @@ function JoinContent() {
                       className={`payment-method-option ${
                         paymentMethod === "bank_transfer" ? "active" : ""
                       }`}
-                      onClick={() => setPaymentMethod("bank_transfer")}
+                      onClick={() => handlePaymentMethodChange("bank_transfer")}
                     >
-                      <span>🏦</span>
+                      <span className="payment-method-icon">🏦</span>
                       <div>
                         <strong>Bank Transfer</strong>
                         <small>Direct bank deposit</small>
@@ -590,7 +611,7 @@ function JoinContent() {
                   </div>
 
                   <div className="payment-instructions">
-                    <h3>Payment Instructions</h3>
+                    <h3>Payment instructions</h3>
                     {paymentMethod === "mobile_money" ? (
                       <>
                         <p>
@@ -649,19 +670,21 @@ function JoinContent() {
                   </div>
 
                   <div className="upload-section">
-                    <h3>Upload Payment Screenshot</h3>
+                    <h3>Upload payment screenshot</h3>
                     <p>
                       After making the payment, upload a screenshot of the
                       transaction confirmation.
                     </p>
-                    <PaymentUpload onUploadComplete={handleScreenshotUpload} />
+                    <PaymentUpload
+                      value={screenshotUrl}
+                      onUploadComplete={handleScreenshotUpload}
+                    />
                   </div>
 
                   {error && <p className="form-message error">{error}</p>}
 
                   <button
-                    className="btn solid"
-                    style={{ width: "100%", marginTop: "20px" }}
+                    className="btn solid join-submit-button"
                     onClick={handleSubmitPaymentRequest}
                     disabled={submitting || !screenshotUrl}
                   >
@@ -669,7 +692,7 @@ function JoinContent() {
                       ? "Submitting..."
                       : !screenshotUrl
                         ? "Upload screenshot first"
-                        : "Submit Payment Request"}
+                        : "Submit payment request"}
                   </button>
                 </div>
               )}

@@ -41,18 +41,50 @@ export const metadata = {
 export default function StackAdvisorPage() {
   return (
     <SiteShell>
-      <section className="page-hero">
-        <div className="wrap">
-          <div className="eyebrow">Premium Tool</div>
-          <h1 className="h-display">
-            Stack <span className="gradient-text">Advisor</span>
-          </h1>
-          <p className="lead">
-            Your intelligent tech stack companion. Select what you&apos;re
-            building, choose your tools, and get a production-ready architecture
-            diagram, environment variables, integration guides, and business
-            recommendations — all tailored to your needs.
-          </p>
+      <section className="page-hero stack-advisor-hero">
+        <div className="wrap stack-hero-layout">
+          <div className="stack-hero-copy">
+            <div className="eyebrow">Premium Strategy Tool</div>
+            <h1 className="h-display">
+              Stack <span className="gradient-text">Advisor</span>
+            </h1>
+            <p className="lead">
+              Design a sharper architecture, compare the right technologies, and
+              get a production-ready stack recommendation tailored to your team,
+              budget, and market context.
+            </p>
+            <div className="stack-hero-badges">
+              <span>AI recommendations</span>
+              <span>Architecture diagrams</span>
+              <span>Cost planning</span>
+            </div>
+          </div>
+
+          <div className="stack-hero-panel">
+            <div className="stack-hero-panel-label">Live strategy snapshot</div>
+            <div className="stack-hero-panel-metric">
+              <strong>3x</strong>
+              <span>faster architecture decisions</span>
+            </div>
+            <div className="stack-hero-panel-grid">
+              <div>
+                <small>Guidance</small>
+                <strong>AI + expert</strong>
+              </div>
+              <div>
+                <small>Delivery</small>
+                <strong>Launch-ready</strong>
+              </div>
+              <div>
+                <small>Scalability</small>
+                <strong>Built in</strong>
+              </div>
+              <div>
+                <small>Budget</small>
+                <strong>Optimized</strong>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

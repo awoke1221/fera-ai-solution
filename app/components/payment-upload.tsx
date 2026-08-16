@@ -1,24 +1,27 @@
 // ─── Payment Screenshot Upload Component ─────────────
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PaymentUploadProps = {
   onUploadComplete: (url: string) => void;
+  value?: string | null;
 };
 
-export function PaymentUpload({ onUploadComplete }: PaymentUploadProps) {
+export function PaymentUpload({ onUploadComplete, value }: PaymentUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(value ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    setPreview(value ?? null);
+  }, [value]);
 
-    // Validate
+  const uploadFile = async (file: File) => {
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
     if (!allowedTypes.includes(file.type)) {
       setError("Only PNG, JPEG, and WebP images are allowed.");
       return;
@@ -32,12 +35,10 @@ export function PaymentUpload({ onUploadComplete }: PaymentUploadProps) {
     setError(null);
     setUploading(true);
 
-    // Show local preview
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.onload = (event) => setPreview(event.target?.result as string);
     reader.readAsDataURL(file);
 
-    // Upload to server
     const formData = new FormData();
     formData.append("file", file);
 
@@ -53,40 +54,69 @@ export function PaymentUpload({ onUploadComplete }: PaymentUploadProps) {
         throw new Error(data.error || "Upload failed");
       }
 
+      setPreview(data.url);
       onUploadComplete(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
       setPreview(null);
+      onUploadComplete("");
     } finally {
       setUploading(false);
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadFile(file);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(true);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
     const file = e.dataTransfer.files?.[0];
-    if (file && fileInputRef.current) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInputRef.current.files = dt.files;
-      handleFileSelect({
-        target: { files: dt.files },
-      } as React.ChangeEvent<HTMLInputElement>);
-    }
+    if (!file) return;
+
+    await uploadFile(file);
+  };
+
+  const resetInput = () => {
+    setPreview(null);
+    setError(null);
+    onUploadComplete("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <div
-      className="payment-upload-zone"
+      className={`payment-upload-zone ${isDragging ? "dragging" : ""}`}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={() => fileInputRef.current?.click()}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          fileInputRef.current?.click();
+        }
+      }}
     >
       <input
         ref={fileInputRef}
@@ -109,8 +139,7 @@ export function PaymentUpload({ onUploadComplete }: PaymentUploadProps) {
             className="btn upload-retry"
             onClick={(e) => {
               e.stopPropagation();
-              setPreview(null);
-              if (fileInputRef.current) fileInputRef.current.value = "";
+              resetInput();
             }}
           >
             Change file

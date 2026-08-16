@@ -22,26 +22,44 @@ const FeraAIChat = dynamic(
 const navGroups = [
   {
     label: "Services",
+    description: "Strategy, delivery, and product acceleration",
     items: [
-      { href: "/services", label: "Services" },
-      { href: "/solutions", label: "Solutions" },
-      { href: "/projects", label: "Projects" },
+      {
+        href: "/services",
+        label: "Services",
+        description: "Custom platform builds and AI transformations",
+        icon: "✦",
+      },
+      {
+        href: "/solutions",
+        label: "Solutions",
+        description: "Vertical products and execution frameworks",
+        icon: "◎",
+      },
+      {
+        href: "/projects",
+        label: "Projects",
+        description: "Case studies and measurable outcomes",
+        icon: "▣",
+      },
     ],
   },
   {
     label: "Company",
+    description: "Who we are and how we work",
     items: [
-      { href: "/about", label: "About" },
-      { href: "/process", label: "Process" },
-      { href: "/contact", label: "Contact us" },
+      { href: "/about", label: "About", description: "Our mission and expertise", icon: "◌" },
+      { href: "/process", label: "Process", description: "How delivery stays sharp", icon: "↗" },
+      { href: "/contact", label: "Contact us", description: "Book a discovery call", icon: "✉" },
     ],
   },
   {
     label: "Learn",
+    description: "Insights, coaching, and hands-on learning",
     items: [
-      { href: "/tutorials", label: "Tutorials" },
-      { href: "/membership/sessions", label: "Sessions" },
-      { href: "/membership/one-to-one", label: "1:1" },
+      { href: "/tutorials", label: "Tutorials", description: "Practical learning resources", icon: "▤" },
+      { href: "/membership/sessions", label: "Sessions", description: "Live group learning and workshops", icon: "◈" },
+      { href: "/membership/one-to-one", label: "1:1", description: "Direct advisory and mentoring", icon: "◎" },
     ],
   },
 ];
@@ -246,6 +264,18 @@ export const SiteShell = memo(function SiteShell({
                   className={`nav-dropdown-group ${
                     isGroupActive ? "active" : ""
                   } ${openDropdown === group.label ? "open" : ""}`}
+                  onMouseEnter={() => {
+                    if (window.innerWidth > 920) {
+                      setOpenDropdown(group.label);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (window.innerWidth > 920) {
+                      setOpenDropdown((current) =>
+                        current === group.label ? null : current,
+                      );
+                    }
+                  }}
                 >
                   <button
                     type="button"
@@ -257,30 +287,41 @@ export const SiteShell = memo(function SiteShell({
                       )
                     }
                   >
-                    {group.label}
+                    <span className="nav-dropdown-label">{group.label}</span>
                     <span className="nav-dropdown-caret">▾</span>
                   </button>
 
                   <div className="nav-dropdown-menu" role="menu">
-                    {group.items.map((item) => {
-                      const isActive =
-                        pathname === item.href ||
-                        pathname.startsWith(`${item.href}/`);
+                    <div className="nav-dropdown-header">
+                      <span>{group.label}</span>
+                      <small>{group.description}</small>
+                    </div>
 
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={isActive ? "active" : ""}
-                          onClick={() => {
-                            setMenuOpen(false);
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
+                    <div className="nav-dropdown-grid">
+                      {group.items.map((item) => {
+                        const isActive =
+                          pathname === item.href ||
+                          pathname.startsWith(`${item.href}/`);
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`nav-dropdown-item ${isActive ? "active" : ""}`}
+                            onClick={() => {
+                              setMenuOpen(false);
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            <span className="nav-dropdown-icon">{item.icon}</span>
+                            <span className="nav-dropdown-copy">
+                              <strong>{item.label}</strong>
+                              <small>{item.description}</small>
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );
