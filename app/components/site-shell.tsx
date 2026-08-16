@@ -22,10 +22,13 @@ const FeraAIChat = dynamic(
 const navItems = [
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
+  { href: "/solutions", label: "Solutions" },
   { href: "/projects", label: "Projects" },
+  { href: "/process", label: "Process" },
   { href: "/tutorials", label: "Tutorials" },
   { href: "/membership/sessions", label: "Sessions" },
   { href: "/membership/one-to-one", label: "1:1" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export const SiteShell = memo(function SiteShell({

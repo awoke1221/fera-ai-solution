@@ -1,72 +1,148 @@
 .container {
-  max-width: var(--form-max);
-  margin: 48px auto;
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  max-width: 960px;
+  margin: 120px auto 72px;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  position: relative;
+  overflow: hidden;
 }
+
+.container::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(2, 132, 199, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
 .header {
-  margin-bottom: 18px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
 }
+
+.header h1 {
+  margin-bottom: 8px;
+}
+
 .unauth {
-  padding: 18px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  padding: 24px 20px;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  position: relative;
+  z-index: 1;
 }
+
 .signIn {
-  color: var(--brand-blue);
+  color: var(--brand-primary);
+  font-weight: 700;
 }
+
 .form {
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
 }
+
 .row {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
 .rowInline {
   display: flex;
   align-items: center;
+  padding: 4px 0;
 }
+
 .label {
   font-weight: 600;
-  color: var(--muted);
-}
-.input {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.2);
   color: var(--text);
 }
+
+.input,
 .textarea {
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.18);
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--text);
+  transition: all var(--transition-micro);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(2, 132, 199, 0.4);
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.08);
+  background: rgba(255, 255, 255, 1);
+}
+
+.textarea {
+  padding: 14px 16px;
   font-family: var(--mono);
   min-height: 220px;
+  resize: vertical;
 }
+
 .checkboxLabel {
   display: inline-flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  color: var(--muted);
+  color: var(--text-secondary);
+  font-weight: 500;
 }
+
+.checkboxLabel input {
+  accent-color: var(--brand-primary);
+  width: 16px;
+  height: 16px;
+}
+
 .actions {
   display: flex;
   gap: 12px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
+
 .previewSection {
   margin-top: 18px;
+  position: relative;
+  z-index: 1;
 }
+
 .preview {
-  padding: 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 640px) {
+  .container {
+    margin-top: 100px;
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button,
+  .actions a {
+    width: 100%;
+  }
 }
