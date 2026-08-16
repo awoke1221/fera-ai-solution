@@ -19,16 +19,31 @@ const FeraAIChat = dynamic(
   },
 );
 
-const navItems = [
-  { href: "/services", label: "Services" },
-  { href: "/about", label: "About" },
-  { href: "/solutions", label: "Solutions" },
-  { href: "/projects", label: "Projects" },
-  { href: "/process", label: "Process" },
-  { href: "/tutorials", label: "Tutorials" },
-  { href: "/membership/sessions", label: "Sessions" },
-  { href: "/membership/one-to-one", label: "1:1" },
-  { href: "/contact", label: "Contact" },
+const navGroups = [
+  {
+    label: "Services",
+    items: [
+      { href: "/services", label: "Services" },
+      { href: "/solutions", label: "Solutions" },
+      { href: "/projects", label: "Projects" },
+    ],
+  },
+  {
+    label: "Company",
+    items: [
+      { href: "/about", label: "About" },
+      { href: "/process", label: "Process" },
+      { href: "/contact", label: "Contact us" },
+    ],
+  },
+  {
+    label: "Learn",
+    items: [
+      { href: "/tutorials", label: "Tutorials" },
+      { href: "/membership/sessions", label: "Sessions" },
+      { href: "/membership/one-to-one", label: "1:1" },
+    ],
+  },
 ];
 
 export const SiteShell = memo(function SiteShell({
@@ -37,10 +52,13 @@ export const SiteShell = memo(function SiteShell({
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
   const lastScrollYRef = useRef(0);
   const navHiddenRef = useRef(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const user = useAuth((s: any) => s.user);
   const profile = useAuth((s: any) => s.profile);
   const loading = useAuth((s: any) => s.loading);
@@ -59,6 +77,10 @@ export const SiteShell = memo(function SiteShell({
       fetchUser();
     }
   }, [user, loading, fetchUser]);
+
+  useEffect(() => {
+    setOpenDropdown(null);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user || loading) return;
@@ -125,12 +147,19 @@ export const SiteShell = memo(function SiteShell({
     const handleNavigationKeys = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
+        setProfileMenuOpen(false);
       }
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
-      if (!navRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (!navRef.current?.contains(target)) {
         setMenuOpen(false);
+      }
+
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+        setProfileMenuOpen(false);
       }
     };
 
@@ -204,20 +233,59 @@ export const SiteShell = memo(function SiteShell({
             id="primary-navigation"
             className={`nav-links ${menuOpen ? "open" : ""}`}
           >
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+            {navGroups.map((group) => {
+              const isGroupActive = group.items.some(
+                (item) =>
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`),
+              );
+
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={isActive ? "active" : ""}
-                  onClick={() => setMenuOpen(false)}
+                <div
+                  key={group.label}
+                  className={`nav-dropdown-group ${
+                    isGroupActive ? "active" : ""
+                  } ${openDropdown === group.label ? "open" : ""}`}
                 >
-                  {item.label}
-                </Link>
+                  <button
+                    type="button"
+                    className="nav-dropdown-trigger"
+                    aria-expanded={openDropdown === group.label}
+                    onClick={() =>
+                      setOpenDropdown((current) =>
+                        current === group.label ? null : group.label,
+                      )
+                    }
+                  >
+                    {group.label}
+                    <span className="nav-dropdown-caret">▾</span>
+                  </button>
+
+                  <div className="nav-dropdown-menu" role="menu">
+                    {group.items.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        pathname.startsWith(`${item.href}/`);
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={isActive ? "active" : ""}
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
+
             {!user && (
               <Link
                 href="/stack-advisor"
@@ -229,37 +297,70 @@ export const SiteShell = memo(function SiteShell({
                 Stack Advisor
               </Link>
             )}
+
             {user && (
-              <div className="nav-auth-cluster">
+              <div className="mobile-user-panel">
+                <div className="mobile-user-summary">
+                  <img
+                    src={
+                      user?.user_metadata?.avatar_url ||
+                      profile?.avatar_url ||
+                      "/default-avatar.png"
+                    }
+                    alt={profile?.full_name || user?.email || "User"}
+                    className="user-avatar-menu"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <strong>
+                      {profile?.full_name ||
+                        user?.user_metadata?.full_name ||
+                        user?.email?.split("@")[0] ||
+                        "User"}
+                    </strong>
+                    <span>{user?.email}</span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/membership/dashboard"
+                  className="user-dropdown-item"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+
                 {isAdmin && (
                   <Link
                     href="/admin/memberships"
-                    className={`nav-secondary-link ${
-                      pathname.startsWith("/admin") ? "active" : ""
-                    }`}
+                    className="user-dropdown-item"
                     onClick={() => setMenuOpen(false)}
                   >
                     Admin
                   </Link>
                 )}
+
                 <Link
-                  href="/membership/dashboard"
-                  className={`nav-secondary-link ${
-                    pathname === "/membership/dashboard" ? "active" : ""
-                  }`}
+                  href="/membership/sessions"
+                  className="user-dropdown-item"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Dashboard
+                  Sessions
                 </Link>
+
                 <button
                   type="button"
                   className="user-dropdown-item logout"
-                  onClick={handleLogout}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
                 >
                   Sign Out
                 </button>
               </div>
             )}
+
             <Link
               href="/book"
               className="btn nav-menu-cta"
@@ -282,17 +383,92 @@ export const SiteShell = memo(function SiteShell({
                   <span className="nav-feature-icon">✦</span>
                   Stack Advisor
                 </Link>
-                <div className="user-profile-nav" aria-label="User profile">
-                  <img
-                    src={
-                      user?.user_metadata?.avatar_url ||
-                      profile?.avatar_url ||
-                      "/default-avatar.png"
-                    }
-                    alt={profile?.full_name || user?.email || "User"}
-                    className="user-avatar-nav"
-                    referrerPolicy="no-referrer"
-                  />
+                <div className="user-profile-wrap" ref={profileMenuRef}>
+                  <button
+                    type="button"
+                    className="user-profile-nav"
+                    aria-label="Open user profile menu"
+                    aria-expanded={profileMenuOpen}
+                    aria-haspopup="menu"
+                    onClick={() => {
+                      setProfileMenuOpen((open) => !open);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <img
+                      src={
+                        user?.user_metadata?.avatar_url ||
+                        profile?.avatar_url ||
+                        "/default-avatar.png"
+                      }
+                      alt={profile?.full_name || user?.email || "User"}
+                      className="user-avatar-nav"
+                      referrerPolicy="no-referrer"
+                    />
+                  </button>
+
+                  {profileMenuOpen && (
+                    <div className="user-profile-menu" role="menu">
+                      <div className="user-profile-summary">
+                        <img
+                          src={
+                            user?.user_metadata?.avatar_url ||
+                            profile?.avatar_url ||
+                            "/default-avatar.png"
+                          }
+                          alt={profile?.full_name || user?.email || "User"}
+                          className="user-avatar-menu"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div>
+                          <strong>
+                            {profile?.full_name ||
+                              user?.user_metadata?.full_name ||
+                              user?.email?.split("@")[0] ||
+                              "User"}
+                          </strong>
+                          <span>{user?.email}</span>
+                        </div>
+                      </div>
+
+                      <Link
+                        href="/membership/dashboard"
+                        className="user-dropdown-item"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+
+                      {isAdmin && (
+                        <Link
+                          href="/admin/memberships"
+                          className="user-dropdown-item"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          Admin
+                        </Link>
+                      )}
+
+                      <Link
+                        href="/membership/sessions"
+                        className="user-dropdown-item"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        Sessions
+                      </Link>
+
+                      <button
+                        type="button"
+                        className="user-dropdown-item logout"
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          handleLogout();
+                        }}
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
