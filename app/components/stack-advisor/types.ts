@@ -114,3 +114,148 @@ export type ProjectToolMapping = {
   /** Human-readable note about this project's tooling strategy */
   note: string;
 };
+
+export type ProjectCategory =
+  | "saas"
+  | "ecommerce"
+  | "lms"
+  | "marketplace"
+  | "social"
+  | "mobile-app"
+  | "ai-app"
+  | "internal-business"
+  | "portfolio"
+  | "api-backend"
+  | "other";
+
+export type TargetPlatform = "web" | "mobile" | "desktop" | "api" | "multiple";
+
+export type TargetUserSegment =
+  | "personal-project"
+  | "small-business"
+  | "startup"
+  | "enterprise";
+
+export type ExpectedUserRange =
+  | "under-100"
+  | "100-1000"
+  | "1000-10000"
+  | "10000-100000"
+  | "100000-plus";
+
+export type TeamSize = "solo" | "2-5" | "6-15" | "16-plus";
+
+export type DeveloperExperience =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "expert";
+
+export type DevelopmentPriority =
+  | "fast-mvp"
+  | "balanced"
+  | "max-scalability"
+  | "lowest-cost"
+  | "max-performance";
+
+export type BudgetRange =
+  | "free"
+  | "under-50"
+  | "50-200"
+  | "200-1000"
+  | "1000-plus";
+
+export type TimeToLaunch =
+  | "under-2-weeks"
+  | "2-4-weeks"
+  | "1-3-months"
+  | "3-6-months"
+  | "6-plus-months";
+
+export type RequiredFeature =
+  | "authentication"
+  | "payments"
+  | "file-uploads"
+  | "video"
+  | "real-time-communication"
+  | "notifications"
+  | "search"
+  | "analytics"
+  | "ai"
+  | "background-jobs"
+  | "admin-dashboard"
+  | "multi-tenancy"
+  | "other";
+
+export type ProjectRequirements = {
+  projectName: string;
+  projectDescription: string;
+  projectCategory: ProjectCategory;
+  targetPlatforms: TargetPlatform[];
+  targetUsers: TargetUserSegment;
+  expectedUsers: ExpectedUserRange;
+  teamSize: TeamSize;
+  developerExperience: DeveloperExperience;
+  developmentPriority: DevelopmentPriority;
+  budget: BudgetRange;
+  timeToLaunch: TimeToLaunch;
+  requiredFeatures: RequiredFeature[];
+  targetMarketCountry: string;
+  expectedGrowth: string;
+  existingTechnologyPreferences: string;
+};
+
+export type ProjectRequirementsValidationErrors = Partial<
+  Record<keyof ProjectRequirements, string>
+>;
+
+export type RequirementPriority = "low" | "medium" | "high" | "critical";
+
+export type RequirementCategory =
+  | "functional"
+  | "non-functional"
+  | "infrastructure"
+  | "data"
+  | "security"
+  | "scalability"
+  | "performance"
+  | "integration"
+  | "devops"
+  | "project";
+
+export type RequirementItem = {
+  id: string;
+  title: string;
+  category: RequirementCategory;
+  priority: RequirementPriority;
+  rationale: string;
+};
+
+export type RequirementsAnalysisScore = {
+  requirementScore: number;
+  complexityScore: number;
+  scalabilityScore: number;
+  securityBaselineScore: number;
+  readinessScore: number;
+};
+
+export type ProjectClassification = {
+  project: string;
+  category: ProjectCategory;
+  summary: string;
+  confidence: "high" | "medium";
+};
+
+export type RequirementsAnalysisResult = {
+  projectClassification: ProjectClassification;
+  functionalRequirements: RequirementItem[];
+  nonFunctionalRequirements: RequirementItem[];
+  infrastructureRequirements: RequirementItem[];
+  dataRequirements: RequirementItem[];
+  securityRequirements: RequirementItem[];
+  scalabilityRequirements: RequirementItem[];
+  performanceRequirements: RequirementItem[];
+  integrationRequirements: RequirementItem[];
+  devOpsRequirements: RequirementItem[];
+  scoring: RequirementsAnalysisScore;
+};

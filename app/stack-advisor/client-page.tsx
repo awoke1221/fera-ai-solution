@@ -6,6 +6,8 @@ import {
   ShareStack,
   getSelectionsFromUrl,
 } from "../components/stack-advisor/share-stack";
+import { ProjectDiscoveryWizard } from "../components/stack-advisor/project-discovery-wizard";
+import type { ProjectRequirements } from "../components/stack-advisor";
 
 const ToolSelector = dynamic(
   () =>
@@ -88,9 +90,18 @@ export function StackAdvisorClient() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null,
   );
+  const [projectRequirements, setProjectRequirements] =
+    useState<ProjectRequirements | null>(null);
   const [activeView, setActiveView] = useState<
-    "select" | "diagram" | "details" | "ai" | "compare" | "cost" | "scaffold"
-  >("select");
+    | "discover"
+    | "select"
+    | "diagram"
+    | "details"
+    | "ai"
+    | "compare"
+    | "cost"
+    | "scaffold"
+  >("discover");
 
   const handleSelectionsChange = useCallback(
     (newSelections: Record<string, string>) => {
@@ -161,7 +172,7 @@ export function StackAdvisorClient() {
 
   return (
     <div className="stack-advisor-container">
-      {(hasSelections || selectedProject) && (
+      {(projectRequirements || hasSelections || selectedProject) && (
         <div
           style={{
             border: "1px solid rgba(255,255,255,0.14)",
@@ -190,12 +201,16 @@ export function StackAdvisorClient() {
                   color: "var(--muted)",
                 }}
               >
-                Advanced stack intelligence
+                {projectRequirements
+                  ? "Project discovery"
+                  : "Advanced stack intelligence"}
               </div>
               <div style={{ fontSize: "1rem", fontWeight: 700 }}>
-                {selectedProject
-                  ? `${selectedProject.icon} ${selectedProject.label}`
-                  : "Custom stack plan"}
+                {projectRequirements
+                  ? `${projectRequirements.projectName || "Project summary"}`
+                  : selectedProject
+                    ? `${selectedProject.icon} ${selectedProject.label}`
+                    : "Custom stack plan"}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -208,6 +223,18 @@ export function StackAdvisorClient() {
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+            {projectRequirements && (
+              <span
+                style={{
+                  background: "rgba(31, 180, 184, 0.14)",
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "999px",
+                  fontSize: "0.85rem",
+                }}
+              >
+                {projectRequirements.projectCategory}
+              </span>
+            )}
             <span
               style={{
                 background: "rgba(31, 180, 184, 0.14)",
@@ -245,6 +272,12 @@ export function StackAdvisorClient() {
       <div className="stack-view-switcher">
         {!hasSelections && activeView === "select" ? null : (
           <>
+            <button
+              className={`stack-view-btn ${activeView === "discover" ? "active" : ""}`}
+              onClick={() => setActiveView("discover")}
+            >
+              🧭 Discovery
+            </button>
             <button
               className={`stack-view-btn ${activeView === "select" ? "active" : ""}`}
               onClick={() => setActiveView("select")}
@@ -302,6 +335,14 @@ export function StackAdvisorClient() {
       </div>
 
       {/* Content based on active view — keep all mounted to preserve state */}
+      <div style={{ display: activeView === "discover" ? "block" : "none" }}>
+        <ProjectDiscoveryWizard
+          initialRequirements={projectRequirements}
+          onRequirementsChange={setProjectRequirements}
+          onComplete={() => setActiveView("select")}
+        />
+      </div>
+
       <div style={{ display: activeView === "select" ? "block" : "none" }}>
         <ToolSelector
           onSelectionsChange={handleSelectionsChange}
@@ -322,6 +363,7 @@ export function StackAdvisorClient() {
         <AiRecommendation
           selections={selections}
           selectedProject={selectedProject}
+          projectRequirements={projectRequirements}
         />
       )}
 

@@ -1,12 +1,24 @@
 // ─── AI Stack Recommendation API ───────────────────────
 // POST /api/ai-stack-recommend
-// Uses DeepSeek to give personalized tech stack advice
-// based on project type, selected tools, and user prompt.
+// Two modes:
+// 1. Structured Mode: If projectRequirements + requirementsAnalysis provided,
+//    returns deterministic typed StructuredTechStackRecommendation
+// 2. Chat Mode: If message provided, uses DeepSeek for conversational advice
 //
 // Environment:
-//   DEEPSEEK_API_KEY  — required in .env.local
+//   DEEPSEEK_API_KEY  — required in .env.local for chat mode
 
 import { NextResponse } from "next/server";
+import type {
+  ProjectRequirements,
+  RequirementsAnalysisResult,
+} from "@/app/components/stack-advisor";
+import { analyzeAndRecommend } from "@/app/components/stack-advisor/tech-recommendation-analyzer";
+import {
+  RecommendationValidator,
+  parseAiJsonResponse,
+  sanitizeRecommendation,
+} from "@/app/components/stack-advisor/tech-recommendation-validator";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -164,18 +176,66 @@ function buildFallbackRecommendation(
 
 export async function POST(request: Request) {
   try {
-    const { projectType, selections, message, conversation } =
-      await request.json();
+    const {
+      projectType,
+      selections,
+      message,
+      conversation,
+      projectRequirements,
+      requirementsAnalysis,
+    } = await request.json();
 
+    // Mode 1: Structured Recommendation
+    // If we have project requirements and analysis, generate deterministic structured recommendation
+    if (projectRequirements && requirementsAnalysis) {
+      try {
+        const recommendation = analyzeAndRecommend(
+          projectRequirements as ProjectRequirements,
+          requirementsAnalysis as RequirementsAnalysisResult,
+        );
+
+        // Validate the recommendation
+        const validator = new RecommendationValidator();
+        if (validator.validateRecommendation(recommendation)) {
+          return NextResponse.json({
+            type: "structured",
+            data: recommendation,
+          });
+        } else {
+          // Validation failed but we have a recommendation, log warnings and return it
+          console.warn(
+            "Recommendation validation warnings:",
+            validator.getErrorMessages(),
+          );
+          return NextResponse.json({
+            type: "structured",
+            data: recommendation,
+          });
+        }
+      } catch (error) {
+        console.error("Recommendation analysis error:", error);
+        return NextResponse.json(
+          {
+            type: "error",
+            error: "Failed to analyze recommendations. Please try again.",
+          },
+          { status: 500 },
+        );
+      }
+    }
+
+    // Mode 2: Chat Mode
+    // Fallback to conversational AI response for free-form questions
     if (!message && !projectType) {
       return NextResponse.json(
-        { error: "Provide at least a message or project type" },
+        { error: "Provide project requirements or a message" },
         { status: 400 },
       );
     }
 
     if (!DEEPSEEK_API_KEY) {
       return NextResponse.json({
+        type: "chat",
         role: "assistant",
         content: buildFallbackRecommendation(projectType, selections, message),
       });
@@ -225,6 +285,7 @@ export async function POST(request: Request) {
 
       if (response.status === 401) {
         return NextResponse.json({
+          type: "chat",
           role: "assistant",
           content:
             "🔑 **Invalid API Key**\n\nThe DeepSeek API key in your `.env.local` file appears to be invalid. Please double-check it and restart the dev server.",
@@ -233,6 +294,7 @@ export async function POST(request: Request) {
 
       if (response.status === 429) {
         return NextResponse.json({
+          type: "chat",
           role: "assistant",
           content:
             "⏳ **Rate limit reached**\n\nWe've hit the DeepSeek API rate limit. Please wait a moment and try again.",
@@ -240,6 +302,7 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({
+        type: "chat",
         role: "assistant",
         content:
           "⚠️ **Temporary issue**\n\nI couldn't get a response from the AI. Please try again in a moment.",
@@ -251,22 +314,25 @@ export async function POST(request: Request) {
 
     if (!assistantMessage) {
       return NextResponse.json({
+        type: "chat",
         role: "assistant",
         content:
           "🤔 **Unexpected response**\n\nI received an unexpected response format. Please try rephrasing your question.",
       });
     }
 
-    return NextResponse.json(assistantMessage);
+    return NextResponse.json({
+      type: "chat",
+      ...assistantMessage,
+    });
   } catch (error) {
     console.error("AI Stack Recommend API error:", error);
     return NextResponse.json(
       {
-        role: "assistant",
-        content:
-          "❌ **Connection error**\n\nI'm having trouble connecting to the AI service. Please check your network and try again.",
+        type: "error",
+        error: "Connection error. Please check your network and try again.",
       },
-      { status: 200 },
+      { status: 500 },
     );
   }
 }
