@@ -1,26 +1,7 @@
 ﻿// ─── Home page — Hero, services overview, stats, CTA ──
-import dynamic from "next/dynamic";
 import Link from "next/link";
+import { LandingSections } from "./components/landing-sections";
 import { SiteShell } from "./components/site-shell";
-
-const LandingSections = dynamic(
-  () => import("./components/landing-sections").then((m) => m.LandingSections),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        style={{
-          minHeight: 420,
-          display: "grid",
-          placeItems: "center",
-          color: "var(--muted)",
-        }}
-      >
-        Loading more content...
-      </div>
-    ),
-  },
-);
 
 export default function HomePage() {
   return (
