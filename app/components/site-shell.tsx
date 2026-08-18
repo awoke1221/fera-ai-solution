@@ -174,6 +174,11 @@ export const SiteShell = memo(function SiteShell({
 
         if (menuOpen && scrollTop > 20) {
           setMenuOpen(false);
+          setOpenDropdown(null);
+        }
+
+        if (openDropdown && window.innerWidth <= 920 && scrollTop > 20) {
+          setOpenDropdown(null);
         }
 
         animationFrameId = 0;
@@ -189,13 +194,14 @@ export const SiteShell = memo(function SiteShell({
         window.cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [menuOpen]);
+  }, [menuOpen, openDropdown]);
 
   useEffect(() => {
     const handleNavigationKeys = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
         setProfileMenuOpen(false);
+        setOpenDropdown(null);
       }
     };
 
@@ -204,6 +210,7 @@ export const SiteShell = memo(function SiteShell({
 
       if (!navRef.current?.contains(target)) {
         setMenuOpen(false);
+        setOpenDropdown(null);
       }
 
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
@@ -280,6 +287,11 @@ export const SiteShell = memo(function SiteShell({
           <div
             id="primary-navigation"
             className={`nav-links ${menuOpen ? "open" : ""}`}
+            onClick={(e) => {
+              if (window.innerWidth <= 920) {
+                e.stopPropagation();
+              }
+            }}
           >
             {navGroups.map((group) => {
               const isGroupActive = group.items.some(
@@ -306,16 +318,26 @@ export const SiteShell = memo(function SiteShell({
                       );
                     }
                   }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    if (window.innerWidth <= 920) {
+                      e.stopPropagation();
+                    }
+                  }}
                 >
                   <button
                     type="button"
                     className="nav-dropdown-trigger"
                     aria-expanded={openDropdown === group.label}
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Close previous dropdown and open new one
                       setOpenDropdown((current) =>
                         current === group.label ? null : group.label,
-                      )
-                    }
+                      );
+                    }}
                   >
                     <span className="nav-dropdown-label">{group.label}</span>
                     <span className="nav-dropdown-caret">▾</span>
@@ -365,7 +387,10 @@ export const SiteShell = memo(function SiteShell({
                 className={`nav-menu-link ${
                   pathname.startsWith("/stack-advisor") ? "active" : ""
                 }`}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setOpenDropdown(null);
+                }}
               >
                 Stack Advisor
               </Link>
@@ -398,7 +423,10 @@ export const SiteShell = memo(function SiteShell({
                 <Link
                   href="/membership/dashboard"
                   className="user-dropdown-item"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   Dashboard
                 </Link>
@@ -407,7 +435,10 @@ export const SiteShell = memo(function SiteShell({
                   <Link
                     href="/admin/memberships"
                     className="user-dropdown-item"
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setOpenDropdown(null);
+                    }}
                   >
                     Admin
                   </Link>
@@ -416,7 +447,10 @@ export const SiteShell = memo(function SiteShell({
                 <Link
                   href="/membership/sessions"
                   className="user-dropdown-item"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   Sessions
                 </Link>
@@ -426,6 +460,7 @@ export const SiteShell = memo(function SiteShell({
                   className="user-dropdown-item logout"
                   onClick={() => {
                     setMenuOpen(false);
+                    setOpenDropdown(null);
                     handleLogout();
                   }}
                 >
@@ -437,7 +472,10 @@ export const SiteShell = memo(function SiteShell({
             <Link
               href="/book"
               className="btn nav-menu-cta"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                setMenuOpen(false);
+                setOpenDropdown(null);
+              }}
             >
               Start a project
             </Link>
@@ -451,7 +489,10 @@ export const SiteShell = memo(function SiteShell({
                   className={`nav-feature-link ${
                     pathname.startsWith("/stack-advisor") ? "active" : ""
                   }`}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   <span className="nav-feature-icon">✦</span>
                   Stack Advisor
@@ -466,6 +507,7 @@ export const SiteShell = memo(function SiteShell({
                     onClick={() => {
                       setProfileMenuOpen((open) => !open);
                       setMenuOpen(false);
+                      setOpenDropdown(null);
                     }}
                   >
                     <img
@@ -507,7 +549,10 @@ export const SiteShell = memo(function SiteShell({
                       <Link
                         href="/membership/dashboard"
                         className="user-dropdown-item"
-                        onClick={() => setProfileMenuOpen(false)}
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          setOpenDropdown(null);
+                        }}
                       >
                         Dashboard
                       </Link>
@@ -516,7 +561,10 @@ export const SiteShell = memo(function SiteShell({
                         <Link
                           href="/admin/memberships"
                           className="user-dropdown-item"
-                          onClick={() => setProfileMenuOpen(false)}
+                          onClick={() => {
+                            setProfileMenuOpen(false);
+                            setOpenDropdown(null);
+                          }}
                         >
                           Admin
                         </Link>
@@ -525,7 +573,10 @@ export const SiteShell = memo(function SiteShell({
                       <Link
                         href="/membership/sessions"
                         className="user-dropdown-item"
-                        onClick={() => setProfileMenuOpen(false)}
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          setOpenDropdown(null);
+                        }}
                       >
                         Sessions
                       </Link>
@@ -535,6 +586,7 @@ export const SiteShell = memo(function SiteShell({
                         className="user-dropdown-item logout"
                         onClick={() => {
                           setProfileMenuOpen(false);
+                          setOpenDropdown(null);
                           handleLogout();
                         }}
                       >
@@ -549,14 +601,20 @@ export const SiteShell = memo(function SiteShell({
                 <Link
                   href="/auth/login"
                   className="nav-login-link"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
                   className="btn solid nav-signup-link"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   Sign Up
                 </Link>
