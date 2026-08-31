@@ -149,3 +149,29 @@ export type {
   SecurityAnalysisContext,
 } from "./security-types";
 export { generateSecurityAnalysis } from "./security-analysis-generator";
+export { buildAdvancedStackInsights } from "./advanced-insights";
+export type { AdvancedStackInsight } from "./advanced-insights";
+export { AdvancedInsightsPanel } from "./advanced-insights-panel";
+export { buildDeploymentReadinessAssessment } from "./deployment-readiness";
+export type {
+  DeploymentOption,
+  DeploymentReadinessAssessment,
+} from "./deployment-readiness";
+export { DeploymentReadinessPanel } from "./deployment-readiness-panel";
+export { buildCloudDeploymentRecommendation } from "./cloud-deployment-recommendation";
+export type {
+  CloudProviderOption,
+  CloudDeploymentRecommendation,
+  DecisionMetric,
+} from "./cloud-deployment-recommendation";
+export { CloudDeploymentPanel } from "./cloud-deployment-panel";
+export {
+  buildCloudCostComparison,
+  selectDeploymentPattern,
+  generateDeploymentChecklist,
+} from "./cloud-deployment-advanced";
+export type {
+  CloudCostEntry,
+  DeploymentPattern,
+} from "./cloud-deployment-advanced";
+export { CloudDeploymentAdvancedPanel } from "./cloud-deployment-advanced-panel";

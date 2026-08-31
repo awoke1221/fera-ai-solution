@@ -78,6 +78,38 @@ const CodeScaffolding = dynamic(
     ),
   { ssr: false },
 );
+
+const AdvancedInsightsPanel = dynamic(
+  () =>
+    import("../components/stack-advisor/advanced-insights-panel").then(
+      (module) => module.AdvancedInsightsPanel,
+    ),
+  { ssr: false },
+);
+
+const DeploymentReadinessPanel = dynamic(
+  () =>
+    import("../components/stack-advisor/deployment-readiness-panel").then(
+      (module) => module.DeploymentReadinessPanel,
+    ),
+  { ssr: false },
+);
+
+const CloudDeploymentPanel = dynamic(
+  () =>
+    import("../components/stack-advisor/cloud-deployment-panel").then(
+      (module) => module.CloudDeploymentPanel,
+    ),
+  { ssr: false },
+);
+
+const CloudDeploymentAdvancedPanel = dynamic(
+  () =>
+    import("../components/stack-advisor/cloud-deployment-advanced-panel").then(
+      (module) => module.CloudDeploymentAdvancedPanel,
+    ),
+  { ssr: false },
+);
 import {
   tools,
   projectTypes,
@@ -95,6 +127,10 @@ export function StackAdvisorClient() {
   const [activeView, setActiveView] = useState<
     | "discover"
     | "select"
+    | "insights"
+    | "deploy"
+    | "cloud"
+    | "advanced-cloud"
     | "diagram"
     | "details"
     | "ai"
@@ -175,37 +211,83 @@ export function StackAdvisorClient() {
       {(projectRequirements || hasSelections || selectedProject) && (
         <div
           style={{
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(8, 16, 24, 0.78)",
-            padding: "1rem 1.15rem",
-            borderRadius: "16px",
-            marginBottom: "1rem",
+            border: "1px solid rgba(56, 189, 248, 0.28)",
+            background: `linear-gradient(
+              135deg,
+              rgba(15, 23, 42, 0.92),
+              rgba(15, 118, 110, 0.2)
+            ),
+            linear-gradient(
+              180deg,
+              rgba(56, 189, 248, 0.08) 0%,
+              rgba(34, 197, 94, 0.06) 100%
+            )`,
+            padding: "1.35rem 1.5rem",
+            borderRadius: "22px",
+            marginBottom: "1.2rem",
             display: "grid",
-            gap: "0.6rem",
+            gap: "0.9rem",
+            boxShadow:
+              "0 20px 35px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(
+                circle at top right,
+                rgba(56, 189, 248, 0.12),
+                transparent 50%
+              ),
+              radial-gradient(
+                circle at bottom left,
+                rgba(34, 197, 94, 0.08),
+                transparent 55%
+              )`,
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
               justifyContent: "space-between",
-              gap: "0.75rem",
+              gap: "1rem",
+              position: "relative",
+              zIndex: 1,
             }}
           >
             <div>
               <div
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "0.7rem",
                   textTransform: "uppercase",
-                  letterSpacing: "0.2em",
-                  color: "var(--muted)",
+                  letterSpacing: "0.22em",
+                  color: "rgba(191, 219, 254, 0.8)",
+                  fontWeight: 700,
+                  marginBottom: "0.4rem",
                 }}
               >
                 {projectRequirements
                   ? "Project discovery"
                   : "Advanced stack intelligence"}
               </div>
-              <div style={{ fontSize: "1rem", fontWeight: 700 }}>
+              <div
+                style={{
+                  fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  background:
+                    "linear-gradient(135deg, #ffffff 0%, rgba(226, 232, 240, 0.95) 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
                 {projectRequirements
                   ? `${projectRequirements.projectName || "Project summary"}`
                   : selectedProject
@@ -213,23 +295,57 @@ export function StackAdvisorClient() {
                     : "Custom stack plan"}
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+            <div style={{ textAlign: "right", display: "grid", gap: "0.4rem" }}>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "rgba(191, 219, 254, 0.7)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                  fontWeight: 700,
+                }}
+              >
                 Estimated cost
               </div>
-              <div style={{ fontSize: "1rem", fontWeight: 700 }}>
+              <div
+                style={{
+                  fontSize: "clamp(1.3rem, 2vw, 1.8rem)",
+                  fontWeight: 900,
+                  letterSpacing: "-0.03em",
+                  background:
+                    "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
                 ${costEstimate.totalMonthly.max}/mo
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.85rem",
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
             {projectRequirements && (
               <span
                 style={{
-                  background: "rgba(31, 180, 184, 0.14)",
-                  padding: "0.35rem 0.65rem",
+                  background:
+                    "linear-gradient(135deg, rgba(31, 180, 184, 0.16), rgba(31, 180, 184, 0.08))",
+                  padding: "0.45rem 0.9rem",
                   borderRadius: "999px",
-                  fontSize: "0.85rem",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  color: "#d1fae5",
+                  border: "1px solid rgba(56, 189, 248, 0.24)",
+                  textTransform: "uppercase",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
                 }}
               >
                 {projectRequirements.projectCategory}
@@ -237,33 +353,54 @@ export function StackAdvisorClient() {
             )}
             <span
               style={{
-                background: "rgba(31, 180, 184, 0.14)",
-                padding: "0.35rem 0.65rem",
+                background:
+                  "linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(56, 189, 248, 0.08))",
+                padding: "0.45rem 0.9rem",
                 borderRadius: "999px",
-                fontSize: "0.85rem",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                color: "#e0f2fe",
+                border: "1px solid rgba(56, 189, 248, 0.28)",
+                textTransform: "uppercase",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
               }}
             >
               {Object.keys(selections).length} tools selected
             </span>
             <span
               style={{
-                background: "rgba(244, 178, 75, 0.14)",
-                padding: "0.35rem 0.65rem",
+                background:
+                  "linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(251, 191, 36, 0.08))",
+                padding: "0.45rem 0.9rem",
                 borderRadius: "999px",
-                fontSize: "0.85rem",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                color: "#fef3c7",
+                border: "1px solid rgba(251, 191, 36, 0.28)",
+                textTransform: "uppercase",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
               }}
             >
               {compatibilityWarnings.length} compatibility checks
             </span>
             <span
               style={{
-                background: "rgba(34, 197, 94, 0.14)",
-                padding: "0.35rem 0.65rem",
+                background:
+                  "linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(34, 197, 94, 0.08))",
+                padding: "0.45rem 0.9rem",
                 borderRadius: "999px",
-                fontSize: "0.85rem",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                color: "#d1fae5",
+                border: "1px solid rgba(34, 197, 94, 0.28)",
+                textTransform: "uppercase",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
               }}
             >
-              {recommendedNextStep}
+              ✓ {recommendedNextStep}
             </span>
           </div>
         </div>
@@ -286,6 +423,30 @@ export function StackAdvisorClient() {
             </button>
             {hasSelections && (
               <>
+                <button
+                  className={`stack-view-btn ${activeView === "insights" ? "active" : ""}`}
+                  onClick={() => setActiveView("insights")}
+                >
+                  🧠 Advanced Insights
+                </button>
+                <button
+                  className={`stack-view-btn ${activeView === "deploy" ? "active" : ""}`}
+                  onClick={() => setActiveView("deploy")}
+                >
+                  🚀 Deployment Readiness
+                </button>
+                <button
+                  className={`stack-view-btn ${activeView === "cloud" ? "active" : ""}`}
+                  onClick={() => setActiveView("cloud")}
+                >
+                  ☁️ Cloud Strategy
+                </button>
+                <button
+                  className={`stack-view-btn ${activeView === "advanced-cloud" ? "active" : ""}`}
+                  onClick={() => setActiveView("advanced-cloud")}
+                >
+                  🧠 Advanced Cloud Plan
+                </button>
                 <button
                   className={`stack-view-btn ${activeView === "diagram" ? "active" : ""}`}
                   onClick={() => setActiveView("diagram")}
@@ -349,6 +510,28 @@ export function StackAdvisorClient() {
           onProjectChange={setSelectedProjectId}
         />
       </div>
+
+      {activeView === "insights" && (
+        <AdvancedInsightsPanel
+          projectRequirements={projectRequirements}
+          selections={selections}
+          selectedProject={selectedProject}
+        />
+      )}
+
+      {activeView === "deploy" && (
+        <DeploymentReadinessPanel projectRequirements={projectRequirements} />
+      )}
+
+      {activeView === "cloud" && (
+        <CloudDeploymentPanel projectRequirements={projectRequirements} />
+      )}
+
+      {activeView === "advanced-cloud" && (
+        <CloudDeploymentAdvancedPanel
+          projectRequirements={projectRequirements}
+        />
+      )}
 
       {activeView === "diagram" && <StackDiagram selections={selections} />}
 
