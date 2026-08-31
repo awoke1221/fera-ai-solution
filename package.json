@@ -11,18 +11,18 @@
   "dependencies": {
     "@paypal/react-paypal-js": "^10.2.0",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.110.0",
+    "@supabase/supabase-js": "^2.112.3",
+    "gray-matter": "^4.0.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "next": "14.2.15",
+    "next-mdx-remote": "^6.0.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "zustand": "^5.0.14",
-    "gray-matter": "^4.0.3",
+    "react-markdown": "^8.0.5",
     "remark": "^14.0.2",
     "remark-html": "^15.0.1",
-    "next-mdx-remote": "^6.0.0",
-    "react-markdown": "^8.0.5"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/node": "26.1.0",

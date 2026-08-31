@@ -433,7 +433,7 @@ export const SiteShell = memo(function SiteShell({
 
                 {isAdmin && (
                   <Link
-                    href="/admin/memberships"
+                    href="/admin"
                     className="user-dropdown-item"
                     onClick={() => {
                       setMenuOpen(false);
@@ -559,7 +559,7 @@ export const SiteShell = memo(function SiteShell({
 
                       {isAdmin && (
                         <Link
-                          href="/admin/memberships"
+                          href="/admin"
                           className="user-dropdown-item"
                           onClick={() => {
                             setProfileMenuOpen(false);
