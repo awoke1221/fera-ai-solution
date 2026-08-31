@@ -209,85 +209,16 @@ export function StackAdvisorClient() {
   return (
     <div className="stack-advisor-container">
       {(projectRequirements || hasSelections || selectedProject) && (
-        <div
-          style={{
-            border: "1px solid rgba(56, 189, 248, 0.28)",
-            background: `linear-gradient(
-              135deg,
-              rgba(15, 23, 42, 0.92),
-              rgba(15, 118, 110, 0.2)
-            ),
-            linear-gradient(
-              180deg,
-              rgba(56, 189, 248, 0.08) 0%,
-              rgba(34, 197, 94, 0.06) 100%
-            )`,
-            padding: "1.35rem 1.5rem",
-            borderRadius: "22px",
-            marginBottom: "1.2rem",
-            display: "grid",
-            gap: "0.9rem",
-            boxShadow:
-              "0 20px 35px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `radial-gradient(
-                circle at top right,
-                rgba(56, 189, 248, 0.12),
-                transparent 50%
-              ),
-              radial-gradient(
-                circle at bottom left,
-                rgba(34, 197, 94, 0.08),
-                transparent 55%
-              )`,
-              pointerEvents: "none",
-              zIndex: 0,
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-              gap: "1rem",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
+        <div className="stack-project-summary-panel">
+          <div className="stack-project-summary-overlay" />
+          <div className="stack-project-summary-top">
             <div>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.22em",
-                  color: "rgba(191, 219, 254, 0.8)",
-                  fontWeight: 700,
-                  marginBottom: "0.4rem",
-                }}
-              >
+              <div className="stack-project-summary-kicker">
                 {projectRequirements
                   ? "Project discovery"
                   : "Advanced stack intelligence"}
               </div>
-              <div
-                style={{
-                  fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                  background:
-                    "linear-gradient(135deg, #ffffff 0%, rgba(226, 232, 240, 0.95) 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
+              <div className="stack-project-summary-title">
                 {projectRequirements
                   ? `${projectRequirements.projectName || "Project summary"}`
                   : selectedProject
@@ -295,111 +226,29 @@ export function StackAdvisorClient() {
                     : "Custom stack plan"}
               </div>
             </div>
-            <div style={{ textAlign: "right", display: "grid", gap: "0.4rem" }}>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  color: "rgba(191, 219, 254, 0.7)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.16em",
-                  fontWeight: 700,
-                }}
-              >
+            <div className="stack-project-summary-cost-wrap">
+              <div className="stack-project-summary-cost-label">
                 Estimated cost
               </div>
-              <div
-                style={{
-                  fontSize: "clamp(1.3rem, 2vw, 1.8rem)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.03em",
-                  background:
-                    "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
+              <div className="stack-project-summary-cost">
                 ${costEstimate.totalMonthly.max}/mo
               </div>
             </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.85rem",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
+
+          <div className="stack-project-summary-badges">
             {projectRequirements && (
-              <span
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(31, 180, 184, 0.16), rgba(31, 180, 184, 0.08))",
-                  padding: "0.45rem 0.9rem",
-                  borderRadius: "999px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  color: "#d1fae5",
-                  border: "1px solid rgba(56, 189, 248, 0.24)",
-                  textTransform: "uppercase",
-                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-                }}
-              >
+              <span className="stack-project-summary-badge stack-project-summary-badge-teal">
                 {projectRequirements.projectCategory}
               </span>
             )}
-            <span
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(56, 189, 248, 0.08))",
-                padding: "0.45rem 0.9rem",
-                borderRadius: "999px",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                color: "#e0f2fe",
-                border: "1px solid rgba(56, 189, 248, 0.28)",
-                textTransform: "uppercase",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-              }}
-            >
+            <span className="stack-project-summary-badge stack-project-summary-badge-sky">
               {Object.keys(selections).length} tools selected
             </span>
-            <span
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(251, 191, 36, 0.08))",
-                padding: "0.45rem 0.9rem",
-                borderRadius: "999px",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                color: "#fef3c7",
-                border: "1px solid rgba(251, 191, 36, 0.28)",
-                textTransform: "uppercase",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-              }}
-            >
+            <span className="stack-project-summary-badge stack-project-summary-badge-amber">
               {compatibilityWarnings.length} compatibility checks
             </span>
-            <span
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(34, 197, 94, 0.08))",
-                padding: "0.45rem 0.9rem",
-                borderRadius: "999px",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                color: "#d1fae5",
-                border: "1px solid rgba(34, 197, 94, 0.28)",
-                textTransform: "uppercase",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-              }}
-            >
+            <span className="stack-project-summary-badge stack-project-summary-badge-emerald">
               ✓ {recommendedNextStep}
             </span>
           </div>

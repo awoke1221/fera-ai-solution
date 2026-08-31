@@ -1461,64 +1461,23 @@ export function ToolDetails({
       </div>
 
       {projectType && projectMapping && (
-        <div
-          style={{
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: "16px",
-            padding: "1rem",
-            margin: "1rem 0",
-            background: "rgba(8, 15, 24, 0.8)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "0.75rem",
-            }}
-          >
+        <div className="stack-project-guidance-panel">
+          <div className="stack-project-guidance-top">
             <div>
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "var(--muted)",
-                  marginBottom: "0.3rem",
-                }}
-              >
+              <div className="stack-project-guidance-kicker">
                 Advanced project guidance
               </div>
-              <div style={{ fontWeight: 700 }}>
+              <div className="stack-project-guidance-name">
                 {projectType.icon} {projectType.label}
               </div>
             </div>
-            <div
-              style={{
-                padding: "0.55rem 0.9rem",
-                borderRadius: "999px",
-                background: "rgba(56, 189, 248, 0.12)",
-                color: "#38bdf8",
-                fontWeight: 700,
-              }}
-            >
+            <div className="stack-project-guidance-badge">
               {primaryRecommendedStack?.name ?? "Review recommended stack"}
             </div>
           </div>
-          <p style={{ color: "var(--muted)", marginTop: "0.75rem" }}>
-            {projectMapping.note}
-          </p>
+          <p className="stack-project-guidance-note">{projectMapping.note}</p>
           {projectScoreAdjustments.missingRequiredCategories.length > 0 && (
-            <div
-              style={{
-                marginTop: "0.85rem",
-                padding: "0.85rem",
-                borderRadius: "14px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
+            <div className="stack-project-guidance-warning">
               <strong>Required category gap:</strong>{" "}
               {projectScoreAdjustments.missingCategoryNotes.join(", ")}.
             </div>
