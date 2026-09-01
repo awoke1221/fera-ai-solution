@@ -65,7 +65,7 @@ export async function GET() {
       );
 
       if (duplicateIds.length > 0) {
-        await serviceClient
+        await (serviceClient as any)
           .from("memberships")
           .update({ is_active: false })
           .in("id", duplicateIds);

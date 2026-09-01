@@ -7,6 +7,8 @@ import {
   isAdminUser,
 } from "@/lib/supabase-admin";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const supabase = await createAdminClient();

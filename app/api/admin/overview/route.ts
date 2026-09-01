@@ -5,6 +5,8 @@ import {
   isAdminUser,
 } from "@/lib/supabase-admin";
 
+export const dynamic = "force-dynamic";
+
 type QueryResult<T> = {
   value: T;
   error: string | null;

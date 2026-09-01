@@ -32,7 +32,7 @@ export function buildMembershipActivation({
 
 export function normalizeMembershipDuplicates<
   T extends {
-    id: string;
+    id?: string;
     user_id?: string;
     end_date?: string | null;
     created_at?: string | null;
@@ -40,12 +40,17 @@ export function normalizeMembershipDuplicates<
   },
 >(rows: T[]) {
   if (!rows.length) {
-    return { canonicalId: null, duplicateIds: [] };
+    return { canonicalId: null as string | null, duplicateIds: [] as string[] };
   }
 
   const activeRows = rows.filter((row) => row.is_active !== false);
   if (!activeRows.length) {
-    return { canonicalId: null, duplicateIds: rows.map((row) => row.id) };
+    return {
+      canonicalId: null as string | null,
+      duplicateIds: rows
+        .map((row) => row.id)
+        .filter((id): id is string => Boolean(id)),
+    };
   }
 
   const canonical = activeRows.reduce((winner, current) => {
@@ -56,19 +61,20 @@ export function normalizeMembershipDuplicates<
       current.end_date || current.created_at || 0,
     ).getTime();
 
-    if (currentEnd > winnerEnd) {
+    if ((current.id && !winner.id) || currentEnd > winnerEnd) {
       return current;
     }
 
     return winner;
   }, activeRows[0]);
 
+  const canonicalId = canonical.id ?? null;
   const duplicateIds = activeRows
-    .filter((row) => row.id !== canonical.id)
-    .map((row) => row.id);
+    .filter((row) => !!row.id && row.id !== canonicalId)
+    .map((row) => row.id as string);
 
   return {
-    canonicalId: canonical.id,
+    canonicalId,
     duplicateIds,
   };
 }

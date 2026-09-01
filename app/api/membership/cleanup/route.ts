@@ -54,8 +54,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const grouped = new Map<string, any[]>();
-    for (const row of rows || []) {
+    const membershipRows = (rows || []) as Array<Record<string, any>>;
+    const grouped = new Map<string, Array<Record<string, any>>>();
+    for (const row of membershipRows) {
       const key = row.user_id || "unknown";
       grouped.set(key, [...(grouped.get(key) || []), row]);
     }
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const response = await serviceClient
+      const response = await (serviceClient as any)
         .from("memberships")
         .update({ is_active: false })
         .in("id", duplicateIds);

@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { generateICS } from "@/lib/ics";
 import { sendEmailViaSendGrid } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createAdminClient();
