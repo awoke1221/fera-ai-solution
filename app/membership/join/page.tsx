@@ -172,6 +172,7 @@ function JoinContent() {
 
         if (res.ok && data.hasPremium) {
           setPaymentStatus("approved");
+          await fetchUser(true);
           router.push("/stack-advisor");
           return true;
         }
@@ -197,7 +198,7 @@ function JoinContent() {
   }, [submitted, paymentMethod, profile?.region, router]);
 
   const handleAuthSuccess = () => {
-    fetchData();
+    fetchUser(true).finally(() => fetchData());
   };
 
   const handlePlanSelect = (selectedPlan: MembershipPlan) => {
@@ -277,6 +278,7 @@ function JoinContent() {
       }
 
       setPaymentStatus("approved");
+      await fetchUser(true);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PayPal payment failed");

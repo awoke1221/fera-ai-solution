@@ -2,6 +2,7 @@
 // Captures a PayPal order after user approval
 import { NextResponse } from "next/server";
 import { createAdminClient, ensureProfileForUser } from "@/lib/supabase-admin";
+import { buildMembershipActivation } from "@/lib/membership";
 
 export async function POST(request: Request) {
   try {
@@ -148,10 +149,14 @@ export async function POST(request: Request) {
     // Auto-activate membership for PayPal payments
     const durationDays = plan?.duration_days || 30;
     const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + durationDays);
+    const activation = buildMembershipActivation({
+      userId: user.id,
+      planId,
+      paymentRequestId: paymentRequest?.id || "",
+      startDate,
+      durationDays,
+    });
 
-    // Check existing membership
     const { data: existingMembership } = await supabase
       .from("memberships")
       .select("id")
@@ -162,22 +167,12 @@ export async function POST(request: Request) {
       await supabase
         .from("memberships")
         .update({
-          plan_id: planId,
-          payment_request_id: paymentRequest?.id,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          is_active: true,
+          ...activation,
+          user_id: user.id,
         })
         .eq("id", existingMembership.id);
     } else {
-      await supabase.from("memberships").insert({
-        user_id: user.id,
-        plan_id: planId,
-        payment_request_id: paymentRequest?.id,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        is_active: true,
-      });
+      await supabase.from("memberships").insert(activation);
     }
 
     return NextResponse.json({

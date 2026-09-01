@@ -5,8 +5,10 @@ import { NextResponse } from "next/server";
 import {
   createAdminClient,
   ensureProfileForUser,
+  getAdminServiceClient,
   isAdminUser,
 } from "@/lib/supabase-admin";
+import { normalizeMembershipDuplicates } from "@/lib/membership";
 
 // Avoid stale membership state so premium access updates immediately after approval.
 const CACHE_HEADERS = {
@@ -47,6 +49,25 @@ export async function GET() {
         .eq("id", user.id)
         .maybeSingle();
       profile = refreshedProfile.data;
+    }
+
+    const serviceClient = getAdminServiceClient();
+
+    if (serviceClient) {
+      const { data: allMembershipRows } = await serviceClient
+        .from("memberships")
+        .select("id, user_id, is_active, end_date, created_at")
+        .eq("user_id", user.id)
+        .order("end_date", { ascending: false });
+
+      const { duplicateIds } = normalizeMembershipDuplicates(allMembershipRows || []);
+
+      if (duplicateIds.length > 0) {
+        await serviceClient
+          .from("memberships")
+          .update({ is_active: false })
+          .in("id", duplicateIds);
+      }
     }
 
     const [membershipResult, paymentsResult] = await Promise.all([

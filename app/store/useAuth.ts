@@ -5,6 +5,25 @@ import { devtools } from "zustand/middleware";
 
 type User = any | null | undefined;
 
+export function shouldSkipAuthFetch({
+  loading,
+  user,
+  lastAuthFetchAt,
+  now,
+  force,
+}: {
+  loading: boolean;
+  user: User;
+  lastAuthFetchAt: number;
+  now: number;
+  force?: boolean;
+}) {
+  if (loading) return true;
+  if (force) return false;
+  if (user === undefined) return false;
+  return now - lastAuthFetchAt < 30_000;
+}
+
 let authFetchInFlight: Promise<void> | null = null;
 let lastAuthFetchAt = 0;
 
@@ -17,7 +36,7 @@ type AuthState = {
   setUser: (u: User) => void;
   setProfile: (p: any | null) => void;
   setMembership: (m: any | null) => void;
-  fetchUser: () => Promise<void>;
+  fetchUser: (force?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -35,14 +54,26 @@ export const useAuth = create<AuthState>()(
       setProfile: (p: any | null) => set({ profile: p }),
       setMembership: (m: any | null) => set({ membership: m }),
 
-      fetchUser: async () => {
+      fetchUser: async (force = false) => {
         const { loading, user } = get() as any;
         const now = Date.now();
 
-        if (loading) return;
-        if (user !== undefined && now - lastAuthFetchAt < 30_000) return;
+        if (
+          shouldSkipAuthFetch({
+            loading,
+            user,
+            lastAuthFetchAt,
+            now,
+            force,
+          })
+        ) {
+          return;
+        }
+
         if (authFetchInFlight) {
-          await authFetchInFlight;
+          if (force) {
+            await authFetchInFlight;
+          }
           return;
         }
 
@@ -87,6 +118,7 @@ export const useAuth = create<AuthState>()(
         } catch (e) {
           // ignore
         }
+        lastAuthFetchAt = 0;
         set({
           user: null,
           profile: null,

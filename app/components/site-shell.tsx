@@ -134,7 +134,7 @@ export const SiteShell = memo(function SiteShell({
     if (!user || loading) return;
 
     const refreshAccess = () => {
-      fetchUser();
+      fetchUser(true);
     };
 
     const intervalId = window.setInterval(refreshAccess, 60_000);

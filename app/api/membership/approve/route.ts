@@ -7,6 +7,7 @@ import {
   getAdminServiceClient,
   isAdminUser,
 } from "@/lib/supabase-admin";
+import { buildMembershipActivation } from "@/lib/membership";
 
 export async function POST(request: Request) {
   try {
@@ -98,8 +99,13 @@ export async function POST(request: Request) {
 
       const durationDays = plan?.duration_days || 30;
       const startDate = new Date();
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + durationDays);
+      const activation = buildMembershipActivation({
+        userId: paymentRequest.user_id,
+        planId: paymentRequest.plan_id,
+        paymentRequestId,
+        startDate,
+        durationDays,
+      });
 
       // Check if user already has a membership
       const { data: existingMembership } = await (db as any)
@@ -109,27 +115,15 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (existingMembership) {
-        // Update existing membership
         await (db as any)
           .from("memberships")
           .update({
-            plan_id: paymentRequest.plan_id,
-            payment_request_id: paymentRequestId,
-            start_date: startDate.toISOString(),
-            end_date: endDate.toISOString(),
-            is_active: true,
+            ...activation,
+            user_id: paymentRequest.user_id,
           } as any)
           .eq("id", existingMembership.id);
       } else {
-        // Create new membership
-        await (db as any).from("memberships").insert({
-          user_id: paymentRequest.user_id,
-          plan_id: paymentRequest.plan_id,
-          payment_request_id: paymentRequestId,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          is_active: true,
-        } as any);
+        await (db as any).from("memberships").insert(activation as any);
       }
     }
 

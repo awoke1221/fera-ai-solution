@@ -1,0 +1,74 @@
+export function buildMembershipActivation({
+  userId,
+  planId,
+  paymentRequestId,
+  startDate,
+  durationDays,
+}: {
+  userId: string;
+  planId: string;
+  paymentRequestId?: string | null;
+  startDate: Date;
+  durationDays: number;
+}) {
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + (durationDays || 30));
+
+  const payload: Record<string, string | boolean | Date> = {
+    user_id: userId,
+    plan_id: planId,
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
+    is_active: true,
+    auto_renew: false,
+  };
+
+  if (paymentRequestId) {
+    payload.payment_request_id = paymentRequestId;
+  }
+
+  return payload;
+}
+
+export function normalizeMembershipDuplicates<
+  T extends {
+    id: string;
+    user_id?: string;
+    end_date?: string | null;
+    created_at?: string | null;
+    is_active?: boolean;
+  },
+>(rows: T[]) {
+  if (!rows.length) {
+    return { canonicalId: null, duplicateIds: [] };
+  }
+
+  const activeRows = rows.filter((row) => row.is_active !== false);
+  if (!activeRows.length) {
+    return { canonicalId: null, duplicateIds: rows.map((row) => row.id) };
+  }
+
+  const canonical = activeRows.reduce((winner, current) => {
+    const winnerEnd = new Date(
+      winner.end_date || winner.created_at || 0,
+    ).getTime();
+    const currentEnd = new Date(
+      current.end_date || current.created_at || 0,
+    ).getTime();
+
+    if (currentEnd > winnerEnd) {
+      return current;
+    }
+
+    return winner;
+  }, activeRows[0]);
+
+  const duplicateIds = activeRows
+    .filter((row) => row.id !== canonical.id)
+    .map((row) => row.id);
+
+  return {
+    canonicalId: canonical.id,
+    duplicateIds,
+  };
+}
