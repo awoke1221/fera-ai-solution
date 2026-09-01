@@ -60,7 +60,9 @@ export async function GET() {
         .eq("user_id", user.id)
         .order("end_date", { ascending: false });
 
-      const { duplicateIds } = normalizeMembershipDuplicates(allMembershipRows || []);
+      const { duplicateIds } = normalizeMembershipDuplicates(
+        allMembershipRows || [],
+      );
 
       if (duplicateIds.length > 0) {
         await serviceClient

@@ -61,10 +61,15 @@ export async function POST(request: Request) {
     }
 
     let cleaned = 0;
-    const results: Array<{ user_id: string; canonicalId: string | null; duplicateIds: string[] }> = [];
+    const results: Array<{
+      user_id: string;
+      canonicalId: string | null;
+      duplicateIds: string[];
+    }> = [];
 
     for (const [memberUserId, memberships] of grouped.entries()) {
-      const { canonicalId, duplicateIds } = normalizeMembershipDuplicates(memberships);
+      const { canonicalId, duplicateIds } =
+        normalizeMembershipDuplicates(memberships);
       if (!canonicalId || duplicateIds.length === 0) {
         results.push({ user_id: memberUserId, canonicalId, duplicateIds: [] });
         continue;
