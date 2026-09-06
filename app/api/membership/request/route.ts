@@ -20,29 +20,47 @@ export async function POST(request: Request) {
 
     await ensureProfileForUser(user);
 
-    const {
-      planId,
-      amount,
-      currency,
-      paymentMethod,
-      screenshotUrl,
-      paypalOrderId,
-    } = await request.json();
+    const { planId, paymentMethod, screenshotUrl, paypalOrderId } =
+      await request.json();
 
-    if (!planId || !amount || !paymentMethod) {
+    if (!planId || !paymentMethod) {
       return NextResponse.json(
         { error: "Plan ID, amount, and payment method are required" },
         { status: 400 },
       );
     }
 
-    const planLookup = await supabase
+    const planById = await supabase
       .from("membership_plans")
-      .select("id")
+      .select("id, price, currency, is_active")
       .eq("id", planId)
+      .eq("is_active", true)
       .maybeSingle();
 
-    const resolvedPlanId = planLookup.data?.id || planId;
+    const planLookup = planById.data
+      ? planById
+      : await supabase
+          .from("membership_plans")
+          .select("id, price, currency, is_active")
+          .eq("slug", planId)
+          .eq("is_active", true)
+          .maybeSingle();
+    const plan = planLookup.data;
+    if (!plan) {
+      return NextResponse.json(
+        { error: "Active plan not found" },
+        { status: 404 },
+      );
+    }
+
+    if (!["mobile_money", "bank_transfer", "paypal"].includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: "Unsupported payment method" },
+        { status: 400 },
+      );
+    }
+
+    const resolvedPlanId = plan.id;
 
     // Use the admin service client for writes that require bypassing RLS
     const serviceClient = getAdminServiceClient();
@@ -93,8 +111,8 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         plan_id: resolvedPlanId,
-        amount,
-        currency: currency || "USD",
+        amount: plan.price,
+        currency: plan.currency,
         payment_method: paymentMethod,
         screenshot_url: screenshotUrl || null,
         paypal_order_id: paypalOrderId || null,

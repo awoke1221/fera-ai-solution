@@ -85,3 +85,29 @@ export function normalizeMembershipDuplicates<
     duplicateIds,
   };
 }
+
+export async function activateMembershipForPayment(
+  db: { rpc: (...args: any[]) => any },
+  {
+    paymentRequestId,
+    accessKey,
+    reviewedBy,
+  }: {
+    paymentRequestId: string;
+    accessKey?: string | null;
+    reviewedBy?: string | null;
+  },
+) {
+  const { data, error } = await db.rpc("activate_membership_for_payment", {
+    p_payment_request_id: paymentRequestId,
+    p_access_key: accessKey ?? null,
+    p_reviewed_by: reviewedBy ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  return data as {
+    payment_request_id: string;
+    membership_id: string;
+    already_activated: boolean;
+  };
+}

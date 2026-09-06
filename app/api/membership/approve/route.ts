@@ -7,7 +7,7 @@ import {
   getAdminServiceClient,
   isAdminUser,
 } from "@/lib/supabase-admin";
-import { buildMembershipActivation } from "@/lib/membership";
+import { activateMembershipForPayment } from "@/lib/membership";
 import { sendEmailViaResend } from "@/lib/email";
 import { randomBytes } from "node:crypto";
 
@@ -80,73 +80,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update payment request status
-    const { error: updateError } = await (db as any)
-      .from("payment_requests")
-      .update({
-        status,
-        admin_notes: adminNotes || null,
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-      } as any)
-      .eq("id", paymentRequestId);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-
     // If approved, create or update membership
     if (status === "approved") {
-      const { data: plan } = await (db as any)
-        .from("membership_plans")
-        .select("duration_days")
-        .eq("id", paymentRequest.plan_id)
-        .single();
-
-      const durationDays = plan?.duration_days || 30;
-      const startDate = new Date();
       const accessKey = createAccessKey();
-      const activation = buildMembershipActivation({
-        userId: paymentRequest.user_id,
-        planId: paymentRequest.plan_id,
+      await (db as any)
+        .from("payment_requests")
+        .update({ admin_notes: adminNotes || null })
+        .eq("id", paymentRequestId);
+
+      const activation = await activateMembershipForPayment(db, {
         paymentRequestId,
         accessKey,
-        startDate,
-        durationDays,
+        reviewedBy: user.id,
       });
-
-      // Check if user already has a membership
-      const { data: existingMembership } = await (db as any)
-        .from("memberships")
-        .select("id")
-        .eq("user_id", paymentRequest.user_id)
-        .maybeSingle();
-
-      if (existingMembership) {
-        const { error: membershipError } = await (db as any)
-          .from("memberships")
-          .update({
-            ...activation,
-            user_id: paymentRequest.user_id,
-          } as any)
-          .eq("id", existingMembership.id);
-        if (membershipError) {
-          return NextResponse.json(
-            { error: membershipError.message },
-            { status: 500 },
-          );
-        }
-      } else {
-        const { error: membershipError } = await (db as any)
-          .from("memberships")
-          .insert(activation as any);
-        if (membershipError) {
-          return NextResponse.json(
-            { error: membershipError.message },
-            { status: 500 },
-          );
-        }
-      }
+      const issuedAccessKey = activation.already_activated ? null : accessKey;
 
       const { data: memberProfile } = await (db as any)
         .from("profiles")
@@ -164,7 +111,7 @@ export async function POST(request: Request) {
               `Hi ${memberProfile.full_name || "there"},`,
               "",
               "Your payment has been approved and your premium membership is now active.",
-              `Access key: ${accessKey}`,
+              ...(issuedAccessKey ? [`Access key: ${issuedAccessKey}`] : []),
               "",
               "Sign in at https://www.feraaisolution.com and open Stack Advisor to use your premium access.",
             ].join("\n"),
@@ -185,11 +132,28 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: "Payment approved and membership activated.",
-        accessKey,
+        message: activation.already_activated
+          ? "Membership was already activated."
+          : "Payment approved and membership activated.",
+        accessKey: issuedAccessKey,
         emailSent,
         request: updatedRequest,
       });
+    }
+
+    const { error: updateError } = await (db as any)
+      .from("payment_requests")
+      .update({
+        status,
+        admin_notes: adminNotes || null,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+      } as any)
+      .eq("id", paymentRequestId)
+      .eq("status", "pending");
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     const { error: revokeError } = await (db as any)
@@ -219,9 +183,11 @@ export async function POST(request: Request) {
       message: `Payment request ${status} successfully.`,
       request: updatedRequest,
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: error instanceof Error ? error.message : "Internal server error",
+      },
       { status: 500 },
     );
   }
