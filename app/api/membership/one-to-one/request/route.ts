@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { sendEmailViaResend } from "@/lib/email";
+import { getActiveMembership } from "@/lib/membership";
 
 export async function POST(request: Request) {
   try {
@@ -16,15 +17,8 @@ export async function POST(request: Request) {
     const { preferred_time, message } = body || {};
 
     // Check membership
-    const membershipRes = await supabase
-      .from("memberships")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
-
-    if (!membershipRes.data)
+    const membership = await getActiveMembership(supabase, user.id);
+    if (!membership)
       return NextResponse.json({ error: "Premium required" }, { status: 403 });
 
     const fromEmail = process.env.FROM_EMAIL || "no-reply@feraaisolution.com";

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { generateICS } from "@/lib/ics";
 import { sendEmailViaResend } from "@/lib/email";
+import { getActiveMembership } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -73,14 +74,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Check premium membership
-    const membershipRes = await supabase
-      .from("memberships")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
-    if (!membershipRes.data)
+    const membership = await getActiveMembership(supabase, user.id);
+    if (!membership)
       return NextResponse.json({ error: "Premium required" }, { status: 403 });
 
     const body = await request.json();

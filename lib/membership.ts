@@ -111,3 +111,16 @@ export async function activateMembershipForPayment(
     already_activated: boolean;
   };
 }
+
+export async function getActiveMembership(db: any, userId: string) {
+  const { data, error } = await db
+    .from("memberships")
+    .select("*, membership_plans(id, name, slug)")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .gt("end_date", new Date().toISOString())
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}

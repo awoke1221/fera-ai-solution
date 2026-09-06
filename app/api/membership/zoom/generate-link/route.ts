@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import nodeCrypto from "crypto";
+import { getActiveMembership } from "@/lib/membership";
 
 function makeToken() {
   return nodeCrypto.randomUUID();
@@ -24,15 +25,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Check premium membership
-    const membershipRes = await supabase
-      .from("memberships")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
-
-    if (!membershipRes.data) {
+    const membership = await getActiveMembership(supabase, user.id);
+    if (!membership) {
       return NextResponse.json({ error: "Premium required" }, { status: 403 });
     }
 

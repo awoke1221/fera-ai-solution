@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, isAdminUser } from "@/lib/supabase-admin";
+import { getActiveMembership } from "@/lib/membership";
 
 async function refreshZoomTokenIfNeeded(supabase: any, tokenRow: any) {
   const now = new Date();
@@ -57,16 +58,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Check membership
-    const membershipRes = await supabase
-      .from("memberships")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
+    const membership = await getActiveMembership(supabase, user.id);
 
     const isAdmin = await isAdminUser(user);
-    if (!membershipRes.data && !isAdmin) {
+    if (!membership && !isAdmin) {
       return NextResponse.json(
         { error: "Premium membership required" },
         { status: 403 },
