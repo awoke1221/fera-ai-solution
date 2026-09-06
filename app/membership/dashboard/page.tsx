@@ -367,6 +367,12 @@ export default function MembershipDashboardPage() {
                           )}
                         </span>
                       </div>
+                      <div className="dash-membership-item">
+                        <span className="dash-meta-label">Access Key</span>
+                        <span className="dash-meta-value">
+                          {membership.access_key || "Check your approval email"}
+                        </span>
+                      </div>
                     </div>
                     <Link
                       href="/stack-advisor"

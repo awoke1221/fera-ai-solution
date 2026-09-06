@@ -193,9 +193,19 @@ export function AdminMembershipsClient() {
         }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to approve");
+      }
+
+      if (data.emailSent) {
+        alert(
+          "Payment approved. The premium access key was emailed to the member.",
+        );
+      } else {
+        alert(
+          `Payment approved, but the email was not sent. Access key: ${data.accessKey || "unavailable"}. Configure RESEND_API_KEY.`,
+        );
       }
 
       fetchRequests(filter);

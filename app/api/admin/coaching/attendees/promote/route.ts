@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, isAdminUser } from "@/lib/supabase-admin";
 import { generateICS } from "@/lib/ics";
-import { sendEmailViaSendGrid } from "@/lib/email";
+import { sendEmailViaResend } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
             : undefined,
           organizerEmail: process.env.FROM_EMAIL || undefined,
         });
-        await sendEmailViaSendGrid({
+        await sendEmailViaResend({
           to: attendee.email,
           subject: `You're in! ${s.title}`,
           html: `<p>You've been promoted to a confirmed spot for ${s.title}.</p>`,

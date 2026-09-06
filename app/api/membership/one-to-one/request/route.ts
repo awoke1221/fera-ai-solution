@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { sendEmailViaSendGrid } from "@/lib/email";
+import { sendEmailViaResend } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       <p>Message: ${message || "(none)"}</p>
       <p>Manage requests in the admin dashboard.</p>`;
 
-    await sendEmailViaSendGrid({
+    await sendEmailViaResend({
       to: support,
       subject: `1:1 Coaching Request — ${user.email}`,
       html,

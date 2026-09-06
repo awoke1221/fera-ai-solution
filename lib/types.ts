@@ -49,6 +49,8 @@ export type Membership = {
   end_date: string;
   is_active: boolean;
   auto_renew: boolean;
+  access_key?: string | null;
+  access_key_issued_at?: string | null;
   created_at: string;
   // joined
   plan_name?: string;

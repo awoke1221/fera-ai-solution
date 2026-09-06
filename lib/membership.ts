@@ -2,12 +2,14 @@ export function buildMembershipActivation({
   userId,
   planId,
   paymentRequestId,
+  accessKey,
   startDate,
   durationDays,
 }: {
   userId: string;
   planId: string;
   paymentRequestId?: string | null;
+  accessKey?: string | null;
   startDate: Date;
   durationDays: number;
 }) {
@@ -22,6 +24,11 @@ export function buildMembershipActivation({
     is_active: true,
     auto_renew: false,
   };
+
+  if (accessKey) {
+    payload.access_key = accessKey;
+    payload.access_key_issued_at = startDate.toISOString();
+  }
 
   if (paymentRequestId) {
     payload.payment_request_id = paymentRequestId;

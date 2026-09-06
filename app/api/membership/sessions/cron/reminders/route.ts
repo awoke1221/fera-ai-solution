@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { generateICS } from "@/lib/ics";
-import { sendEmailViaSendGrid } from "@/lib/email";
+import { sendEmailViaResend } from "@/lib/email";
 
 // This endpoint is intended to be called by a scheduler (cron) to send email reminders.
 export async function POST() {
@@ -51,7 +51,7 @@ export async function POST() {
           const subject = `Reminder: ${s.title} — ${new Date(s.start_time).toLocaleString()}`;
           const html = `<p>Hi ${a.profiles?.full_name || "there"},</p><p>This is a reminder for your upcoming session: <strong>${s.title}</strong> at ${new Date(s.start_time).toLocaleString()}.</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL || ""}/membership/coaching/${s.id}">View session details</a></p>`;
 
-          await sendEmailViaSendGrid({
+          await sendEmailViaResend({
             to,
             subject,
             html,

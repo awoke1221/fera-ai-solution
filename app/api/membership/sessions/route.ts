@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { generateICS } from "@/lib/ics";
-import { sendEmailViaSendGrid } from "@/lib/email";
+import { sendEmailViaResend } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -230,7 +230,7 @@ export async function DELETE(request: Request) {
               organizerEmail: process.env.FROM_EMAIL || undefined,
             });
 
-            await sendEmailViaSendGrid({
+            await sendEmailViaResend({
               to: attendee.email,
               subject: `You're in! ${s.title}`,
               html: `<p>Hi ${attendee.full_name || "there"},</p><p>Good news — you've been promoted from the waitlist to a confirmed spot for <strong>${s.title}</strong> at ${new Date(s.start_time).toLocaleString()}.</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL || ""}/membership/coaching/${s.id}">View session details</a></p>`,
