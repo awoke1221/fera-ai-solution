@@ -18,10 +18,13 @@ export function MembershipCheck({ children }: MembershipCheckProps) {
   useEffect(() => {
     const refreshMembership = () => {
       fetch("/api/membership/status", { cache: "no-store" })
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Membership status unavailable");
+          return res.json();
+        })
         .then((data) => {
-          setUser(data.user);
-          setHasPremium(data.hasPremium);
+          setUser(data?.user ?? null);
+          setHasPremium(data?.hasPremium === true);
         })
         .catch(() => {
           setUser(null);

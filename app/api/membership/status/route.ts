@@ -72,8 +72,10 @@ export async function GET() {
       }
     }
 
+    const membershipClient = serviceClient || supabase;
+
     const [membershipResult, paymentsResult] = await Promise.all([
-      supabase
+      membershipClient
         .from("memberships")
         .select("*, membership_plans(id, name, slug)")
         .eq("user_id", user.id)

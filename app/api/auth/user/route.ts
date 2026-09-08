@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   createAdminClient,
   ensureProfileForUser,
+  getAdminServiceClient,
   isAdminUser,
 } from "@/lib/supabase-admin";
 
@@ -44,7 +45,8 @@ export async function GET() {
       profile = refreshedProfile.data;
     }
 
-    const membershipResult = await supabase
+    const membershipClient = getAdminServiceClient() || supabase;
+    const membershipResult = await membershipClient
       .from("memberships")
       .select("*, membership_plans(name)")
       .eq("user_id", user.id)
