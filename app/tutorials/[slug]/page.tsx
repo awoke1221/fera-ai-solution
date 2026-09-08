@@ -102,17 +102,6 @@ export default async function TutorialPage({
                     color: "inherit",
                     transition: "all 0.2s",
                   }}
-                  onMouseOver={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(148,163,184,0.4)";
-                    (e.currentTarget as HTMLElement).style.background =
-                      "rgba(255,255,255,0.02)";
-                  }}
-                  onMouseOut={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(148,163,184,0.2)";
-                    (e.currentTarget as HTMLElement).style.background = "";
-                  }}
                 >
                   <span style={{ fontSize: "0.875rem", color: "#64748b" }}>
                     ← Previous Lesson
@@ -137,17 +126,6 @@ export default async function TutorialPage({
                     color: "inherit",
                     transition: "all 0.2s",
                     textAlign: "right",
-                  }}
-                  onMouseOver={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(148,163,184,0.4)";
-                    (e.currentTarget as HTMLElement).style.background =
-                      "rgba(255,255,255,0.02)";
-                  }}
-                  onMouseOut={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(148,163,184,0.2)";
-                    (e.currentTarget as HTMLElement).style.background = "";
                   }}
                 >
                   <span style={{ fontSize: "0.875rem", color: "#64748b" }}>
