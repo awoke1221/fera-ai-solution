@@ -13,9 +13,6 @@ export default function SignupPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      // Use the server API so the redirect URL is built server-side
-      // with the production domain (NEXT_PUBLIC_SITE_URL), avoiding
-      // localhost redirects from the client-side PKCE flow.
       const next =
         new URLSearchParams(window.location.search).get("next") ||
         "/membership";
@@ -42,8 +39,7 @@ export default function SignupPage() {
           <div className="eyebrow">Get Started</div>
           <h1 className="h-display">Create your account</h1>
           <p className="lead">
-            Join Fera AI Solutions with your Google account and unlock premium
-            the Stack Advisor, templates, and expert guidance.
+            Join Fera AI Solutions with your Google account.
           </p>
         </div>
       </div>

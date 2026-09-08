@@ -54,7 +54,7 @@ export const backendExtraTools: ToolOption[] = [
   {
     id: "laravel",
     name: "Laravel",
-    icon: "🎼",
+    icon: "",
     description:
       "PHP web framework with elegant syntax, Eloquent ORM, built-in auth, queues, and Blade templating. Batteries included.",
     category: "backend",

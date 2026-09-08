@@ -13,9 +13,6 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      // Use the server API so the redirect URL is built server-side
-      // with the production domain (NEXT_PUBLIC_SITE_URL), avoiding
-      // localhost redirects from the client-side PKCE flow.
       const next =
         new URLSearchParams(window.location.search).get("next") ||
         "/membership";
@@ -42,8 +39,7 @@ export default function LoginPage() {
           <div className="eyebrow">Authentication</div>
           <h1 className="h-display">Welcome back</h1>
           <p className="lead">
-            Sign in with your Google account to manage your membership and
-            access premium content.
+            Sign in with your Google account to manage your membership.
           </p>
         </div>
       </div>
