@@ -199,7 +199,7 @@ class TypedEventEmitter {
 
 const emitter = new TypedEventEmitter();
 emitter.on("user:login", (payload) => {
-  console.log(payload.userId); // ✓
+  console.log(payload.userId); // Valid
   // console.log(payload.reason); // Error
 });
 

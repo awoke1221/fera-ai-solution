@@ -224,13 +224,13 @@ input[type="checkbox"] {
 }
 
 a[target="_blank"]::after {
-  content: " ↗";
+  content: " (external)";
   font-size: 0.8em;
 }
 
 /* Pseudo-elements for generated content */
 .list-item::before {
-  content: "→ ";
+  content: "* ";
   color: var(--color-primary);
   font-weight: bold;
 }
@@ -326,19 +326,17 @@ a[target="_blank"]::after {
 
 **The three metrics that matter**:
 
-```
-1. Largest Contentful Paint (LCP): When main content is visible
+1. **Largest Contentful Paint (LCP)**: When main content is visible
    - Target: < 2.5 seconds
    - Affects: First impression, bounce rate
 
-2. Interaction to Next Paint (INP): Responsiveness to user input
+2. **Interaction to Next Paint (INP)**: Responsiveness to user input
    - Target: < 200 milliseconds
    - Affects: User experience smoothness
 
-3. Cumulative Layout Shift (CLS): Visual stability
+3. **Cumulative Layout Shift (CLS)**: Visual stability
    - Target: < 0.1
    - Affects: User frustration, accidental clicks
-```
 
 ### 2. Optimizing LCP
 
@@ -548,14 +546,12 @@ body.modal-open {
 
 ### 1. Critical Rendering Path
 
-```
-1. Parse HTML → DOM
-2. Fetch CSS → CSSOM
-3. Combine DOM + CSSOM → Render Tree
-4. Calculate layout → Layout
-5. Paint elements → Paint
-6. Composite layers → Composite
-```
+1. Parse HTML => DOM
+2. Fetch CSS => CSSOM
+3. Combine DOM + CSSOM => Render Tree
+4. Calculate layout => Layout
+5. Paint elements => Paint
+6. Composite layers => Composite
 
 **Optimization strategy**:
 

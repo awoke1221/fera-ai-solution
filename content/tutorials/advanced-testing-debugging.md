@@ -17,19 +17,11 @@ Comprehensive guide to testing strategies, debugging techniques, and monitoring 
 
 ### 1. Testing Pyramid
 
-```
-        △
-       /|\
-      / | \
-     /  |  \
-    / E2E  \        (1) End-to-end tests
-   /--------- \      (10-20% of tests)
-  /  | | | |  \
- / Int. Tests  \    (30-50% of tests)
-/--------|------\
-| Unit Tests    |   (50-70% of tests)
-└────────────────┘
-```
+The testing pyramid shows the distribution of test types:
+
+- **Unit Tests** (bottom, 50-70%): Test individual functions in isolation
+- **Integration Tests** (middle, 30-50%): Test multiple components together
+- **E2E Tests** (top, 10-20%): Test complete user flows
 
 **Implementation strategy**:
 
@@ -294,18 +286,18 @@ describe("StringUtils", () => {
 debugger; // Execution stops here when DevTools open
 
 // 2. Conditional breakpoints
-// Right-click breakpoint → "Add conditional breakpoint"
+// Right-click breakpoint and select "Add conditional breakpoint"
 // Condition: response.status >= 400
 
 // 3. DOM breakpoints
-// Right-click element → Break on... → Subtree modifications
+// Right-click element and select "Break on... Subtree modifications"
 
 // 4. Event listener breakpoints
-// DevTools → Sources → Event Listener Breakpoints
+// Open DevTools, go to Sources, then Event Listener Breakpoints
 // Select: click, input, change, load, etc.
 
 // 5. Use logpoint instead of console.log
-// Right-click breakpoint → "Add logpoint"
+// Right-click breakpoint and select "Add logpoint"
 // Expression: `Received response: ${response.status}`
 
 // 6. Watch expressions
@@ -325,7 +317,7 @@ function caller() {
 }
 
 function callee() {
-  debugger; // Call Stack shows: callee ← caller ← main
+  debugger; // Call Stack shows: callee <- caller <- main
 }
 ```
 
@@ -397,16 +389,16 @@ const originalFetch = window.fetch;
 window.fetch = function (...args) {
   const [resource, config] = args;
 
-  console.log("→ Request:", resource, config);
+  console.log("[Request]", resource, config);
 
   return originalFetch
     .apply(this, args)
     .then((response) => {
-      console.log("← Response:", response.status, response.statusText);
+      console.log("[Response]", response.status, response.statusText);
       return response;
     })
     .catch((error) => {
-      console.error("✗ Network Error:", error);
+      console.error("[ERROR] Network Error:", error);
       throw error;
     });
 };
