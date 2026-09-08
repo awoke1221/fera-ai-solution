@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { projects } from "./data";
 import { SiteShell } from "../components/site-shell";
 
@@ -38,14 +37,12 @@ export default function ProjectsPage() {
                   </div>
                   <span className="work-year">{item.year}</span>
                 </div>
-                <Image
-                  src={item.image}
+                <img
+                  src={item.image || "/fera-logo.jpg"}
                   alt={`${item.title} homepage preview`}
                   className="work-card-image"
-                  width={500}
-                  height={300}
-                  priority
-                  quality={85}
+                  loading="lazy"
+                  decoding="async"
                 />
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>

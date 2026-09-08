@@ -15,7 +15,8 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://feraisolutions.com"),
   title: {
-    default: "Fera AI Solutions — Intelligent Software Engineering",
+    default:
+      "Fera AI Solutions — Intelligent Software Software Development Platform",
     template: "%s | Fera AI Solutions",
   },
   description:
@@ -35,9 +36,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Fera AI Solutions" }],
   creator: "Fera AI Solutions",
   openGraph: {
-    title: "Fera AI Solutions — Intelligent Software Engineering",
+    title: "Fera AI Solutions — Intelligent Software development Platform",
     description:
-      "We design and ship cutting-edge software powered by AI for teams that need speed, clarity and production-ready execution.",
+      "We design cutting-edge software development guide powered by AI for teams that need speed, clarity and production-ready execution.",
     url: "https://feraisolutions.com",
     siteName: "Fera AI Solutions",
     locale: "en_US",
@@ -45,9 +46,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fera AI Solutions — Intelligent Software Engineering",
+    title: "Fera AI Solutions — Intelligent Software development Platform",
     description:
-      "AI-powered software studio building modern products for ambitious teams.",
+      "AI-powered software development studio building modern products and platforms for teams that need speed, clarity and production-ready execution.",
   },
   alternates: {
     canonical: "https://feraisolutions.com",

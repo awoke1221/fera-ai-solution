@@ -10,6 +10,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { memo, useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import useAuth from "../store/useAuth";
+import { isActivePath, shouldHideNav } from "./nav-utils";
 
 const FeraAIChat = dynamic(
   () => import("./fera-ai-chat").then((module) => module.FeraAIChat),
@@ -27,20 +28,20 @@ const navGroups = [
       {
         href: "/services",
         label: "Services",
-        description: "Custom platform builds and AI transformations",
-        icon: "✦",
+        description: "our services",
+        icon: "▤",
       },
       {
         href: "/solutions",
         label: "Solutions",
-        description: "Vertical products and execution frameworks",
-        icon: "◎",
+        description: "what we give",
+        icon: "▤",
       },
       {
         href: "/projects",
         label: "Projects",
-        description: "Case studies and measurable outcomes",
-        icon: "▣",
+        description: "given projects",
+        icon: "▤",
       },
     ],
   },
@@ -51,43 +52,43 @@ const navGroups = [
       {
         href: "/about",
         label: "About",
-        description: "Our mission and expertise",
+        description: "mission",
         icon: "◌",
       },
       {
         href: "/process",
         label: "Process",
-        description: "How delivery stays sharp",
+        description: " delivery",
         icon: "↗",
       },
       {
         href: "/contact",
         label: "Contact us",
-        description: "Book a discovery call",
+        description: "for a project",
         icon: "✉",
       },
     ],
   },
   {
     label: "Learn",
-    description: "Insights, coaching, and hands-on learning",
+    description: "hands-on learning",
     items: [
       {
         href: "/tutorials",
         label: "Tutorials",
-        description: "Practical learning resources",
+        description: "resources",
         icon: "▤",
       },
       {
         href: "/membership/sessions",
         label: "Sessions",
-        description: "Live group learning and workshops",
+        description: "Live learning",
         icon: "◈",
       },
       {
         href: "/membership/one-to-one",
         label: "1:1",
-        description: "Direct advisory and mentoring",
+        description: "Direct mentoring",
         icon: "◎",
       },
     ],
@@ -104,6 +105,7 @@ export const SiteShell = memo(function SiteShell({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [navHidden, setNavHidden] = useState(false);
+  const [pageTransitioning, setPageTransitioning] = useState(false);
   const lastScrollYRef = useRef(0);
   const navHiddenRef = useRef(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -128,6 +130,13 @@ export const SiteShell = memo(function SiteShell({
 
   useEffect(() => {
     setOpenDropdown(null);
+    setPageTransitioning(true);
+
+    const timer = window.setTimeout(() => {
+      setPageTransitioning(false);
+    }, 180);
+
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   useEffect(() => {
@@ -160,14 +169,14 @@ export const SiteShell = memo(function SiteShell({
 
         setScrollProgress(progress);
 
-        const shouldHide = scrollTop > 80 && scrollTop > lastScrollYRef.current;
-        const shouldShow =
-          scrollTop < lastScrollYRef.current || scrollTop <= 80;
+        const nextHidden = shouldHideNav({
+          scrollY: scrollTop,
+          lastScrollY: lastScrollYRef.current,
+          menuOpen,
+        });
 
-        if (shouldHide && !navHiddenRef.current) {
-          setNavHidden(true);
-        } else if (shouldShow && navHiddenRef.current) {
-          setNavHidden(false);
+        if (nextHidden !== navHiddenRef.current) {
+          setNavHidden(nextHidden);
         }
 
         lastScrollYRef.current = scrollTop;
@@ -275,7 +284,13 @@ export const SiteShell = memo(function SiteShell({
 
       <header className={navHidden ? "nav-hidden" : ""}>
         <nav className="wrap nav-shell" ref={navRef}>
-          <Link href="/" className="brand" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/"
+            className="brand"
+            prefetch={true}
+            onMouseEnter={() => router.prefetch("/")}
+            onClick={() => setMenuOpen(false)}
+          >
             <img
               src="/fera-logo.jpg"
               alt="Fera AI Solutions logo"
@@ -294,10 +309,8 @@ export const SiteShell = memo(function SiteShell({
             }}
           >
             {navGroups.map((group) => {
-              const isGroupActive = group.items.some(
-                (item) =>
-                  pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`),
+              const isGroupActive = group.items.some((item) =>
+                isActivePath(pathname, item.href),
               );
 
               return (
@@ -351,15 +364,16 @@ export const SiteShell = memo(function SiteShell({
 
                     <div className="nav-dropdown-grid">
                       {group.items.map((item) => {
-                        const isActive =
-                          pathname === item.href ||
-                          pathname.startsWith(`${item.href}/`);
+                        const isActive = isActivePath(pathname, item.href);
 
                         return (
                           <Link
                             key={item.href}
                             href={item.href}
+                            prefetch={true}
                             className={`nav-dropdown-item ${isActive ? "active" : ""}`}
+                            onMouseEnter={() => router.prefetch(item.href)}
+                            onFocus={() => router.prefetch(item.href)}
                             onClick={() => {
                               setMenuOpen(false);
                               setOpenDropdown(null);
@@ -384,9 +398,12 @@ export const SiteShell = memo(function SiteShell({
             {!user && (
               <Link
                 href="/stack-advisor"
+                prefetch={true}
                 className={`nav-menu-link ${
                   pathname.startsWith("/stack-advisor") ? "active" : ""
                 }`}
+                onMouseEnter={() => router.prefetch("/stack-advisor")}
+                onFocus={() => router.prefetch("/stack-advisor")}
                 onClick={() => {
                   setMenuOpen(false);
                   setOpenDropdown(null);
@@ -471,7 +488,10 @@ export const SiteShell = memo(function SiteShell({
 
             <Link
               href="/book"
+              prefetch={true}
               className="btn nav-menu-cta"
+              onMouseEnter={() => router.prefetch("/book")}
+              onFocus={() => router.prefetch("/book")}
               onClick={() => {
                 setMenuOpen(false);
                 setOpenDropdown(null);
@@ -486,9 +506,12 @@ export const SiteShell = memo(function SiteShell({
               <>
                 <Link
                   href="/stack-advisor"
+                  prefetch={true}
                   className={`nav-feature-link ${
                     pathname.startsWith("/stack-advisor") ? "active" : ""
                   }`}
+                  onMouseEnter={() => router.prefetch("/stack-advisor")}
+                  onFocus={() => router.prefetch("/stack-advisor")}
                   onClick={() => {
                     setMenuOpen(false);
                     setOpenDropdown(null);
@@ -600,7 +623,10 @@ export const SiteShell = memo(function SiteShell({
               <>
                 <Link
                   href="/auth/login"
+                  prefetch={true}
                   className="nav-login-link"
+                  onMouseEnter={() => router.prefetch("/auth/login")}
+                  onFocus={() => router.prefetch("/auth/login")}
                   onClick={() => {
                     setMenuOpen(false);
                     setOpenDropdown(null);
@@ -610,7 +636,10 @@ export const SiteShell = memo(function SiteShell({
                 </Link>
                 <Link
                   href="/auth/signup"
+                  prefetch={true}
                   className="btn solid nav-signup-link"
+                  onMouseEnter={() => router.prefetch("/auth/signup")}
+                  onFocus={() => router.prefetch("/auth/signup")}
                   onClick={() => {
                     setMenuOpen(false);
                     setOpenDropdown(null);
@@ -638,7 +667,13 @@ export const SiteShell = memo(function SiteShell({
         </nav>
       </header>
 
-      <main id="top">{children}</main>
+      <main
+        id="top"
+        key={pathname}
+        className={`page-shell ${pageTransitioning ? "page-shell-entering" : "page-shell-ready"}`}
+      >
+        {children}
+      </main>
 
       <footer>
         <div className="wrap">

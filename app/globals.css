@@ -576,7 +576,8 @@ nav.wrap {
   position: absolute;
   top: calc(100% + 14px);
   left: 0;
-  min-width: 340px;
+  width: min(420px, calc(100vw - 32px));
+  min-width: 0;
   max-width: 90vw;
   padding: 14px;
   display: flex;
@@ -600,6 +601,7 @@ nav.wrap {
     visibility 0.2s ease;
   z-index: 1000;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .nav-dropdown-group.open .nav-dropdown-menu,
@@ -635,8 +637,15 @@ nav.wrap {
 
 .nav-dropdown-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .nav-dropdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .nav-dropdown-item {
@@ -645,9 +654,13 @@ nav.wrap {
   gap: 12px;
   border-radius: 16px;
   width: 100%;
+  max-width: 100%;
   justify-content: flex-start;
   padding: 13px 11px;
   text-align: left;
+  min-width: 0;
+  overflow: hidden;
+  white-space: normal;
   background: linear-gradient(
     135deg,
     rgba(248, 250, 252, 0.85),
@@ -700,9 +713,14 @@ nav.wrap {
 
 .nav-dropdown-copy {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .nav-dropdown-copy strong {
@@ -711,6 +729,7 @@ nav.wrap {
   font-size: 0.88rem;
   font-weight: 750;
   letter-spacing: -0.005em;
+  white-space: normal;
 }
 
 .nav-dropdown-copy small {
@@ -719,6 +738,9 @@ nav.wrap {
   font-size: 0.72rem;
   line-height: 1.5;
   font-weight: 500;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .nav-dropdown-caret {
@@ -6112,6 +6134,24 @@ nav.wrap {
 /* Sections */
 main {
   background: var(--bg);
+}
+
+.page-shell {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.page-shell-entering {
+  opacity: 0.65;
+  transform: translateY(8px);
+}
+
+.page-shell-ready {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 section {

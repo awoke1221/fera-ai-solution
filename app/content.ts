@@ -1,7 +1,3 @@
-// ─── Data types for the entire portfolio ───────────────
-// These types define the shape of all dynamic content used
-// across the site: services, testimonials, team, etc.
-
 /** A single service offering (icon, title, description) */
 export type Service = {
   title: string;

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { projects } from "../data";
 import { SiteShell } from "@/app/components/site-shell";
@@ -35,14 +34,12 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
               <span>{project.year}</span>
               <span>{project.tags.join(" • ")}</span>
             </div>
-            <Image
-              src={project.image}
+            <img
+              src={project.image || "/fera-logo.jpg"}
               alt={`${project.title} homepage preview`}
               className="project-preview-image"
-              width={900}
-              height={500}
-              priority
-              quality={85}
+              loading="eager"
+              decoding="async"
             />
             <div className="hero-cta">
               <a

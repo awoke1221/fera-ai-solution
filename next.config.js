@@ -27,6 +27,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.temeupholstery.com",
       },
+      {
+        protocol: "https",
+        hostname: "*.nhattythebarber.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.vercel.app",
+      },
     ],
   },
 };
