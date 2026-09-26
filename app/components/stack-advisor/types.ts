@@ -93,6 +93,8 @@ export type AdvancedGuide = {
 
 // ─── Per-Project-Type Tool Mappings ─────────────────
 export type CategoryToolPriorities = {
+  /** Why this category was reordered for this project type */
+  reason: string;
   /** Tool IDs to show first (recommended for this project type) */
   prioritize: string[];
   /** Tool IDs to hide (not relevant for this project type) */

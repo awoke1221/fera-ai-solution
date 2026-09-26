@@ -29,21 +29,27 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       storage: {
+        reason:
+          "Prioritized for Ethiopian media delivery and lower bandwidth cost.",
         prioritize: ["bunny", "cloudinary", "supabase_storage"],
         hide: [],
         ethiopianPriority: ["bunny"],
       },
       payment: {
+        reason: "Prioritized for Ethiopian mobile-money and payment support.",
         prioritize: ["chapa", "paypal", "stripe"],
         hide: ["telebirr"],
         ethiopianPriority: ["chapa"],
       },
       backend: {
+        reason:
+          "Prioritized for a lightweight LMS backend without unnecessary complexity.",
         prioritize: ["nextjs_api", "node", "python_fastapi"],
         hide: [],
         ethiopianPriority: [],
       },
       email: {
+        reason: "Prioritized for reliable student and admin notifications.",
         prioritize: ["resend", "sendgrid"],
         hide: [],
         ethiopianPriority: ["resend"],
@@ -77,21 +83,29 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       storage: {
+        reason:
+          "Prioritized for product media delivery and faster storefront performance.",
         prioritize: ["cloudinary", "bunny", "supabase_storage"],
         hide: [],
         ethiopianPriority: ["bunny", "cloudinary"],
       },
       payment: {
+        reason:
+          "Prioritized for checkout conversion and Ethiopian payment coverage.",
         prioritize: ["chapa", "stripe", "paypal", "telebirr"],
         hide: [],
         ethiopianPriority: ["chapa", "telebirr"],
       },
       search: {
+        reason:
+          "Prioritized for browse-heavy storefront discovery and product findability.",
         prioritize: ["meilisearch", "algolia", "typesense"],
         hide: [],
         ethiopianPriority: ["meilisearch"],
       },
       cache: {
+        reason:
+          "Prioritized for faster checkout and catalog reads during traffic spikes.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_self"],
@@ -124,21 +138,27 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       payment: {
+        reason: "Prioritized for recurring billing and subscription flows.",
         prioritize: ["stripe", "chapa", "paypal"],
         hide: ["telebirr"],
         ethiopianPriority: ["chapa"],
       },
       cache: {
+        reason:
+          "Prioritized for session speed and dashboard performance under load.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_upstash"],
       },
       monitoring: {
+        reason:
+          "Prioritized for uptime visibility and product health tracking.",
         prioritize: ["sentry", "posthog"],
         hide: [],
         ethiopianPriority: ["posthog"],
       },
       email: {
+        reason: "Prioritized for onboarding and account lifecycle messaging.",
         prioritize: ["resend", "sendgrid"],
         hide: [],
         ethiopianPriority: ["resend"],
@@ -171,21 +191,29 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       database: {
+        reason:
+          "Prioritized for real-time social data and fast feed interactions.",
         prioritize: ["supabase_db", "mongodb", "postgresql"],
         hide: [],
         ethiopianPriority: ["supabase_db"],
       },
       storage: {
+        reason:
+          "Prioritized for image-heavy social content and media delivery.",
         prioritize: ["supabase_storage", "cloudinary", "bunny"],
         hide: [],
         ethiopianPriority: ["bunny"],
       },
       cache: {
+        reason:
+          "Prioritized for feed performance and low-latency engagement loops.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_upstash"],
       },
       mobile: {
+        reason:
+          "Prioritized for Android-first engagement in Ethiopian markets.",
         prioritize: ["react_native", "flutter"],
         hide: [],
         ethiopianPriority: ["react_native"],
@@ -217,6 +245,8 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       backend: {
+        reason:
+          "Prioritized for enterprise-grade CRUD, compliance, and predictable operations.",
         prioritize: [
           "django",
           "python_fastapi",
@@ -228,16 +258,22 @@ export const projectToolMappings: ProjectToolMapping[] = [
         ethiopianPriority: ["django", "laravel"],
       },
       database: {
+        reason:
+          "Prioritized for relational integrity and local data residency requirements.",
         prioritize: ["postgresql", "supabase_db", "neon"],
         hide: ["mongodb", "planetscale"],
         ethiopianPriority: ["postgresql"],
       },
       deploy_backend: {
+        reason:
+          "Prioritized for controlled hosting, security, and local deployment options.",
         prioritize: ["docker_vps", "railway", "render"],
         hide: [],
         ethiopianPriority: ["docker_vps"],
       },
       auth: {
+        reason:
+          "Prioritized for secure identity flows with low operational overhead.",
         prioritize: ["nextauth", "supabase_auth", "clerk"],
         hide: ["firebase_auth"],
         ethiopianPriority: ["nextauth"],
@@ -270,26 +306,35 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       backend: {
+        reason:
+          "Prioritized for secure API performance and compliance-friendly backend operations.",
         prioritize: ["python_fastapi", "go_gin", "node", "nextjs_api"],
         hide: [],
         ethiopianPriority: ["python_fastapi"],
       },
       database: {
+        reason:
+          "Prioritized for strong consistency, auditability, and data residency control.",
         prioritize: ["postgresql", "supabase_db", "neon", "turso"],
         hide: ["mongodb", "planetscale"],
         ethiopianPriority: ["postgresql"],
       },
       payment: {
+        reason:
+          "Prioritized for Ethiopian payment rails and transaction safety.",
         prioritize: ["chapa", "telebirr", "stripe", "paypal"],
         hide: [],
         ethiopianPriority: ["chapa", "telebirr"],
       },
       cache: {
+        reason: "Prioritized for faster transaction and audit-log reads.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_self"],
       },
       monitoring: {
+        reason:
+          "Prioritized for fraud alerts, observability, and operational traceability.",
         prioritize: ["sentry", "posthog"],
         hide: [],
         ethiopianPriority: ["sentry"],
@@ -321,21 +366,29 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       backend: {
+        reason:
+          "Prioritized for secure patient workflows and healthcare-grade reliability.",
         prioritize: ["django", "python_fastapi", "node", "nextjs_api"],
         hide: [],
         ethiopianPriority: ["django", "python_fastapi"],
       },
       database: {
+        reason:
+          "Prioritized for privacy-sensitive records and local deployment constraints.",
         prioritize: ["postgresql", "supabase_db", "neon"],
         hide: ["mongodb", "planetscale", "turso"],
         ethiopianPriority: ["postgresql"],
       },
       deploy_backend: {
+        reason:
+          "Prioritized for self-hosted and regulated infrastructure control.",
         prioritize: ["docker_vps", "railway", "render"],
         hide: [],
         ethiopianPriority: ["docker_vps"],
       },
       storage: {
+        reason:
+          "Prioritized for confidential document storage and data-access control.",
         prioritize: ["supabase_storage", "cloudinary"],
         hide: ["bunny"],
         ethiopianPriority: ["supabase_storage"],
@@ -369,16 +422,22 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       storage: {
+        reason:
+          "Prioritized for visual property listings and high-quality media capture.",
         prioritize: ["cloudinary", "bunny", "supabase_storage"],
         hide: [],
         ethiopianPriority: ["cloudinary", "bunny"],
       },
       search: {
+        reason:
+          "Prioritized for location-driven property discovery and filtering.",
         prioritize: ["meilisearch", "algolia", "typesense"],
         hide: [],
         ethiopianPriority: ["meilisearch"],
       },
       database: {
+        reason:
+          "Prioritized for listing data, lead records, and fast retrieval.",
         prioritize: ["supabase_db", "postgresql", "neon"],
         hide: [],
         ethiopianPriority: ["postgresql"],
@@ -411,26 +470,35 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       storage: {
+        reason:
+          "Prioritized for CDN-heavy media delivery and fast content access.",
         prioritize: ["bunny", "cloudinary", "supabase_storage"],
         hide: [],
         ethiopianPriority: ["bunny"],
       },
       search: {
+        reason: "Prioritized for content discovery and article/topic indexing.",
         prioritize: ["meilisearch", "algolia", "typesense"],
         hide: [],
         ethiopianPriority: ["meilisearch"],
       },
       cache: {
+        reason:
+          "Prioritized for high-volume reading and performant content feeds.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_upstash"],
       },
       frontend: {
+        reason:
+          "Prioritized for a lightweight front end that works well on low-bandwidth connections.",
         prioritize: ["nextjs", "astro", "vue", "svelte"],
         hide: [],
         ethiopianPriority: ["astro"],
       },
       email: {
+        reason:
+          "Prioritized for newsletter and subscriber lifecycle workflows.",
         prioritize: ["resend", "sendgrid"],
         hide: [],
         ethiopianPriority: ["resend"],
@@ -463,16 +531,22 @@ export const projectToolMappings: ProjectToolMapping[] = [
     ],
     categoryPriorities: {
       payment: {
+        reason:
+          "Prioritized for booking deposits and local payment convenience.",
         prioritize: ["chapa", "stripe", "paypal"],
         hide: ["telebirr"],
         ethiopianPriority: ["chapa"],
       },
       cache: {
+        reason:
+          "Prioritized for live availability checks and faster booking flows.",
         prioritize: ["redis_upstash", "redis_self"],
         hide: [],
         ethiopianPriority: ["redis_upstash"],
       },
       database: {
+        reason:
+          "Prioritized for reservation records and high-frequency booking writes.",
         prioritize: ["supabase_db", "postgresql", "neon", "turso"],
         hide: [],
         ethiopianPriority: ["supabase_db"],

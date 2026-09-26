@@ -40,6 +40,49 @@ export function SecurityReportComponent({ report }: SecurityReportProps) {
     return "#dc2626"; // dark red
   };
 
+  const formatReviewDate = (dateString?: string): string => {
+    if (!dateString) return "Unknown review date";
+
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) return "Unknown review date";
+
+    return new Intl.DateTimeFormat("en", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(parsed);
+  };
+
+  const isReviewStale = (dateString?: string): boolean => {
+    if (!dateString) return false;
+
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) return false;
+
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 12);
+    return parsed < cutoff;
+  };
+
+  const renderReviewMeta = (issue: SecurityIssue) => {
+    const stale = isReviewStale(issue.lastReviewed);
+    return (
+      <div className="issue-review-meta">
+        <span className="issue-review-date">
+          Last verified {formatReviewDate(issue.lastReviewed)}
+        </span>
+        {stale && (
+          <span
+            className="issue-review-warning"
+            title="May need re-verification"
+          >
+            ⚠️ May need re-verification
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="security-report-container">
       {/* Header with Score */}
@@ -372,6 +415,8 @@ export function SecurityReportComponent({ report }: SecurityReportProps) {
                         {issue.severity}
                       </div>
                     </div>
+
+                    {renderReviewMeta(issue)}
 
                     {expandedIssue === issue.id && (
                       <div className="issue-expanded">

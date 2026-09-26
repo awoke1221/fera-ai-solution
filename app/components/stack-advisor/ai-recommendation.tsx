@@ -5,6 +5,7 @@ import {
   analyzeProjectRequirements,
   projectTypes,
   tools,
+  calculateCost,
   type ProjectType,
   type StructuredTechStackRecommendation,
   generateArchitectureStrategies,
@@ -263,6 +264,20 @@ export function AiRecommendation({
 
   const hasSelections = Object.keys(selections).length > 0;
 
+  const selectedTools = useMemo(
+    () =>
+      Object.values(selections)
+        .map((toolId) => tools.find((tool) => tool.id === toolId))
+        .filter(Boolean),
+    [selections],
+  );
+
+  const projectCostEstimate = useMemo(
+    () =>
+      calculateCost(selectedTools as any[], projectRequirements ?? undefined),
+    [projectRequirements, selectedTools],
+  );
+
   return (
     <div className="ai-recommend-container">
       {/* Header */}
@@ -339,6 +354,10 @@ export function AiRecommendation({
                 <div className="ai-summary-item">
                   <span className="ai-summary-label">Expected Scale:</span>
                   <span>{recommendation.projectSummary.expectedScale}</span>
+                </div>
+                <div className="ai-summary-item">
+                  <span className="ai-summary-label">Estimated Cost:</span>
+                  <span>${projectCostEstimate.totalMonthly.max}/mo</span>
                 </div>
                 <div className="ai-summary-item">
                   <span className="ai-summary-label">Overview:</span>

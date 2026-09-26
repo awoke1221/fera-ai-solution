@@ -192,8 +192,9 @@ export function StackAdvisorClient() {
   );
 
   const costEstimate = useMemo(
-    () => calculateCost(selectedTools as any[]),
-    [selectedTools],
+    () =>
+      calculateCost(selectedTools as any[], projectRequirements ?? undefined),
+    [projectRequirements, selectedTools],
   );
 
   const recommendedNextStep = useMemo(() => {
@@ -211,7 +212,7 @@ export function StackAdvisorClient() {
     const compatibilityBonus = compatibilityWarnings.length === 0 ? 25 : 10;
     const projectBonus = projectRequirements ? 20 : 5;
     return Math.min(98, Math.max(30, base + compatibilityBonus + projectBonus));
-  }, [compatibilityWarnings.length, projectRequirements, selectedTools.length]);
+  }, [compatibilityWarnings, projectRequirements, selectedTools]);
 
   const stackKpis = [
     {

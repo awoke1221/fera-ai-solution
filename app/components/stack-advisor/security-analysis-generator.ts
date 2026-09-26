@@ -16,7 +16,12 @@ import type {
 import type { ArchitectureStrategy } from "./architecture-strategy-types";
 
 // ─── Tech Stack Security Capabilities ────────────────────────
-const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
+// When a security recommendation or capability profile is revised, bump the
+// lastReviewed ISO date for the affected entries so the UI can flag stale reviews.
+const TECH_SECURITY_PROFILES: Record<
+  string,
+  Record<string, boolean | string> & { lastReviewed: string }
+> = {
   // Frontend frameworks
   "next.js": {
     hasBuiltInAuth: true,
@@ -25,6 +30,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   react: {
     hasBuiltInAuth: false,
@@ -33,6 +39,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   vue: {
     hasBuiltInAuth: false,
@@ -41,6 +48,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   angular: {
     hasBuiltInAuth: false,
@@ -49,6 +57,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
 
   // Backend frameworks
@@ -59,6 +68,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   express: {
     hasBuiltInAuth: false,
@@ -67,6 +77,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   fastapi: {
     hasBuiltInAuth: true,
@@ -75,6 +86,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: true,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   django: {
     hasBuiltInAuth: true,
@@ -83,6 +95,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: true,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
   flask: {
     hasBuiltInAuth: false,
@@ -91,6 +104,7 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasInputValidation: false,
     hasRateLimiting: false,
     hasEncryption: false,
+    lastReviewed: "2026-09-26",
   },
 
   // Databases
@@ -99,24 +113,28 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasEncryption: true,
     hasAuditLogging: false,
     hasBackupSupport: true,
+    lastReviewed: "2026-09-26",
   },
   mongodb: {
     hasRoleBasedAccess: true,
     hasEncryption: false,
     hasAuditLogging: false,
     hasBackupSupport: true,
+    lastReviewed: "2026-09-26",
   },
   mysql: {
     hasRoleBasedAccess: true,
     hasEncryption: false,
     hasAuditLogging: false,
     hasBackupSupport: true,
+    lastReviewed: "2026-09-26",
   },
   sqlite: {
     hasRoleBasedAccess: false,
     hasEncryption: false,
     hasAuditLogging: false,
     hasBackupSupport: false,
+    lastReviewed: "2026-09-26",
   },
 
   // Cache
@@ -124,11 +142,13 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasEncryption: true,
     hasAccessControl: true,
     hasAOFPersistence: true,
+    lastReviewed: "2026-09-26",
   },
   memcached: {
     hasEncryption: false,
     hasAccessControl: false,
     hasAOFPersistence: false,
+    lastReviewed: "2026-09-26",
   },
 
   // Auth services
@@ -137,18 +157,21 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasMFA: true,
     hasSessionManagement: true,
     hasPasswordHashing: true,
+    lastReviewed: "2026-09-26",
   },
   firebase: {
     hasOAuth: true,
     hasMFA: true,
     hasSessionManagement: true,
     hasPasswordHashing: true,
+    lastReviewed: "2026-09-26",
   },
   auth0: {
     hasOAuth: true,
     hasMFA: true,
     hasSessionManagement: true,
     hasPasswordHashing: true,
+    lastReviewed: "2026-09-26",
   },
 
   // Payment
@@ -156,16 +179,20 @@ const TECH_SECURITY_PROFILES: Record<string, Record<string, boolean>> = {
     hasPCICompliance: true,
     hasTokenization: true,
     hasWebhookSecurity: true,
+    lastReviewed: "2026-09-26",
   },
   paypal: {
     hasPCICompliance: true,
     hasTokenization: true,
     hasWebhookSecurity: true,
+    lastReviewed: "2026-09-26",
   },
 };
 
 // ─── Security Issues Database ────────────────────────
 const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
+  // When a security rule or guidance is revised, update the corresponding
+  // lastReviewed date in ISO format (YYYY-MM-DD) so the UI can flag stale entries.
   // Authentication Issues
   {
     id: "auth-001",
@@ -185,6 +212,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Implement proper session timeout (15-30 minutes)",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "auth-002",
@@ -204,6 +232,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Log all authentication attempts",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "auth-003",
@@ -223,6 +252,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Test MFA recovery flows",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Authorization Issues
@@ -245,6 +275,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Implement principle of least privilege",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "authz-002",
@@ -265,6 +296,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Monitor logs for suspicious patterns",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
 
   // API Security Issues
@@ -287,6 +319,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Monitor rate limit violations",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "api-002",
@@ -307,6 +340,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Document which fields are safe to expose",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "api-003",
@@ -325,6 +359,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Document migration path for clients",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Database Security Issues
@@ -346,6 +381,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Rotate encryption keys regularly",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "db-002",
@@ -366,6 +402,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Test for SQL injection vulnerabilities",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "db-003",
@@ -386,6 +423,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Document recovery procedures",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Secrets Management Issues
@@ -409,6 +447,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Audit secret access logs",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "secrets-002",
@@ -429,6 +468,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Document rotation procedures",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Input Validation Issues
@@ -451,6 +491,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Test with OWASP test data",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "input-002",
@@ -472,6 +513,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Run uploaded files in sandboxed environment",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
 
   // Rate Limiting Issues
@@ -494,6 +536,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Allow whitelist for trusted IPs",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
 
   // CORS Issues
@@ -517,6 +560,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Test CORS with curl and browser tools",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
 
   // CSRF Issues
@@ -539,6 +583,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Regenerate token after login",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Payment Security Issues
@@ -561,6 +606,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Never log payment details",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "payment-002",
@@ -580,6 +626,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Return 200 OK immediately, process async",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
 
   // Logging Issues
@@ -603,6 +650,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Never log passwords or sensitive data",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "logging-002",
@@ -623,6 +671,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Monitor for log tampering",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Monitoring Issues
@@ -645,6 +694,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Use APM tools for performance monitoring",
     ],
     estimatedEffort: "large",
+    lastReviewed: "2026-09-26",
   },
 
   // Backup Issues
@@ -668,6 +718,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Implement point-in-time recovery",
     ],
     estimatedEffort: "medium",
+    lastReviewed: "2026-09-26",
   },
 
   // Dependency Security Issues
@@ -690,6 +741,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Keep Node.js and Python versions updated",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
   {
     id: "deps-002",
@@ -707,6 +759,7 @@ const SECURITY_ISSUES_DATABASE: SecurityIssue[] = [
       "Test updates in staging before production",
     ],
     estimatedEffort: "small",
+    lastReviewed: "2026-09-26",
   },
 ];
 

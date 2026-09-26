@@ -112,6 +112,20 @@ export function ToolSelector({
     ? toolCategories.find((c) => c.id === activeCategory)!
     : null;
 
+  const getPriorityReason = (
+    categoryId: string,
+    toolId: string,
+  ): string | null => {
+    const priorities = projectMapping?.categoryPriorities[categoryId];
+    if (!priorities) return null;
+
+    const isPrioritized = priorities.prioritize.includes(toolId);
+    const isEthiopianBoost = priorities.ethiopianPriority.includes(toolId);
+    if (!isPrioritized && !isEthiopianBoost) return null;
+
+    return priorities.reason;
+  };
+
   const activeCatTools = activeCategory ? getSortedTools(activeCategory) : [];
   const visibleCatTools = useMemo(() => {
     if (!activeCatData) return [];
@@ -465,6 +479,10 @@ export function ToolSelector({
                       projectMapping?.categoryPriorities[
                         activeCatData.id
                       ]?.ethiopianPriority?.includes(tool.id);
+                    const priorityReason = getPriorityReason(
+                      activeCatData.id,
+                      tool.id,
+                    );
                     return (
                       <button
                         key={tool.id}
@@ -487,6 +505,15 @@ export function ToolSelector({
                         {isEthiopianPriority && (
                           <span className="ethiopian-badge">
                             &#x1f1ea;&#x1f1f9; Ethiopian Best
+                          </span>
+                        )}
+                        {priorityReason && (
+                          <span
+                            className="tool-priority-reason"
+                            title={priorityReason}
+                            aria-label={priorityReason}
+                          >
+                            Why this order
                           </span>
                         )}
                         <span className="tool-icon">{tool.icon}</span>

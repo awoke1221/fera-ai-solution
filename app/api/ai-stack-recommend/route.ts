@@ -120,7 +120,7 @@ YOUR RESPONSE RULES:
 7. If asked about pricing, reference the cost estimator data accurately
 8. Keep the tone professional, warm, and actionable`;
 
-function buildFallbackRecommendation(
+export function buildFallbackRecommendation(
   projectType: string | null,
   selections: Record<string, string> | undefined,
   message: string | null,
@@ -174,16 +174,46 @@ function buildFallbackRecommendation(
   return content;
 }
 
+// Fallback chain: no API key, AI/network/parsing failures, and validation failures
+// must all degrade to the safe recommendation payload instead of surfacing a raw error.
+export function createFallbackResponse(
+  projectType: string | null,
+  selections: Record<string, string> | undefined,
+  message: string | null,
+  failureReason?: string,
+) {
+  if (failureReason) {
+    console.warn(
+      `[stack-advisor fallback] Falling back to safe recommendation: ${failureReason}`,
+    );
+  }
+
+  return NextResponse.json({
+    type: "chat",
+    role: "assistant",
+    content: buildFallbackRecommendation(projectType, selections, message),
+  });
+}
+
 export async function POST(request: Request) {
+  let projectType: string | null = null;
+  let selections: Record<string, string> | undefined;
+  let message: string | null = null;
+  let conversation:
+    | Array<{ role: "user" | "assistant"; content: string }>
+    | undefined;
+  let projectRequirements: ProjectRequirements | undefined;
+  let requirementsAnalysis: RequirementsAnalysisResult | undefined;
+
   try {
-    const {
+    ({
       projectType,
       selections,
       message,
       conversation,
       projectRequirements,
       requirementsAnalysis,
-    } = await request.json();
+    } = await request.json());
 
     // Mode 1: Structured Recommendation
     // If we have project requirements and analysis, generate deterministic structured recommendation
@@ -194,32 +224,56 @@ export async function POST(request: Request) {
           requirementsAnalysis as RequirementsAnalysisResult,
         );
 
-        // Validate the recommendation
         const validator = new RecommendationValidator();
-        if (validator.validateRecommendation(recommendation)) {
-          return NextResponse.json({
-            type: "structured",
-            data: recommendation,
-          });
-        } else {
-          // Validation failed but we have a recommendation, log warnings and return it
-          console.warn(
-            "Recommendation validation warnings:",
-            validator.getErrorMessages(),
-          );
-          return NextResponse.json({
-            type: "structured",
-            data: recommendation,
-          });
+        const validationErrors: string[] = [];
+
+        for (const [index, tech] of recommendation.recommendedStack.entries()) {
+          if (
+            !validator.validateTechRecommendation(
+              tech,
+              `recommendedStack[${index}]`,
+            )
+          ) {
+            validationErrors.push(
+              ...validator
+                .getErrorMessages()
+                .map((message) => `recommendedStack[${index}]: ${message}`),
+            );
+          }
         }
+
+        if (
+          !validator.validateRecommendation(recommendation) ||
+          validationErrors.length > 0
+        ) {
+          const reasons = [
+            ...validator.getErrorMessages(),
+            ...validationErrors,
+          ];
+          console.warn(
+            "Structued recommendation validation failed; falling back to safe recommendation.",
+            reasons,
+          );
+          return createFallbackResponse(
+            projectType,
+            selections,
+            message,
+            `structured_validation_failed: ${reasons.join("; ")}`,
+          );
+        }
+
+        return NextResponse.json({
+          type: "structured",
+          data: recommendation,
+        });
       } catch (error) {
-        console.error("Recommendation analysis error:", error);
-        return NextResponse.json(
-          {
-            type: "error",
-            error: "Failed to analyze recommendations. Please try again.",
-          },
-          { status: 500 },
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error("Recommendation analysis error:", reason);
+        return createFallbackResponse(
+          projectType,
+          selections,
+          message,
+          `structured_generation_failed: ${reason}`,
         );
       }
     }
@@ -234,11 +288,12 @@ export async function POST(request: Request) {
     }
 
     if (!DEEPSEEK_API_KEY) {
-      return NextResponse.json({
-        type: "chat",
-        role: "assistant",
-        content: buildFallbackRecommendation(projectType, selections, message),
-      });
+      return createFallbackResponse(
+        projectType,
+        selections,
+        message,
+        "missing_deepseek_api_key",
+      );
     }
 
     // Build context about current selections
@@ -264,20 +319,33 @@ export async function POST(request: Request) {
       { role: "user", content: userPrompt },
     ];
 
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages,
-        temperature: 0.5,
-        max_tokens: 2048,
-        stream: false,
-      }),
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          messages,
+          temperature: 0.5,
+          max_tokens: 2048,
+          stream: false,
+        }),
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.error("DeepSeek fetch failed:", reason);
+      return createFallbackResponse(
+        projectType,
+        selections,
+        message,
+        `deepseek_fetch_failed: ${reason}`,
+      );
+    }
 
     if (!response.ok) {
       const errorData = await response.text();
@@ -309,16 +377,87 @@ export async function POST(request: Request) {
       });
     }
 
-    const data = await response.json();
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.error("DeepSeek response parse failed:", reason);
+      return createFallbackResponse(
+        projectType,
+        selections,
+        message,
+        `deepseek_json_parse_failed: ${reason}`,
+      );
+    }
+
     const assistantMessage = data.choices?.[0]?.message;
 
     if (!assistantMessage) {
-      return NextResponse.json({
-        type: "chat",
-        role: "assistant",
-        content:
-          "🤔 **Unexpected response**\n\nI received an unexpected response format. Please try rephrasing your question.",
-      });
+      return createFallbackResponse(
+        projectType,
+        selections,
+        message,
+        "deepseek_missing_message_payload",
+      );
+    }
+
+    const rawContent =
+      typeof assistantMessage.content === "string"
+        ? assistantMessage.content
+        : "";
+
+    if (rawContent) {
+      try {
+        const parsed = parseAiJsonResponse(rawContent);
+        if (parsed && typeof parsed === "object") {
+          const validator = new RecommendationValidator();
+          const sanitized = sanitizeRecommendation(parsed);
+
+          if (!sanitized || !validator.validateRecommendation(sanitized)) {
+            const reasons = validator.getErrorMessages();
+            console.warn(
+              "AI structured JSON parse/validation failed; using safe fallback.",
+              reasons,
+            );
+            return createFallbackResponse(
+              projectType,
+              selections,
+              message,
+              `structured_json_validation_failed: ${reasons.join("; ")}`,
+            );
+          }
+
+          return NextResponse.json({
+            type: "structured",
+            data: sanitized,
+          });
+        }
+
+        const reason = "parseAiJsonResponse did not yield a structured object";
+        console.warn(
+          "parseAiJsonResponse failed while evaluating AI structured response; falling back.",
+          reason,
+        );
+        return createFallbackResponse(
+          projectType,
+          selections,
+          message,
+          `parse_ai_json_failed: ${reason}`,
+        );
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.warn(
+          "parseAiJsonResponse failed while evaluating AI structured response; falling back.",
+          reason,
+        );
+        return createFallbackResponse(
+          projectType,
+          selections,
+          message,
+          `parse_ai_json_failed: ${reason}`,
+        );
+      }
     }
 
     return NextResponse.json({
@@ -326,13 +465,13 @@ export async function POST(request: Request) {
       ...assistantMessage,
     });
   } catch (error) {
-    console.error("AI Stack Recommend API error:", error);
-    return NextResponse.json(
-      {
-        type: "error",
-        error: "Connection error. Please check your network and try again.",
-      },
-      { status: 500 },
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error("AI Stack Recommend API error:", reason);
+    return createFallbackResponse(
+      projectType,
+      selections,
+      message,
+      `chat_handler_failed: ${reason}`,
     );
   }
 }

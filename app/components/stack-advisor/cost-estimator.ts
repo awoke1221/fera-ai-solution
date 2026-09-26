@@ -496,7 +496,37 @@ const costData: Record<
   },
 };
 
-export function calculateCost(selectedTools: ToolOption[]): TotalCostEstimate {
+type ProjectScaleContext = {
+  expectedUsers?: string;
+  scale?: string;
+};
+
+const scaleRankMap: Record<string, number> = {
+  "under-100": 0,
+  "100-1000": 1,
+  "1000-10000": 2,
+  "10000-100000": 3,
+  "100000-plus": 4,
+};
+
+function getUserScaleLabel(projectRequirements?: ProjectScaleContext): string {
+  const userScale =
+    projectRequirements?.scale ??
+    projectRequirements?.expectedUsers ??
+    "100-1000";
+
+  return userScale in scaleRankMap ? userScale : "100-1000";
+}
+
+function getUserScaleRank(projectRequirements?: ProjectScaleContext): number {
+  const userScale = getUserScaleLabel(projectRequirements);
+  return scaleRankMap[userScale] ?? 1;
+}
+
+export function calculateCost(
+  selectedTools: ToolOption[],
+  projectRequirements?: ProjectScaleContext,
+): TotalCostEstimate {
   const breakdown: CostBreakdown[] = selectedTools.map((tool) => {
     const data = costData[tool.id] || {
       min: 0,
@@ -531,24 +561,69 @@ export function calculateCost(selectedTools: ToolOption[]): TotalCostEstimate {
     max: totalMonthly.max * 12,
   };
 
-  const hasFreeTools = breakdown.some((b) => b.monthlyCost.max === 0);
-  const freeTierSufficient = totalMonthly.max === 0;
+  const expectedUserScale = getUserScaleLabel(projectRequirements);
+  const userScaleRank = getUserScaleRank(projectRequirements);
+
+  // Free tiers are often valid for a prototype, but they stop being a realistic
+  // production plan once the project crosses the early-growth stage.
+  const hasScalePressure = userScaleRank >= 3;
+  const hasLikelyPaidUpgrade = selectedTools.some((tool) => {
+    const data = costData[tool.id] || { min: 0, max: 0 };
+    const hasFreeTier =
+      data.min === 0 || /free|hobby|starter|self-hosted/i.test(tool.freeTier);
+    return hasFreeTier && hasScalePressure && data.max <= 25;
+  });
+
+  const freeTierSufficient = breakdown.every((item) => {
+    const data = costData[item.toolId] || { min: 0, max: 0 };
+    const hasFreeTier =
+      (data.min === 0 && data.max === 0) ||
+      /free|hobby|starter|self-hosted|open-source/i.test(item.freeTier);
+
+    if (!hasFreeTier) {
+      return false;
+    }
+
+    if (userScaleRank <= 2) {
+      return true;
+    }
+
+    return false;
+  });
+
   const allFree = breakdown.every(
     (b) => b.monthlyCost.min === 0 && b.monthlyCost.max === 0,
   );
 
   let monthsUntilPaid = "N/A — all tools free";
-  if (!allFree) {
+  if (hasScalePressure) {
+    const paidBreakdowns = breakdown.filter((b) => b.monthlyCost.max > 0);
+    const earliestBreakEven = paidBreakdowns.sort(
+      (a, b) => a.monthlyCost.max - b.monthlyCost.max,
+    )[0];
+    monthsUntilPaid = earliestBreakEven
+      ? `At ${expectedUserScale} users, expect an upgrade soon — ${earliestBreakEven.toolName} will likely need a paid tier when ${earliestBreakEven.breakEvenPoint}`
+      : "At this scale, plan for paid hosting and managed services before launch.";
+  } else if (!allFree && !freeTierSufficient) {
     const earliestBreakEven = breakdown
       .filter((b) => b.monthlyCost.max > 0)
       .sort((a, b) => a.monthlyCost.max - b.monthlyCost.max)[0];
     monthsUntilPaid = earliestBreakEven
       ? `When ${earliestBreakEven.breakEvenPoint} — upgrade ${earliestBreakEven.toolName}`
       : "Immediately — some tools have no free tier";
+  } else if (!allFree) {
+    monthsUntilPaid = "N/A — free tiers still fit this projected scale";
   }
 
   let recommendation = "";
-  if (totalMonthly.max === 0) {
+  if (hasScalePressure && totalMonthly.max === 0) {
+    recommendation = `The stack looks free on paper, but at ${expectedUserScale} users you should budget for paid tiers soon to keep performance, reliability, and growth manageable.`;
+  } else if (
+    hasScalePressure &&
+    (hasLikelyPaidUpgrade || !freeTierSufficient)
+  ) {
+    recommendation = `Your target growth is ${expectedUserScale} users, so expect free tiers to run out quickly. Upgrade the most limiting tools early and keep a 20–30% buffer for usage spikes.`;
+  } else if (totalMonthly.max === 0) {
     recommendation =
       "Your selected stack is completely free! Perfect for prototyping and MVPs.";
   } else if (totalMonthly.max <= 25) {

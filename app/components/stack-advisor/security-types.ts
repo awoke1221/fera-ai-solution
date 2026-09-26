@@ -33,6 +33,7 @@ export interface SecurityIssue {
   implementationGuidance: string[];
   estimatedEffort: "minimal" | "small" | "medium" | "large";
   relatedTechnology?: string; // e.g., "Next.js", "PostgreSQL"
+  lastReviewed?: string; // ISO date, e.g. "2026-09-26"
 }
 
 export interface SecurityCategoryAnalysis {
