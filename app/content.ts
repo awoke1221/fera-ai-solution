@@ -39,7 +39,7 @@ export const services: Service[] = [
   {
     title: "AI-Based Software & Intelligent Agents",
     description:
-      "Custom AI software, copilots, automation flows, and autonomous agents that analyze data, execute tasks, and enhance operational decision-making.",
+      "Custom AI copilots, workflow automations, document intelligence, and agentic systems that connect large language models to your real business processes. We design AI systems for retrieval, decision support, task execution, integrations, monitoring, and measurable operational ROI—without sacrificing security, governance, or reliability.",
     icon: "🤖",
   },
   {

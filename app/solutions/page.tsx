@@ -40,8 +40,12 @@ export default function SolutionsPage() {
             <div className="solution-card reveal">
               <h3>AI systems that operate</h3>
               <p>
-                We build AI agents, copilots, and automation systems that reduce
-                manual work and improve decision-making.
+                We build AI agents, copilots, and workflow automations that turn
+                fragmented processes into reliable operational systems. From
+                customer support and knowledge search to document processing and
+                internal task execution, our AI solutions connect to your tools,
+                validate outputs, and improve decisions with human oversight
+                where it matters most.
               </p>
             </div>
             <div className="solution-card reveal">
