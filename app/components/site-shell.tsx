@@ -74,6 +74,12 @@ const navGroups = [
     description: "hands-on learning",
     items: [
       {
+        href: "/ai-careers",
+        label: "AI Career Guide",
+        description: "choose an AI career path",
+        icon: "↗",
+      },
+      {
         href: "/tutorials",
         label: "Tutorials",
         description: "resources",

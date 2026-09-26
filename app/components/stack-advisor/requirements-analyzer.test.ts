@@ -41,7 +41,7 @@ test("detects LMS-specific functional requirements", () => {
 });
 
 test("flags payment and security requirements for commerce flows", () => {
-  const commerce = {
+  const commerce: ProjectRequirements = {
     ...baseRequirements,
     projectCategory: "ecommerce",
     requiredFeatures: ["authentication", "payments", "file-uploads"],

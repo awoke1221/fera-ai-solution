@@ -254,6 +254,41 @@ export function StackAdvisorClient() {
           </div>
         </div>
       )}
+
+      <div className="stack-intel-strip">
+        <div className="stack-intel-card stack-intel-card-primary">
+          <span className="stack-intel-label">Primary fit</span>
+          <strong>
+            {selectedProject
+              ? `${selectedProject.icon} ${selectedProject.label}`
+              : "Choose a project type"}
+          </strong>
+          <small>
+            {selectedProject
+              ? "Architecture is tuned toward the right launch pattern."
+              : "Select a direction to unlock the best stack strategy."}
+          </small>
+        </div>
+
+        <div className="stack-intel-card">
+          <span className="stack-intel-label">Compatibility</span>
+          <strong>{compatibilityWarnings.length} signals</strong>
+          <small>
+            {compatibilityWarnings.length > 0
+              ? "Review the warnings before moving to production."
+              : "Your current stack is well-aligned and stable."}
+          </small>
+        </div>
+
+        <div className="stack-intel-card">
+          <span className="stack-intel-label">Next move</span>
+          <strong>
+            {selectedTools.length > 0 ? "Harden the stack" : "Define the stack"}
+          </strong>
+          <small>{recommendedNextStep}</small>
+        </div>
+      </div>
+
       {/* View Switcher — AI is always available */}
       <div className="stack-view-switcher">
         {!hasSelections && activeView === "select" ? null : (

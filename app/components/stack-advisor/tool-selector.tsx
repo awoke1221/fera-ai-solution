@@ -30,6 +30,10 @@ export function ToolSelector({
   );
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [toolQuery, setToolQuery] = useState("");
+  const [toolFilter, setToolFilter] = useState<
+    "all" | "recommended" | "ethiopian"
+  >("all");
 
   // ─── Dynamic category/tool filtering ────────────────
   const projectMapping = useMemo(
@@ -109,6 +113,58 @@ export function ToolSelector({
     : null;
 
   const activeCatTools = activeCategory ? getSortedTools(activeCategory) : [];
+  const visibleCatTools = useMemo(() => {
+    if (!activeCatData) return [];
+
+    const normalizedQuery = toolQuery.trim().toLowerCase();
+    const recommendedIds = new Set(
+      activeCatTools.filter((tool) => tool.recommended).map((tool) => tool.id),
+    );
+    const ethiopianIds = new Set(
+      projectMapping?.categoryPriorities[activeCatData.id]?.ethiopianPriority ??
+        [],
+    );
+
+    return activeCatTools.filter((tool) => {
+      const isEthiopian = ethiopianIds.has(tool.id);
+      const matchesQuery =
+        !normalizedQuery ||
+        `${tool.name} ${tool.description} ${tool.freeTier}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+
+      if (!matchesQuery) return false;
+
+      if (toolFilter === "recommended" && !recommendedIds.has(tool.id)) {
+        return false;
+      }
+
+      if (toolFilter === "ethiopian" && !isEthiopian) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [activeCatData, activeCatTools, projectMapping, toolFilter, toolQuery]);
+
+  const setRecommendedTool = () => {
+    if (!activeCatData) return;
+
+    const preferred =
+      activeCatTools.find((tool) => tool.recommended) ?? activeCatTools[0];
+    if (!preferred) return;
+    handleToolSelect(activeCatData.id, preferred.id);
+  };
+
+  const clearCategorySelection = () => {
+    if (!activeCatData) return;
+
+    const nextSelections = { ...selections };
+    delete nextSelections[activeCatData.id];
+    setSelections(nextSelections);
+    onSelectionsChange(nextSelections);
+  };
+
   const selectionsCount = Object.keys(selections).length;
   const visibleCount = filteredCategories.length;
   const progressPct =
@@ -267,6 +323,59 @@ export function ToolSelector({
                 )}
               </div>
 
+              <div className="stack-tool-toolbar">
+                <label className="stack-search-field">
+                  <span>Search</span>
+                  <input
+                    type="text"
+                    value={toolQuery}
+                    onChange={(event) => setToolQuery(event.target.value)}
+                    placeholder="Search tools..."
+                  />
+                </label>
+
+                <div className="stack-filter-pills">
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "recommended", label: "Recommended" },
+                    { id: "ethiopian", label: "Ethiopian" },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={
+                        "stack-filter-pill" +
+                        (toolFilter === option.id ? " active" : "")
+                      }
+                      onClick={() =>
+                        setToolFilter(option.id as typeof toolFilter)
+                      }
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="stack-category-actions">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={setRecommendedTool}
+                  >
+                    Quick pick
+                  </button>
+                  {selections[activeCatData.id] && (
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={clearCategorySelection}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Ethiopian context hint */}
               {projectMapping?.categoryPriorities[activeCatData.id]
                 ?.ethiopianPriority?.length ? (
@@ -277,49 +386,56 @@ export function ToolSelector({
               ) : null}
 
               <div className="stack-tool-grid">
-                {activeCatTools.map((tool) => {
-                  const selectedToolId = selections[activeCatData.id];
-                  const isSelected = selectedToolId === tool.id;
-                  const isEthiopianPriority =
-                    projectMapping?.categoryPriorities[
-                      activeCatData.id
-                    ]?.ethiopianPriority?.includes(tool.id);
-                  return (
-                    <button
-                      key={tool.id}
-                      className={
-                        "stack-tool-card" +
-                        (isSelected ? " selected" : "") +
-                        (tool.recommended || isEthiopianPriority
-                          ? " recommended"
-                          : "")
-                      }
-                      onClick={() =>
-                        handleToolSelect(activeCatData.id, tool.id)
-                      }
-                    >
-                      {tool.recommended && !isEthiopianPriority && (
-                        <span className="tool-recommended-badge">
-                          &#9733; Recommended
-                        </span>
-                      )}
-                      {isEthiopianPriority && (
-                        <span className="ethiopian-badge">
-                          &#x1f1ea;&#x1f1f9; Ethiopian Best
-                        </span>
-                      )}
-                      <span className="tool-icon">{tool.icon}</span>
-                      <span className="tool-name">{tool.name}</span>
-                      <span className="tool-desc">{tool.description}</span>
-                      <span className="tool-free-badge">{tool.freeTier}</span>
-                      {isSelected && (
-                        <span className="tool-selected-check">
-                          &#x2713; Selected
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {visibleCatTools.length > 0 ? (
+                  visibleCatTools.map((tool) => {
+                    const selectedToolId = selections[activeCatData.id];
+                    const isSelected = selectedToolId === tool.id;
+                    const isEthiopianPriority =
+                      projectMapping?.categoryPriorities[
+                        activeCatData.id
+                      ]?.ethiopianPriority?.includes(tool.id);
+                    return (
+                      <button
+                        key={tool.id}
+                        className={
+                          "stack-tool-card" +
+                          (isSelected ? " selected" : "") +
+                          (tool.recommended || isEthiopianPriority
+                            ? " recommended"
+                            : "")
+                        }
+                        onClick={() =>
+                          handleToolSelect(activeCatData.id, tool.id)
+                        }
+                      >
+                        {tool.recommended && !isEthiopianPriority && (
+                          <span className="tool-recommended-badge">
+                            &#9733; Recommended
+                          </span>
+                        )}
+                        {isEthiopianPriority && (
+                          <span className="ethiopian-badge">
+                            &#x1f1ea;&#x1f1f9; Ethiopian Best
+                          </span>
+                        )}
+                        <span className="tool-icon">{tool.icon}</span>
+                        <span className="tool-name">{tool.name}</span>
+                        <span className="tool-desc">{tool.description}</span>
+                        <span className="tool-free-badge">{tool.freeTier}</span>
+                        {isSelected && (
+                          <span className="tool-selected-check">
+                            &#x2713; Selected
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="stack-empty-state">
+                    <strong>No tools match this filter.</strong>
+                    <p>Try another keyword or switch back to All tools.</p>
+                  </div>
+                )}
               </div>
 
               {/* Prev / Next navigation */}
