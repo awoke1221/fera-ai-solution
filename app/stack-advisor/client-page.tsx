@@ -206,6 +206,101 @@ export function StackAdvisorClient() {
     return "Start by choosing a project type and your core frontend, backend, and database tools.";
   }, [compatibilityWarnings, selectedTools]);
 
+  const readinessScore = useMemo(() => {
+    const base = selectedTools.length * 10;
+    const compatibilityBonus = compatibilityWarnings.length === 0 ? 25 : 10;
+    const projectBonus = projectRequirements ? 20 : 5;
+    return Math.min(98, Math.max(30, base + compatibilityBonus + projectBonus));
+  }, [compatibilityWarnings.length, projectRequirements, selectedTools.length]);
+
+  const stackKpis = [
+    {
+      label: "Launch readiness",
+      value: `${Math.round(readinessScore)}%`,
+      trend: compatibilityWarnings.length === 0 ? "Healthy" : "Needs review",
+      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+    },
+    {
+      label: "Tools selected",
+      value: String(selectedTools.length),
+      trend: selectedTools.length > 0 ? "Active" : "Waiting",
+      tone: selectedTools.length > 0 ? "info" : "neutral",
+    },
+    {
+      label: "Compatibility",
+      value: `${compatibilityWarnings.length}`,
+      trend: compatibilityWarnings.length === 0 ? "Aligned" : "Checks open",
+      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+    },
+    {
+      label: "Est. monthly spend",
+      value: `$${costEstimate.totalMonthly.max}`,
+      trend: costEstimate.totalMonthly.max < 500 ? "Lean" : "Scaled",
+      tone: costEstimate.totalMonthly.max < 500 ? "success" : "info",
+    },
+  ];
+
+  const statusBlocks = [
+    {
+      title: "Architecture health",
+      detail:
+        compatibilityWarnings.length === 0
+          ? "Core dependencies are aligned and ready for rollout."
+          : "Some compatibility issues need to be resolved before production.",
+      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+    },
+    {
+      title: "Delivery focus",
+      detail: recommendedNextStep,
+      tone: "info",
+    },
+    {
+      title: "Project state",
+      detail: selectedProject
+        ? `${selectedProject.label} strategy is active.`
+        : "No project type selected yet.",
+      tone: selectedProject ? "success" : "neutral",
+    },
+  ];
+
+  const strategyScorecards = [
+    {
+      label: "Product fit",
+      value: selectedProject ? "High" : "Pending",
+      note: selectedProject
+        ? `${selectedProject.label} matches the recommended architecture.`
+        : "Choose a project type to unlock stack guidance.",
+      tone: selectedProject ? "success" : "neutral",
+    },
+    {
+      label: "Operational readiness",
+      value: compatibilityWarnings.length === 0 ? "Strong" : "Review",
+      note:
+        compatibilityWarnings.length === 0
+          ? "Integration risk is low and the stack is stable."
+          : "Resolve the current compatibility issues before launch.",
+      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+    },
+    {
+      label: "Delivery speed",
+      value: selectedTools.length >= 4 ? "Fast" : "Lean",
+      note:
+        selectedTools.length >= 4
+          ? "The stack is ready to ship with a clear production path."
+          : "The stack is still being shaped toward launch readiness.",
+      tone: selectedTools.length >= 4 ? "info" : "neutral",
+    },
+    {
+      label: "Scale confidence",
+      value: readinessScore > 75 ? "Confident" : "Watchlist",
+      note:
+        readinessScore > 75
+          ? "The system is positioned for a structured growth phase."
+          : "More operational guardrails would reduce launch risk.",
+      tone: readinessScore > 75 ? "success" : "warning",
+    },
+  ];
+
   return (
     <div className="stack-advisor-container">
       {(projectRequirements || hasSelections || selectedProject) && (
@@ -286,6 +381,58 @@ export function StackAdvisorClient() {
             {selectedTools.length > 0 ? "Harden the stack" : "Define the stack"}
           </strong>
           <small>{recommendedNextStep}</small>
+        </div>
+      </div>
+
+      <div className="stack-dashboard-board">
+        <div className="stack-dashboard-kpis">
+          <div className="stack-panel-header">
+            <span>Executive overview</span>
+            <span className="stack-pill success">Operational</span>
+          </div>
+          <div className="stack-kpi-grid">
+            {stackKpis.map((kpi) => (
+              <div key={kpi.label} className={`stack-kpi-card ${kpi.tone}`}>
+                <span className="stack-kpi-label">{kpi.label}</span>
+                <strong>{kpi.value}</strong>
+                <small>{kpi.trend}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="stack-status-panel">
+          <div className="stack-panel-header">
+            <span>Operational status</span>
+            <span className="stack-pill info">Live</span>
+          </div>
+          <div className="stack-status-list">
+            {statusBlocks.map((block) => (
+              <div
+                key={block.title}
+                className={`stack-status-item ${block.tone}`}
+              >
+                <div className="stack-status-title">{block.title}</div>
+                <p>{block.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="stack-strategy-board">
+        <div className="stack-panel-header">
+          <span>Decision quality</span>
+          <span className="stack-pill neutral">Advanced</span>
+        </div>
+        <div className="stack-score-grid">
+          {strategyScorecards.map((card) => (
+            <div key={card.label} className={`stack-score-card ${card.tone}`}>
+              <span className="stack-score-label">{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.note}</small>
+            </div>
+          ))}
         </div>
       </div>
 

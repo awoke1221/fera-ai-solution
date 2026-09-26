@@ -60,17 +60,76 @@ export function CostProjections({ selections }: CostProjectionsProps) {
 
   // Comparison scenarios
   const comparisonData = useMemo(() => {
-    // "Free" scenario: only free-tier tools (min costs)
     const freeTotal = estimate.breakdown.reduce(
       (sum, b) => sum + b.monthlyCost.min,
       0,
     );
-    // "Hybrid" scenario: current selection (max costs)
     const hybridTotal = estimate.totalMonthly.max;
-    // "Pro" scenario: everything at max + 30% buffer
     const proTotal = Math.round(hybridTotal * 1.3);
     return { freeTotal, hybridTotal, proTotal };
   }, [estimate]);
+
+  const advancedTemplates = useMemo(
+    () => [
+      {
+        name: "Lean MVP",
+        monthly: "$0–$35",
+        focus: "Validate the idea quickly.",
+        includes: [
+          "Free front-end hosting",
+          "Self-hosted or Supabase database",
+          "Core auth + email flow",
+        ],
+      },
+      {
+        name: "Growth Launch",
+        monthly: "$35–$120",
+        focus: "Support your first real user traction.",
+        includes: [
+          "Managed hosting + better observability",
+          "Dedicated DB + CDN + analytics",
+          "Production monitoring and backups",
+        ],
+      },
+      {
+        name: "Enterprise Ready",
+        monthly: "$120–$400+",
+        focus: "Scale into a serious product operation.",
+        includes: [
+          "Advanced compliance and SRE practices",
+          "Multi-region deployment and security",
+          "Higher-volume storage, queueing, and support",
+        ],
+      },
+    ],
+    [],
+  );
+
+  const planningAssumptions = useMemo(
+    () => [
+      {
+        label: "Traffic profile",
+        value: "1k–10k users / month",
+        note: "Most early MVPs can stay under a very manageable monthly spend.",
+      },
+      {
+        label: "Cost model",
+        value: "Free + usage-based",
+        note: "This stack keeps free tiers active before production growth hits.",
+      },
+      {
+        label: "Operational guardrail",
+        value: "30% buffer",
+        note: "Reserve capacity for analytics, monitoring, storage, and extra traffic.",
+      },
+      {
+        label: "Ethiopian fit",
+        value: "Self-host + local gateway",
+        note: "Local VPS and Chapa/Telebirr keep smart costs low and build trust.",
+      },
+    ],
+    [],
+  );
 
   // Chart dimensions
   const chartW = 600;
@@ -133,6 +192,47 @@ export function CostProjections({ selections }: CostProjectionsProps) {
             ${Math.round(estimate.totalMonthly.max * 0.7)}
           </span>
           <span className="cp-card-note">~30% savings with local hosting</span>
+        </div>
+      </div>
+
+      <div className="cp-advanced-layout">
+        <div className="cp-advanced-panel">
+          <div className="cp-panel-header">
+            <span>Advanced templates</span>
+            <span className="cp-pill">Planning</span>
+          </div>
+          <div className="cp-template-grid">
+            {advancedTemplates.map((template) => (
+              <div key={template.name} className="cp-template-card">
+                <div className="cp-template-topline">
+                  <strong>{template.name}</strong>
+                  <span>{template.monthly}</span>
+                </div>
+                <p>{template.focus}</p>
+                <ul>
+                  {template.includes.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="cp-advanced-panel">
+          <div className="cp-panel-header">
+            <span>Planning assumptions</span>
+            <span className="cp-pill neutral">Model</span>
+          </div>
+          <div className="cp-assumptions-list">
+            {planningAssumptions.map((assumption) => (
+              <div key={assumption.label} className="cp-assumption-item">
+                <div className="cp-assumption-label">{assumption.label}</div>
+                <strong>{assumption.value}</strong>
+                <small>{assumption.note}</small>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

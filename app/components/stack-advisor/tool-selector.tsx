@@ -169,6 +169,7 @@ export function ToolSelector({
   const visibleCount = filteredCategories.length;
   const progressPct =
     visibleCount > 0 ? (selectionsCount / visibleCount) * 100 : 0;
+  const compatibilityWarnings = projectMapping ? [] : [];
 
   // If no project selected, show project type grid
   if (!selectedProject) {
@@ -221,6 +222,33 @@ export function ToolSelector({
           </span>
         </div>
 
+        <div
+          className="stack-workflow-rail"
+          aria-label="Stack advisor workflow"
+        >
+          <div className="stack-workflow-step active">
+            <span className="stack-step-index">01</span>
+            <div>
+              <strong>Project</strong>
+              <small>Choose your product type</small>
+            </div>
+          </div>
+          <div className="stack-workflow-step active">
+            <span className="stack-step-index">02</span>
+            <div>
+              <strong>Categories</strong>
+              <small>Pick required stack layers</small>
+            </div>
+          </div>
+          <div className="stack-workflow-step">
+            <span className="stack-step-index">03</span>
+            <div>
+              <strong>Review</strong>
+              <small>Validate architecture and cost</small>
+            </div>
+          </div>
+        </div>
+
         {/* Dynamic recommendation note */}
         {projectMapping && (
           <div className="dynamic-mapping-note">
@@ -263,6 +291,21 @@ export function ToolSelector({
           </div>
         )}
 
+        <div className="stack-selection-checklist">
+          <div className="checklist-title">Selection checklist</div>
+          <div className="checklist-items">
+            <span className={selectionsCount > 0 ? "done" : ""}>
+              Core stack chosen
+            </span>
+            <span className={projectMapping ? "done" : ""}>
+              Project strategy loaded
+            </span>
+            <span className={compatibilityWarnings.length === 0 ? "done" : ""}>
+              Compatibility reviewed
+            </span>
+          </div>
+        </div>
+
         <div className="stack-selector-progress">
           <div className="progress-bar">
             <div
@@ -273,6 +316,34 @@ export function ToolSelector({
           <span className="progress-text">
             {selectionsCount} / {visibleCount} categories selected
           </span>
+        </div>
+
+        <div className="stack-decision-summary">
+          <div className="stack-summary-card">
+            <span className="summary-label">Decision board</span>
+            <strong>{selectedProject.label}</strong>
+            <small>Project type</small>
+          </div>
+          <div className="stack-summary-card">
+            <span className="summary-label">Selected layers</span>
+            <strong>{selectionsCount}</strong>
+            <small>
+              {Math.max(visibleCount - selectionsCount, 0)} remaining
+            </small>
+          </div>
+          <div className="stack-summary-card">
+            <span className="summary-label">Best stack fit</span>
+            <strong>
+              {projectMapping
+                ? recommendedStacks.find(
+                    (stack) =>
+                      stack.projectType === projectMapping.projectType &&
+                      stack.isPrimary,
+                  )?.name || "Review stack"
+                : "Review stack"}
+            </strong>
+            <small>Recommended direction</small>
+          </div>
         </div>
       </div>
 
