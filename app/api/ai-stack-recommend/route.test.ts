@@ -5,6 +5,7 @@ import {
   buildFallbackRecommendation,
   createFallbackResponse,
 } from "./fallback";
+import { consumeUserRateLimit } from "./rate-limit";
 
 test("buildFallbackRecommendation includes the fallback guidance for a low-cost MVP", () => {
   const content = buildFallbackRecommendation(
@@ -38,4 +39,35 @@ test("createFallbackResponse returns a non-error chat payload without leaking in
     String(json.content),
     /deepseek_timeout|internal|stack trace/i,
   );
+});
+
+test("should allow a user to make a few requests before rate limiting", () => {
+  const userId = "user-rate-limit-test";
+
+  for (let i = 0; i < 5; i += 1) {
+    const result = consumeUserRateLimit(userId, { max: 5, windowMs: 60_000 });
+    assert.equal(result.allowed, true);
+  }
+
+  const blocked = consumeUserRateLimit(userId, { max: 5, windowMs: 60_000 });
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.retryAfterMs > 0, true);
+});
+
+test("should reset the rate limit after the window expires", () => {
+  const userId = "user-rate-limit-reset";
+
+  const first = consumeUserRateLimit(
+    userId,
+    { max: 1, windowMs: 1000 },
+    Date.now(),
+  );
+  assert.equal(first.allowed, true);
+
+  const second = consumeUserRateLimit(
+    userId,
+    { max: 1, windowMs: 1000 },
+    Date.now() + 1500,
+  );
+  assert.equal(second.allowed, true);
 });

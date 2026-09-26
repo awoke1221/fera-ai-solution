@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { shouldSkipAuthFetch } from "./useAuth";
+import { isAdminProfile } from "../../lib/supabase-admin";
 import {
   buildMembershipActivation,
   normalizeMembershipDuplicates,
@@ -81,4 +82,20 @@ test("should skip refresh when the user data is fresh and no force is requested"
     }),
     true,
   );
+});
+
+test("should only treat a profile as admin when it has an admin role flag or role", () => {
+  assert.equal(
+    isAdminProfile({ id: "u1", is_admin: false, role: "user" }),
+    false,
+  );
+  assert.equal(
+    isAdminProfile({ id: "u1", is_admin: true, role: "user" }),
+    true,
+  );
+  assert.equal(
+    isAdminProfile({ id: "u1", is_admin: false, role: "admin" }),
+    true,
+  );
+  assert.equal(isAdminProfile(null), false);
 });

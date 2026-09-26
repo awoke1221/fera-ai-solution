@@ -11,6 +11,7 @@
 //   DEEPSEEK_MODEL    — optional (default: deepseek-chat)
 
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -43,6 +44,16 @@ RULES:
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createAdminClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { messages } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {

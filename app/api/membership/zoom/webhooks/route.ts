@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAdminServiceClient, createAdminClient } from "@/lib/supabase-admin";
+import { getAdminServiceClient } from "@/lib/supabase-admin";
+import { validateZoomWebhookRequest } from "@/lib/zoom-webhook";
 
 async function refreshZoomTokenIfNeeded(serviceClient: any, tokenRow: any) {
   const now = new Date();
@@ -47,12 +48,11 @@ async function refreshZoomTokenIfNeeded(serviceClient: any, tokenRow: any) {
 
 export async function POST(request: Request) {
   try {
-    const expected = process.env.ZOOM_WEBHOOK_VERIFICATION_TOKEN || "";
-    const received = request.headers.get("x-zoom-verification-token") || "";
-    if (expected && expected !== received) {
+    const tokenResult = validateZoomWebhookRequest(request);
+    if (!tokenResult.ok) {
       return NextResponse.json(
-        { error: "Invalid verification token" },
-        { status: 401 },
+        { error: tokenResult.error },
+        { status: tokenResult.status },
       );
     }
 

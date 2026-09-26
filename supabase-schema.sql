@@ -250,12 +250,20 @@ create policy "Users can view own profile"
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 create policy "Admins can view all profiles"
   on profiles for select
-  using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
+  using (
+    auth.uid() = id
+    or exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and (p.role = 'admin' or p.is_admin = true)
+    )
+  );
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 create policy "Users can update own profile"
   on profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id or (role = 'admin' or is_admin = true));
 
 -- Membership plans: anyone can read active plans
 DROP POLICY IF EXISTS "Anyone can view active plans" ON membership_plans;
@@ -272,12 +280,34 @@ create policy "Users can view own payment requests"
 DROP POLICY IF EXISTS "Admins can view all payment requests" ON payment_requests;
 create policy "Admins can view all payment requests"
   on payment_requests for select
-  using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
+  using (exists (
+    select 1 from profiles p
+    where p.id = auth.uid()
+      and (p.role = 'admin' or p.is_admin = true)
+  ));
 
 DROP POLICY IF EXISTS "Users can insert own payment requests" ON payment_requests;
 create policy "Users can insert own payment requests"
   on payment_requests for insert
   with check (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can update payment request status" ON payment_requests;
+create policy "Admins can update payment request status"
+  on payment_requests for update
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and (p.role = 'admin' or p.is_admin = true)
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and (p.role = 'admin' or p.is_admin = true)
+    )
+  );
 
 -- Memberships: users can view own, admins can view all
 DROP POLICY IF EXISTS "Users can view own membership" ON memberships;
@@ -288,7 +318,29 @@ create policy "Users can view own membership"
 DROP POLICY IF EXISTS "Admins can view all memberships" ON memberships;
 create policy "Admins can view all memberships"
   on memberships for select
-  using (exists (select 1 from profiles where id = auth.uid() and is_admin = true));
+  using (exists (
+    select 1 from profiles p
+    where p.id = auth.uid()
+      and (p.role = 'admin' or p.is_admin = true)
+  ));
+
+DROP POLICY IF EXISTS "Admins can update memberships" ON memberships;
+create policy "Admins can update memberships"
+  on memberships for update
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and (p.role = 'admin' or p.is_admin = true)
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and (p.role = 'admin' or p.is_admin = true)
+    )
+  );
 
 -- ══════════════════════════════════════════════════════
 -- 8. SEED DATA — Membership Plans

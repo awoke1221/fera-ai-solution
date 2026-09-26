@@ -117,6 +117,10 @@ export function getAdminServiceClient() {
   return getServiceClient();
 }
 
+export function isAdminProfile(profile: ProfileRow | null | undefined) {
+  return !!profile && (!!profile.is_admin || profile.role === "admin");
+}
+
 export async function ensureProfileForUser(
   user:
     | { id: string; email?: string | null; user_metadata?: Record<string, any> }
@@ -130,7 +134,7 @@ export async function ensureProfileForUser(
 
   const normalizedEmail = (user.email || "").trim().toLowerCase();
   const adminEmails = getConfiguredAdminEmails();
-  const isAdminEmail =
+  const isBootstrapAdminEmail =
     normalizedEmail.length > 0 && adminEmails.includes(normalizedEmail);
 
   let roleSupported = true;
@@ -168,23 +172,21 @@ export async function ensureProfileForUser(
   }
 
   if (profile) {
-    const shouldBeAdmin = isAdminEmail || !!profile.is_admin;
+    const shouldBeAdmin =
+      isAdminProfile(profile) || (!profile.role && isBootstrapAdminEmail);
     const updatePayload: Record<string, any> = { is_admin: shouldBeAdmin };
 
     if (roleSupported) {
-      updatePayload.role = shouldBeAdmin ? "admin" : "user";
+      updatePayload.role = shouldBeAdmin ? "admin" : profile.role || "user";
     }
 
-    if (isAdminEmail && !profile.is_admin) {
+    if (shouldBeAdmin && !isAdminProfile(profile)) {
       await (serviceClient.from("profiles") as any)
         .update(updatePayload)
         .eq("id", user.id);
-    } else if (
-      roleSupported &&
-      profile.role !== (shouldBeAdmin ? "admin" : "user")
-    ) {
+    } else if (roleSupported && profile.role === null && !shouldBeAdmin) {
       await (serviceClient.from("profiles") as any)
-        .update({ role: shouldBeAdmin ? "admin" : "user" })
+        .update({ role: "user" })
         .eq("id", user.id);
     }
     return profile;
@@ -202,11 +204,11 @@ export async function ensureProfileForUser(
     full_name: fullName,
     avatar_url: null,
     region: "local",
-    is_admin: isAdminEmail,
+    is_admin: isBootstrapAdminEmail,
   };
 
   if (roleSupported) {
-    insertPayload.role = isAdminEmail ? "admin" : "user";
+    insertPayload.role = isBootstrapAdminEmail ? "admin" : "user";
   }
 
   const { data, error } = await serviceClient
@@ -220,17 +222,20 @@ export async function ensureProfileForUser(
 }
 
 export async function isAdminUser(
-  user: { id: string; email?: string | null } | null | undefined,
+  user:
+    | { id: string; email?: string | null; user_metadata?: Record<string, any> }
+    | null
+    | undefined,
 ) {
   if (!user?.id) return false;
 
-  const normalizedEmail = (user.email || "").trim().toLowerCase();
-  if (normalizedEmail && getConfiguredAdminEmails().includes(normalizedEmail)) {
-    return true;
-  }
-
   const serviceClient = getAdminServiceClient();
   if (!serviceClient) return false;
+
+  const normalizedEmail = (user.email || "").trim().toLowerCase();
+  const isBootstrapAdminEmail =
+    normalizedEmail.length > 0 &&
+    getConfiguredAdminEmails().includes(normalizedEmail);
 
   const { data, error } = await serviceClient
     .from("profiles")
@@ -239,5 +244,28 @@ export async function isAdminUser(
     .maybeSingle();
 
   const profile = data as ProfileRow | null;
-  return !error && (!!profile?.is_admin || profile?.role === "admin");
+  if (error && error.code !== "PGRST116") return false;
+  if (isAdminProfile(profile)) return true;
+
+  if (!profile && isBootstrapAdminEmail) {
+    await (serviceClient.from("profiles") as any).upsert(
+      {
+        id: user.id,
+        email: user.email || null,
+        full_name:
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          null,
+        avatar_url: null,
+        region: "local",
+        role: "admin",
+        is_admin: true,
+      },
+      { onConflict: "id" },
+    );
+    return true;
+  }
+
+  return false;
 }

@@ -9,6 +9,8 @@
 //   DEEPSEEK_API_KEY  — required in .env.local for chat mode
 
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase-admin";
+import { consumeUserRateLimit } from "./rate-limit";
 import type {
   ProjectRequirements,
   RequirementsAnalysisResult,
@@ -27,6 +29,8 @@ import {
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const API_URL = "https://api.deepseek.com/v1/chat/completions";
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
 
 const SYSTEM_PROMPT = `You are a senior tech stack advisor for the "Vibe Coder's Tech Stack Platform". Your role is to help developers choose the best combination of tools, frameworks, and services for their projects.
 
@@ -138,6 +142,31 @@ export async function POST(request: Request) {
   let requirementsAnalysis: RequirementsAnalysisResult | undefined;
 
   try {
+    const supabase = await createAdminClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimit = consumeUserRateLimit(user.id, {
+      max: RATE_LIMIT_MAX_REQUESTS,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Too many requests",
+          retryAfterMs: rateLimit.retryAfterMs,
+        },
+        { status: 429 },
+      );
+    }
+
     ({
       projectType,
       selections,
