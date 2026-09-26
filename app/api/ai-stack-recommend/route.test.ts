@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildFallbackRecommendation, createFallbackResponse } from "./route";
+import {
+  buildFallbackRecommendation,
+  createFallbackResponse,
+} from "./fallback";
 
 test("buildFallbackRecommendation includes the fallback guidance for a low-cost MVP", () => {
   const content = buildFallbackRecommendation(
