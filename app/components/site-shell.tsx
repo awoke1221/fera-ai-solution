@@ -663,7 +663,7 @@ export const SiteShell = memo(function SiteShell({
         {children}
       </main>
 
-      <footer>
+      <footer className="site-footer">
         <div className="wrap">
           <div className="footer-main">
             <div className="footer-brand">

@@ -57,7 +57,7 @@ Your entire portfolio application has been transformed from a **dark theme** to 
 
 #### **Buttons**
 
-- Solid primary blue buttons
+- Solid primary blue button
 - Outlined secondary buttons
 - Ghost transparent buttons
 - Smooth hover animations with color transitions

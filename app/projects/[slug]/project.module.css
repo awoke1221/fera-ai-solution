@@ -268,17 +268,79 @@
 
 @media (max-width: 680px) {
   .page {
-    padding-bottom: 64px;
+    padding: 12px 0 56px;
   }
 
   .breadcrumb {
     align-items: flex-start;
-    padding-bottom: 20px;
+    gap: 7px;
+    padding: 8px 0 16px;
+    font-size: 0.78rem;
   }
 
   .hero {
-    gap: 28px;
-    padding: 24px 0 48px;
+    gap: 22px;
+    padding: 18px 0 36px;
+  }
+
+  .heroCopy h1 {
+    font-size: clamp(2.15rem, 10vw, 3.1rem);
+  }
+
+  .summary {
+    margin: 14px 0;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .tags {
+    gap: 6px;
+    margin: 18px 0;
+  }
+
+  .tags span {
+    padding: 6px 9px;
+    font-size: 0.7rem;
+  }
+
+  .facts {
+    gap: 18px;
+    margin: 20px 0;
+    padding-top: 16px;
+  }
+
+  .heroCopy > a {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview {
+    padding: 9px;
+    border-radius: 16px;
+  }
+
+  .previewImage {
+    aspect-ratio: 1.35;
+    border-radius: 10px;
+  }
+
+  .story {
+    gap: 12px;
+    padding: 0;
+  }
+
+  .storyCard {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .storyCard p,
+  .approachIntro p {
+    font-size: 0.94rem;
+    line-height: 1.7;
   }
 
   .story,
@@ -288,22 +350,40 @@
   }
 
   .approach {
-    gap: 28px;
-    padding: 56px 0;
+    gap: 22px;
+    padding: 44px 0;
+  }
+
+  .deliverables {
+    padding: 22px;
   }
 
   .scope {
-    gap: 20px;
-    padding: 32px 0 48px;
+    gap: 18px;
+    padding: 28px 0 40px;
   }
 
   .scopeList {
     grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .scopeList li {
+    padding: 13px;
+    font-size: 0.86rem;
   }
 
   .footerCta {
     align-items: flex-start;
     flex-direction: column;
+    gap: 18px;
+    padding: 24px;
+    border-radius: 18px;
+  }
+
+  .footerCta .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

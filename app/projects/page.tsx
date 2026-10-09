@@ -12,7 +12,7 @@ export const metadata = {
 export default function ProjectsPage() {
   return (
     <SiteShell>
-      <section className="page-hero">
+      <section className="page-hero portfolio-hero">
         <div className="wrap">
           <div className="eyebrow">Projects</div>
           <h1 className="h-display">
