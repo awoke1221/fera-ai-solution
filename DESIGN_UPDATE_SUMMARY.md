@@ -57,7 +57,9 @@ Your entire portfolio application has been transformed from a **dark theme** to 
 
 #### **Buttons**
 
-- Solid primary blue button
+- Solid primary blue buttongit add app/components/site-shell.tsx app/globals.css app/projects/page.tsx "app/projects/[slug]/project.module.css" DESIGN_UPDATE_SUMMARY.md
+  git commit -m "Improve mobile portfolio and footer"
+  git push
 - Outlined secondary buttons
 - Ghost transparent buttons
 - Smooth hover animations with color transitions
