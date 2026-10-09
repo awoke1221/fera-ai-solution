@@ -37,12 +37,6 @@ const navGroups = [
         description: "what we give",
         icon: "▤",
       },
-      {
-        href: "/projects",
-        label: "Projects",
-        description: "given projects",
-        icon: "▤",
-      },
     ],
   },
   {
@@ -314,6 +308,22 @@ export const SiteShell = memo(function SiteShell({
               }
             }}
           >
+            <Link
+              href="/projects"
+              prefetch={true}
+              className={`nav-menu-link nav-portfolio-link ${
+                isActivePath(pathname, "/projects") ? "active" : ""
+              }`}
+              onMouseEnter={() => router.prefetch("/projects")}
+              onFocus={() => router.prefetch("/projects")}
+              onClick={() => {
+                setMenuOpen(false);
+                setOpenDropdown(null);
+              }}
+            >
+              Portfolio
+            </Link>
+
             {navGroups.map((group) => {
               const isGroupActive = group.items.some((item) =>
                 isActivePath(pathname, item.href),
@@ -492,19 +502,6 @@ export const SiteShell = memo(function SiteShell({
               </div>
             )}
 
-            <Link
-              href="/book"
-              prefetch={true}
-              className="btn nav-menu-cta"
-              onMouseEnter={() => router.prefetch("/book")}
-              onFocus={() => router.prefetch("/book")}
-              onClick={() => {
-                setMenuOpen(false);
-                setOpenDropdown(null);
-              }}
-            >
-              Start a project
-            </Link>
           </div>
 
           <div className="nav-visible-actions">
@@ -626,34 +623,19 @@ export const SiteShell = memo(function SiteShell({
                 </div>
               </>
             ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  prefetch={true}
-                  className="nav-login-link"
-                  onMouseEnter={() => router.prefetch("/auth/login")}
-                  onFocus={() => router.prefetch("/auth/login")}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  prefetch={true}
-                  className="btn solid nav-signup-link"
-                  onMouseEnter={() => router.prefetch("/auth/signup")}
-                  onFocus={() => router.prefetch("/auth/signup")}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Sign Up
-                </Link>
-              </>
+              <Link
+                href="/auth/signup"
+                prefetch={true}
+                className="btn solid nav-signup-link"
+                onMouseEnter={() => router.prefetch("/auth/signup")}
+                onFocus={() => router.prefetch("/auth/signup")}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setOpenDropdown(null);
+                }}
+              >
+                Get Started
+              </Link>
             )}
           </div>
 

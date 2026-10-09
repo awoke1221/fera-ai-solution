@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { projects } from "./data";
+import { ProjectImage } from "./project-image";
 import { SiteShell } from "../components/site-shell";
+
+export const metadata = {
+  title: "Selected Projects",
+  description:
+    "Explore digital products and websites built by Fera AI Solutions for businesses, communities, and product teams.",
+};
 
 export default function ProjectsPage() {
   return (
@@ -35,22 +42,23 @@ export default function ProjectsPage() {
                       <span key={tag}>{tag}</span>
                     ))}
                   </div>
-                  <span className="work-year">{item.year}</span>
+                  {item.year ? (
+                    <span className="work-year">{item.year}</span>
+                  ) : null}
                 </div>
-                <img
+                <ProjectImage
                   src={item.image || "/fera-logo.jpg"}
-                  alt={`${item.title} homepage preview`}
+                  alt={`${item.title} project visual`}
+                  title={item.title}
                   className="work-card-image"
-                  loading="lazy"
-                  decoding="async"
                 />
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <div className="work-card-bottom">
-                  <div className="work-metrics">
-                    {item.metrics.slice(0, 2).map((m) => (
-                      <span key={m} className="metric-chip">
-                        {m}
+                  <div className="work-deliverables" aria-label="Project scope">
+                    {item.deliverables.slice(0, 2).map((deliverable) => (
+                      <span key={deliverable} className="deliverable-chip">
+                        {deliverable}
                       </span>
                     ))}
                   </div>
@@ -61,7 +69,7 @@ export default function ProjectsPage() {
                     <a
                       href={item.website}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="work-cta"
                     >
                       Visit live site →

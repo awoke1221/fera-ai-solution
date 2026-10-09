@@ -2,7 +2,7 @@ export type Project = {
   slug: string;
   title: string;
   client: string;
-  year: string;
+  year?: string;
   tags: string[];
   website: string;
   image: string;
@@ -11,9 +11,8 @@ export type Project = {
   problem: string;
   solution: string;
   outcome: string;
-  metrics: string[];
+  deliverables: string[];
   highlights: string[];
-  meta: string[];
 };
 
 export const projects: Project[] = [
@@ -24,7 +23,7 @@ export const projects: Project[] = [
     year: "2026",
     tags: ["Education", "Creator Growth", "Lead Generation", "Web Design"],
     website: "https://www.adonaytiktokacademy.com/",
-    image: "https://www.adonaytiktokacademy.com/logo-adlms.jpg",
+    image: "https://www.adonaytiktokacademy.com/apple-touch-icon.png",
     description:
       "A modern academy website for a TikTok-focused training brand that turns curiosity into course enrollments through a polished, conversion-first experience.",
     summary:
@@ -35,7 +34,7 @@ export const projects: Project[] = [
       "We designed and developed a clean, mobile-friendly experience with strong hero messaging, course-focused sections, testimonials, and clear calls to action that guide visitors from first impression to enrollment.",
     outcome:
       "The brand now presents itself as a premium, professional learning platform with a clearer message, easier navigation, and stronger conversion flow.",
-    metrics: [
+    deliverables: [
       "Conversion-first landing experience",
       "Course + about + FAQ structure",
       "Mobile-friendly enrollment journey",
@@ -47,7 +46,6 @@ export const projects: Project[] = [
       "Student trust through testimonials and structured content",
       "Fast, elegant experience optimized for modern mobile viewership",
     ],
-    meta: ["Launch", "2026"],
   },
   {
     slug: "azmera-coffee",
@@ -67,7 +65,7 @@ export const projects: Project[] = [
       "We built a polished, buyer-focused experience with strong brand storytelling, structured service sections, and clear pathways for wholesale inquiry and product discovery.",
     outcome:
       "The website now positions Azmera as a professional export partner with a strong international brand presence and a more persuasive buyer journey.",
-    metrics: [
+    deliverables: [
       "Premium sourcing storytelling",
       "B2B buyer-focused experience",
       "International trust signals",
@@ -79,7 +77,6 @@ export const projects: Project[] = [
       "Clear service and export navigation",
       "Modern design aligned with premium brand positioning",
     ],
-    meta: ["Launch", "2026"],
   },
   {
     slug: "teme-upholstery",
@@ -99,7 +96,7 @@ export const projects: Project[] = [
       "We designed a visually rich, conversion-oriented website with elegant service storytelling, strong visual proof, and clear pathways for booking, gallery exploration, and training enrollment.",
     outcome:
       "The business now has a polished digital storefront that reinforces its premium positioning and makes it easier for clients to book and explore services.",
-    metrics: [
+    deliverables: [
       "Luxury service storytelling",
       "Booking-ready experience",
       "Visual galleries and transformation proof",
@@ -111,7 +108,6 @@ export const projects: Project[] = [
       "Training and business services reflected in one platform",
       "Strong visual quality aligned with the brand's craftsmanship",
     ],
-    meta: ["Launch", "2026"],
   },
   {
     slug: "nhatty-the-barber",
@@ -131,7 +127,7 @@ export const projects: Project[] = [
       "We developed a refined website with service-led storytelling, modern visual presentation, and clear booking pathways designed to support both local and international clients.",
     outcome:
       "The website now strengthens Nhatty's premium image and gives the business a more compelling, conversion-ready experience for new and returning customers.",
-    metrics: [
+    deliverables: [
       "Premium grooming brand experience",
       "Appointment-ready conversion flow",
       "Modern visual storytelling",
@@ -143,39 +139,37 @@ export const projects: Project[] = [
       "Clear booking and appointment motivation",
       "Modern design that reflects elite grooming culture",
     ],
-    meta: ["Launch", "2026"],
   },
   {
     slug: "denbegnaye-ai-platform",
-    title: "Denbegnaye",
+    title: "Denbegnaye AI Workspace",
     client: "Denbegnaye",
     year: "2025",
-    tags: ["AI SaaS", "Automation", "Product Launch", "No-Code"],
-    website: "https://denbegaye.vercel.app/",
-    image: "https://denbegaye.vercel.app/denbegnaye-logo.svg",
+    tags: ["AI Workspace", "Workflow Automation", "Document Intelligence"],
+    website: "https://www.denbegnayeaiagent.com/",
+    image: "https://www.denbegnayeaiagent.com/denbegnaye-og.png",
     description:
-      "A sleek AI product website for a no-code automation platform, presenting workflow building as simple, scalable, and ready for modern teams.",
+      "A dual-purpose AI workspace combining a visual agent builder with specialist AI tools for understanding documents, spreadsheets, and business information.",
     summary:
-      "We shaped a modern product experience for an AI workflow platform, highlighting its visual builder, automation capabilities, and fast path to adoption.",
+      "We built the Denbegnaye product experience around two connected capabilities: visual AI workflow automation and Office Intelligence for turning business files into useful insights.",
     problem:
-      "The product needed a clearer narrative around how users could design, automate, and scale AI workflows without complexity or technical friction.",
+      "The product needed to make two complex AI use cases understandable: assembling agents into workflows and applying specialist analysis to business documents and data.",
     solution:
-      "We built a product-first website with a strong hero experience, structured feature storytelling, and clear pathways for sign-up and product exploration.",
+      "We created a product-focused experience that introduces the AI Automation Builder through triggers, agents, tools, and actions, while giving Office Intelligence a distinct path for exploring document and business-data analysis.",
     outcome:
-      "The launch site now communicates the platform's value clearly and gives the product a more credible, modern presence in the AI automation space.",
-    metrics: [
-      "Product-led launch experience",
-      "Automation-first storytelling",
-      "Visual builder positioning",
-      "Modern SaaS presentation",
+      "The live product experience now presents Denbegnaye as an AI workspace for both workflow automation and business information analysis.",
+    deliverables: [
+      "Visual workflow builder positioning",
+      "AI agent triggers, tools, and actions",
+      "Office Intelligence product pathway",
+      "Document and business-data use cases",
     ],
     highlights: [
-      "Compelling AI workflow product messaging",
-      "Clean onboarding and sign-up journey",
-      "Visual structure for complex product concepts",
-      "Modern design language for technical products",
+      "Clear distinction between automation and intelligence products",
+      "Workflow concepts explained with a trigger → agent → action model",
+      "Document analysis positioned for business teams",
+      "Direct routes to product exploration and sign-in",
     ],
-    meta: ["Launch", "2025"],
   },
   {
     slug: "dr-feben-dental-clinic",
@@ -184,7 +178,7 @@ export const projects: Project[] = [
     year: "2025",
     tags: ["Healthcare", "Dental Clinic", "Booking", "Medical Brand"],
     website: "https://dr-feben.vercel.app/",
-    image: "https://dr-feben.vercel.app/assets/hero-CZD6JFnb.jpg",
+    image: "https://dr-feben.vercel.app/logo.svg",
     description:
       "A calm, modern dental clinic website designed to make treatment services feel trustworthy, premium, and easy to book.",
     summary:
@@ -195,7 +189,7 @@ export const projects: Project[] = [
       "We created a refined clinic website with service-focused sections, patient-first messaging, and a straightforward path to consultation and booking.",
     outcome:
       "The clinic now has a polished, reassuring digital front door that strengthens trust and makes its care offerings easier to understand and access.",
-    metrics: [
+    deliverables: [
       "Patient-first clinic experience",
       "Service clarity and trust building",
       "Modern medical web presentation",
@@ -207,6 +201,65 @@ export const projects: Project[] = [
       "Modern design built around patient confidence",
       "Stronger conversion path from discovery to booking",
     ],
-    meta: ["Launch", "2025"],
+  },
+  {
+    slug: "fiyorina-chiffon",
+    title: "Fiyorina Chiffon",
+    client: "Fiyorina Chiffon",
+    tags: ["Fashion", "Ethiopian Clothing", "Bridal & Custom Design"],
+    website: "https://www.fiyorinachiffon.com/",
+    image: "https://www.fiyorinachiffon.com/og-image.jpg",
+    description:
+      "A digital home for an Addis Ababa fashion brand featuring luxury chiffon dresses, Ethiopian traditional clothing, bridal outfits, and custom designs.",
+    summary:
+      "We created a focused online presence for Fiyorina Chiffon, bringing its luxury chiffon, Ethiopian traditional clothing, bridal fashion, and custom design offering together under one brand.",
+    problem:
+      "Fiyorina Chiffon needed a clear online presence to introduce its fashion identity and help visitors discover its traditional, bridal, and custom design offerings.",
+    solution:
+      "We developed a brand website that presents the label's fashion categories and custom design focus with a digital identity rooted in its Addis Ababa base.",
+    outcome:
+      "The live website gives the brand a central place to present its fashion offering and connect its Ethiopian identity with prospective customers.",
+    deliverables: [
+      "Luxury chiffon fashion positioning",
+      "Ethiopian traditional clothing focus",
+      "Bridal and custom design discovery",
+      "Addis Ababa brand presence",
+    ],
+    highlights: [
+      "Brand storytelling centered on Ethiopian fashion",
+      "Clear visibility for bridal and custom outfit categories",
+      "A dedicated destination for premium chiffon collections",
+      "Search and social sharing presentation for the brand",
+    ],
+  },
+  {
+    slug: "st-mary-st-gabriel-church",
+    title: "St. Mary & St. Gabriel Church",
+    client: "St. Mary & St. Gabriel Ethiopian Orthodox Tewahedo Church",
+    tags: ["Community", "Church Website", "Ethiopian Orthodox"],
+    website: "https://www.stleotc.org/",
+    image: "https://www.stleotc.org/church-logo.png",
+    description:
+      "A community website for St. Mary & St. Gabriel Ethiopian Orthodox Tewahedo Church, introducing worship, spiritual guidance, sacred services, fellowship, and charity.",
+    summary:
+      "We built a public-facing digital home for St. Mary & St. Gabriel Ethiopian Orthodox Tewahedo Church, helping its community and visitors find information about worship, church life, and spiritual services.",
+    problem:
+      "The church needed an accessible online presence to represent its faith community and make essential information about worship, sacred services, fellowship, and charity easier to discover.",
+    solution:
+      "We developed a church website that brings the congregation's identity and community offerings together in one clear destination for members and visitors.",
+    outcome:
+      "The live website provides the church with a central online presence for sharing its Ethiopian Orthodox Tewahedo traditions and community life.",
+    deliverables: [
+      "Church identity and community presence",
+      "Worship and spiritual guidance information",
+      "Sacred services and fellowship discovery",
+      "Charity and community engagement focus",
+    ],
+    highlights: [
+      "A dedicated digital home for the congregation",
+      "Faith and community information organized for discovery",
+      "Public-facing presentation of Ethiopian Orthodox traditions",
+      "Responsive, accessible entry point for members and visitors",
+    ],
   },
 ];
