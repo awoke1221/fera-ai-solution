@@ -212,4 +212,49 @@ export const projectTypes: ProjectType[] = [
       "Analytics & revenue reporting",
     ],
   },
+  {
+    id: "ai-app",
+    label: "AI Application",
+    icon: "🤖",
+    description:
+      "An AI-powered product using assistants, recommendations, content generation, or intelligent automation.",
+    businessFeatures: [
+      "AI assistant or workflow",
+      "Model and provider integration",
+      "Data ingestion and retrieval",
+      "Usage limits and cost controls",
+      "Evaluation and quality monitoring",
+      "Human review for sensitive decisions",
+    ],
+  },
+  {
+    id: "mobile-app",
+    label: "Mobile Application",
+    icon: "📱",
+    description:
+      "A mobile-first product for iOS, Android, or both, with suitable API and delivery infrastructure.",
+    businessFeatures: [
+      "Mobile-first user journeys",
+      "Secure API integration",
+      "Push notifications",
+      "Offline and unreliable-network handling",
+      "App analytics and crash reporting",
+      "App store release workflow",
+    ],
+  },
+  {
+    id: "api-backend",
+    label: "API / Backend Service",
+    icon: "🔌",
+    description:
+      "A backend or API product focused on integrations, data services, and reliable service operations.",
+    businessFeatures: [
+      "Versioned API design",
+      "Authentication and authorization",
+      "Rate limits and abuse prevention",
+      "API documentation",
+      "Monitoring and request tracing",
+      "Automated contract and integration tests",
+    ],
+  },
 ];

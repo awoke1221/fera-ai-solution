@@ -43,6 +43,7 @@ export type DeploymentPattern = {
 
 export function buildCloudCostComparison(
   requirements: ProjectRequirements,
+  selectedToolIds: string[] = [],
 ): CloudCostEntry[] {
   const features = new Set(requirements.requiredFeatures);
   const isHighScale =
@@ -52,58 +53,76 @@ export function buildCloudCostComparison(
   const hasBackgroundJobs = features.has("background-jobs");
   const hasUploads = features.has("file-uploads");
   const hasPayments = features.has("payments");
+  const needsExtraCapacityPlanning =
+    isHighScale || hasAI || hasBackgroundJobs || hasUploads || hasPayments;
+  const selectedDeploymentName: Record<string, string> = {
+    vercel: "Vercel",
+    netlify: "Netlify",
+    railway: "Railway",
+    render: "Render",
+    docker_vps: "Docker on VPS",
+  };
+  const selectedDeployment = selectedToolIds
+    .map((toolId) => selectedDeploymentName[toolId])
+    .find(Boolean);
 
   const baseEntries: CloudCostEntry[] = [
     {
       provider: "AWS",
       architecture: "EKS + RDS + S3 + CloudFront + ALB + Redis + SQS",
-      monthlyEstimate: isHighScale ? "$1,200–$4,500+" : "$500–$1,800",
+      monthlyEstimate: "Requires workload-specific pricing",
       notes: [
         "Best for enterprise-scale reliability and operational control",
         "Strong security baseline and orchestration maturity",
         "Higher engineering overhead but most resilient at scale",
+        "Estimate with region, instance sizes, traffic, storage, backups, and support tier",
       ],
     },
     {
       provider: "Azure",
       architecture:
         "AKS + PostgreSQL + Blob Storage + Front Door + Redis + Service Bus",
-      monthlyEstimate: isHighScale ? "$1,000–$4,000+" : "$450–$1,600",
+      monthlyEstimate: "Requires workload-specific pricing",
       notes: [
         "Very strong for enterprise identity and compliance flows",
         "Good hybrid platform fit for regulated customers",
         "Predictable and mature for corporate environments",
+        "Estimate with region, instance sizes, traffic, storage, backups, and support tier",
       ],
     },
     {
       provider: "Google Cloud",
       architecture: "GKE + Cloud SQL + GCS + Cloud CDN + Memorystore + Pub/Sub",
-      monthlyEstimate: isHighScale ? "$950–$3,800+" : "$420–$1,500",
+      monthlyEstimate: "Requires workload-specific pricing",
       notes: [
         "Excellent for AI and analytics-heavy products",
         "Strong managed data and compute story",
         "Requires stronger platform design discipline for some workloads",
+        "Estimate with region, instance sizes, traffic, storage, backups, and support tier",
       ],
     },
     {
       provider: "Managed App Platform",
       architecture: "Vercel + Postgres + object storage + queue workers + CDN",
-      monthlyEstimate:
-        hasAI || hasBackgroundJobs ? "$300–$1,500+" : "$100–$600",
+      monthlyEstimate: "Requires workload-specific pricing",
       notes: [
         "Fastest deployment path and smallest ops burden",
         "Best for MVPs, rapid shipping, and lean product teams",
         "Less control for highly complex infra or strict enterprise security",
+        "Estimate using selected services, region, bandwidth, and managed database pricing",
+        ...(selectedDeployment
+          ? [`Selected deployment layer includes ${selectedDeployment}; confirm service boundaries and provider fit.`]
+          : []),
       ],
     },
   ];
 
-  if (hasPayments || hasUploads || hasAI || hasBackgroundJobs) {
+  if (needsExtraCapacityPlanning) {
     return baseEntries.map((entry) => ({
       ...entry,
       notes: [
         ...entry.notes,
-        "Extra budget should be reserved for storage, queueing, observability, and request protection.",
+        "Capacity planning is especially important for this scope; estimate storage, queueing, observability, and request protection from actual workloads.",
       ],
     }));
   }
@@ -113,6 +132,7 @@ export function buildCloudCostComparison(
 
 export function selectDeploymentPattern(
   requirements: ProjectRequirements,
+  selectedToolIds: string[] = [],
 ): DeploymentPattern {
   const features = new Set(requirements.requiredFeatures);
   const isEnterprise = requirements.targetUsers === "enterprise";
@@ -123,6 +143,25 @@ export function selectDeploymentPattern(
   const hasBackgroundJobs = features.has("background-jobs");
   const hasUploads = features.has("file-uploads");
   const hasRealtime = features.has("real-time-communication");
+  const selectedDeploymentName: Record<string, string> = {
+    vercel: "Vercel",
+    netlify: "Netlify",
+    railway: "Railway",
+    render: "Render",
+    docker_vps: "Docker on VPS",
+  };
+  const selectedDeployment = selectedToolIds
+    .map((toolId) => selectedDeploymentName[toolId])
+    .find(Boolean);
+  const recommendedProvider =
+    selectedDeployment ??
+    (isEnterprise ||
+    isHighScale ||
+    hasAI ||
+    hasBackgroundJobs ||
+    hasRealtime
+      ? "AWS"
+      : "Managed App Platform");
 
   const blueprints: ProviderBlueprint[] = [
     {
@@ -136,7 +175,7 @@ export function selectDeploymentPattern(
       services: ["EKS/ECS", "RDS", "S3", "CloudFront", "SQS", "CloudWatch"],
       reason:
         "AWS is the strongest default for serious scale, enterprise security, and production-grade operational control.",
-      estimatedCost: isHighScale ? "$1,200–$4,500+/month" : "$500–$1,800/month",
+      estimatedCost: "Requires workload-specific pricing",
     },
     {
       provider: "Azure",
@@ -155,7 +194,7 @@ export function selectDeploymentPattern(
       ],
       reason:
         "Azure is an excellent fit for enterprise identity, compliance, and hybrid environments with strong governance requirements.",
-      estimatedCost: isHighScale ? "$1,000–$4,000+/month" : "$450–$1,600/month",
+      estimatedCost: "Requires workload-specific pricing",
     },
     {
       provider: "Google Cloud",
@@ -168,7 +207,7 @@ export function selectDeploymentPattern(
       services: ["GKE", "Cloud SQL", "Cloud Storage", "Cloud CDN", "Pub/Sub"],
       reason:
         "Google Cloud works especially well for AI, analytics, and modern data-rich workloads with managed service depth.",
-      estimatedCost: isHighScale ? "$950–$3,800+/month" : "$420–$1,500/month",
+      estimatedCost: "Requires workload-specific pricing",
     },
   ];
 
@@ -219,24 +258,24 @@ export function selectDeploymentPattern(
         "Disaster recovery drills, rollback playbooks, and business continuity testing",
       ],
       outcome:
-        "The platform remains operational during regional outages, data loss events, and broader service disruptions.",
+        "A tested design aims to reduce impact from regional outages, data-loss events, and broader service disruptions.",
     },
   ];
 
   const decisionBoard: DeploymentDecisionBoardEntry[] = [
     {
       recommendedPhase: "MVP launch",
-      targetProvider: "AWS",
-      rolloutWindow: "0–3 months",
+      targetProvider: recommendedProvider,
+      rolloutWindow: "Initial deployment",
       riskLevel: "Moderate",
       investmentProfile: "Lean but scalable",
       reasoning:
-        "Start with a managed production template and evolve into deeper AWS services as usage and operational maturity increase.",
+        `Start with the selected deployment pattern; use ${recommendedProvider} as a planning direction, then validate provider fit against team capability and project requirements.`,
     },
     {
       recommendedPhase: "Scale-up phase",
-      targetProvider: "AWS",
-      rolloutWindow: "3–9 months",
+      targetProvider: recommendedProvider,
+      rolloutWindow: "After validating growth and service limits",
       riskLevel: "Moderate",
       investmentProfile: "Balanced expansion",
       reasoning:
@@ -244,8 +283,8 @@ export function selectDeploymentPattern(
     },
     {
       recommendedPhase: "Enterprise production hardening",
-      targetProvider: "AWS",
-      rolloutWindow: "6–12 months",
+      targetProvider: recommendedProvider,
+      rolloutWindow: "Before enterprise adoption",
       riskLevel: "High",
       investmentProfile: "Enterprise-grade control",
       reasoning:
@@ -253,8 +292,8 @@ export function selectDeploymentPattern(
     },
     {
       recommendedPhase: "Multi-region / cloud resilience strategy",
-      targetProvider: "AWS",
-      rolloutWindow: "12+ months",
+      targetProvider: recommendedProvider,
+      rolloutWindow: "When resilience requirements justify multi-region",
       riskLevel: "High",
       investmentProfile: "Resilience-first capital",
       reasoning:
@@ -319,7 +358,7 @@ export function selectDeploymentPattern(
           ],
           reason:
             "For faster launches and smaller teams, a managed app platform provides the fastest path while still allowing controlled expansion later.",
-          estimatedCost: "$100–$600+/month",
+          estimatedCost: "Requires workload-specific pricing",
         },
       ],
       roadmap,
@@ -354,7 +393,7 @@ export function selectDeploymentPattern(
         services: ["Vercel", "Managed Postgres", "CDN", "Queue workers"],
         reason:
           "This pattern minimizes operational drag while keeping a clear upgrade path as the product matures.",
-        estimatedCost: "$50–$400+/month",
+        estimatedCost: "Requires workload-specific pricing",
       },
       ...blueprints.slice(0, 2),
     ],

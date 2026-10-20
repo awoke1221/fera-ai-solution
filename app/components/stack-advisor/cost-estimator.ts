@@ -21,8 +21,8 @@ export type TotalCostEstimate = {
   breakdown: CostBreakdown[];
   totalMonthly: { min: number; max: number };
   totalAnnual: { min: number; max: number };
-  freeTierSufficient: boolean;
-  monthsUntilPaid: string;
+  hasFreeTierOptions: boolean;
+  upgradePlanningNote: string;
   recommendation: string;
 };
 
@@ -543,8 +543,9 @@ export function calculateCost(
       freeTier: tool.freeTier,
       monthlyCost: { min: data.min, max: data.max, note: data.note },
       estimatedAnnual: data.max * 12,
-      breakEvenPoint: data.breakEven,
-      ethiopianCostNote: data.ethiopianNote,
+      breakEvenPoint: "Check current vendor plan limits against your workload.",
+      ethiopianCostNote:
+        "No regional pricing adjustment is applied; verify availability, transaction fees, taxes, and currency conversion with the provider.",
     };
   });
 
@@ -564,93 +565,31 @@ export function calculateCost(
   const expectedUserScale = getUserScaleLabel(projectRequirements);
   const userScaleRank = getUserScaleRank(projectRequirements);
 
-  // Free tiers are often valid for a prototype, but they stop being a realistic
-  // production plan once the project crosses the early-growth stage.
-  const hasScalePressure = userScaleRank >= 3;
-  const hasLikelyPaidUpgrade = selectedTools.some((tool) => {
-    const data = costData[tool.id] || { min: 0, max: 0 };
-    const hasFreeTier =
-      data.min === 0 || /free|hobby|starter|self-hosted/i.test(tool.freeTier);
-    return hasFreeTier && hasScalePressure && data.max <= 25;
-  });
-
-  const freeTierSufficient = breakdown.every((item) => {
-    const data = costData[item.toolId] || { min: 0, max: 0 };
-    const hasFreeTier =
-      (data.min === 0 && data.max === 0) ||
-      /free|hobby|starter|self-hosted|open-source/i.test(item.freeTier);
-
-    if (!hasFreeTier) {
-      return false;
-    }
-
-    if (userScaleRank <= 2) {
-      return true;
-    }
-
-    return false;
-  });
-
-  const allFree = breakdown.every(
-    (b) => b.monthlyCost.min === 0 && b.monthlyCost.max === 0,
+  const hasFreeTierOptions = breakdown.some(
+    (item) =>
+      item.monthlyCost.min === 0 ||
+      /free|hobby|starter|self-hosted|open-source/i.test(item.freeTier),
   );
-
-  let monthsUntilPaid = "N/A — all tools free";
-  if (hasScalePressure) {
-    const paidBreakdowns = breakdown.filter((b) => b.monthlyCost.max > 0);
-    const earliestBreakEven = paidBreakdowns.sort(
-      (a, b) => a.monthlyCost.max - b.monthlyCost.max,
-    )[0];
-    monthsUntilPaid = earliestBreakEven
-      ? `At ${expectedUserScale} users, expect an upgrade soon — ${earliestBreakEven.toolName} will likely need a paid tier when ${earliestBreakEven.breakEvenPoint}`
-      : "At this scale, plan for paid hosting and managed services before launch.";
-  } else if (!allFree && !freeTierSufficient) {
-    const earliestBreakEven = breakdown
-      .filter((b) => b.monthlyCost.max > 0)
-      .sort((a, b) => a.monthlyCost.max - b.monthlyCost.max)[0];
-    monthsUntilPaid = earliestBreakEven
-      ? `When ${earliestBreakEven.breakEvenPoint} — upgrade ${earliestBreakEven.toolName}`
-      : "Immediately — some tools have no free tier";
-  } else if (!allFree) {
-    monthsUntilPaid = "N/A — free tiers still fit this projected scale";
-  }
-
-  let recommendation = "";
-  if (hasScalePressure && totalMonthly.max === 0) {
-    recommendation = `The stack looks free on paper, but at ${expectedUserScale} users you should budget for paid tiers soon to keep performance, reliability, and growth manageable.`;
-  } else if (
-    hasScalePressure &&
-    (hasLikelyPaidUpgrade || !freeTierSufficient)
-  ) {
-    recommendation = `Your target growth is ${expectedUserScale} users, so expect free tiers to run out quickly. Upgrade the most limiting tools early and keep a 20–30% buffer for usage spikes.`;
-  } else if (totalMonthly.max === 0) {
-    recommendation =
-      "Your selected stack is completely free! Perfect for prototyping and MVPs.";
-  } else if (totalMonthly.max <= 25) {
-    recommendation =
-      "Very affordable stack. Under $25/mo keeps costs low while you validate your idea.";
-  } else if (totalMonthly.max <= 60) {
-    recommendation =
-      "Moderate monthly cost. Consider which tools you can optimize (e.g., self-hosted DB, Cloudflare free tier).";
-  } else {
-    recommendation =
-      "Higher monthly cost. Review each tool — consider free alternatives like self-hosted PostgreSQL, Cloudflare Pages, or self-hosted Sentry.";
-  }
-
-  if (
-    costData.chapa &&
-    selectedTools.some((t) => t.id === "chapa" || t.id === "telebirr")
-  ) {
-    recommendation +=
-      " For Ethiopian payments, Chapa (3.5% + 5 ETB) and Telebirr (~1%) have no monthly fees — only per-transaction costs.";
-  }
+  const hasHighScaleTarget = userScaleRank >= 3;
+  const upgradePlanningNote =
+    selectedTools.length === 0
+      ? "Select tools before reviewing provider plan limits."
+      : hasHighScaleTarget
+        ? `For the ${expectedUserScale} expected-user range, validate service limits with workload-specific provider calculators.`
+        : `The ${expectedUserScale} expected-user range is context only; this model does not convert users into requests, storage, or data transfer.`;
+  const recommendation =
+    selectedTools.length === 0
+      ? "Select tools to see catalogue-based monthly price ranges."
+      : totalMonthly.max === 0
+        ? "No fixed monthly charge is modeled for this selection. Transaction, usage, data-transfer, tax, and overage fees may still apply."
+        : `The $${totalMonthly.min}–$${totalMonthly.max}/month range is based on catalogue plan assumptions, not a live quote. Verify current plans, regions, workload, and usage with each provider.`;
 
   return {
     breakdown,
     totalMonthly,
     totalAnnual,
-    freeTierSufficient,
-    monthsUntilPaid,
+    hasFreeTierOptions,
+    upgradePlanningNote,
     recommendation,
   };
 }

@@ -11,18 +11,22 @@ import {
   projectTypes,
   advancedGuides,
   getProjectMapping,
+  getOrderedCategories,
+  isCategoryRequired,
   calculateCost,
   checkCompatibility,
   generateStackExport,
   getToolScore,
   type ToolOption,
   type AdvancedGuide,
+  type ProjectRequirements,
 } from ".";
 
 // ─── Props ──────────────────────────────────────────────
 interface ToolDetailsProps {
   selections: Record<string, string>;
   selectedProjectType?: string | null;
+  projectRequirements?: ProjectRequirements | null;
   onSelectionsChange?: (selections: Record<string, string>) => void;
 }
 
@@ -32,6 +36,7 @@ type StrategyMode = "cheapest" | "fastest" | "scalable" | "ethiopia";
 export function ToolDetails({
   selections,
   selectedProjectType,
+  projectRequirements,
   onSelectionsChange,
 }: ToolDetailsProps) {
   const [activeTab, setActiveTab] = useState<
@@ -76,7 +81,7 @@ export function ToolDetails({
   const selectedTools = useMemo(() => {
     return Object.values(selections)
       .map((id) => tools.find((t) => t.id === id))
-      .filter(Boolean) as ToolOption[];
+      .filter((tool): tool is ToolOption => Boolean(tool));
   }, [selections]);
 
   // Find the project type
@@ -129,20 +134,6 @@ export function ToolDetails({
     [selections],
   );
 
-  const compatibilityScore = useMemo(() => {
-    const severityWeight = compatibilityWarnings.reduce((score, warning) => {
-      if (warning.type === "error") return score + 20;
-      if (warning.type === "warning") return score + 10;
-      return score + 4;
-    }, 0);
-
-    const score = Math.max(0, 100 - severityWeight);
-    if (score >= 90) return { label: "Excellent", color: "#22c55e" };
-    if (score >= 75) return { label: "Strong", color: "#38bdf8" };
-    if (score >= 60) return { label: "Good", color: "#f4b24b" };
-    return { label: "Needs refinement", color: "#ef4444" };
-  }, [compatibilityWarnings]);
-
   const strategySummary = useMemo(() => {
     const projectLabel = projectType?.label || "your product";
     switch (strategyMode) {
@@ -191,8 +182,14 @@ export function ToolDetails({
   }, [projectType, strategyMode]);
 
   const stackCost = useMemo(
-    () => calculateCost(selectedTools),
-    [selectedTools],
+    () =>
+      calculateCost(
+        selectedTools,
+        projectRequirements
+          ? { expectedUsers: projectRequirements.expectedUsers }
+          : undefined,
+      ),
+    [projectRequirements, selectedTools],
   );
 
   const starterTemplate = useMemo(() => {
@@ -497,22 +494,28 @@ export function ToolDetails({
 
   const budgetPlan = useMemo(() => {
     const currentCost = stackCost.totalMonthly.max;
-    const delta = budgetTarget - currentCost;
+    if (selectedTools.length === 0) {
+      return {
+        label: "No estimate yet",
+        description: "Select tools to compare catalogue ranges with this target.",
+        tone: "neutral",
+      };
+    }
 
     if (currentCost <= budgetTarget * 0.7) {
       return {
-        label: "Lean and healthy",
+        label: "Below target with reserve",
         description:
-          "Your stack is comfortably under budget and can support a focused launch.",
+          "The catalogue upper range is below the selected budget target. Verify current provider pricing.",
         tone: "good",
       };
     }
 
-    if (delta >= 0) {
+    if (currentCost <= budgetTarget) {
       return {
         label: "Within target",
         description:
-          "Your stack fits the target budget, but you should still trim optional services early.",
+          "The catalogue upper range is within the selected target; actual usage and vendor fees may differ.",
         tone: "good",
       };
     }
@@ -520,98 +523,45 @@ export function ToolDetails({
     return {
       label: "Needs budgeting",
       description:
-        "The current stack is above the target. Prioritize essentials and delay premium add-ons.",
+        "The catalogue upper range exceeds the selected target. Verify current pricing and revisit optional services.",
       tone: "warning",
     };
-  }, [budgetTarget, stackCost.totalMonthly.max]);
+  }, [budgetTarget, selectedTools.length, stackCost.totalMonthly.max]);
 
-  const launchReadiness = useMemo(() => {
-    let score = 48;
-    const upgrades: string[] = [];
-
-    const hasAuth = selectedTools.some((tool) =>
-      ["supabase", "clerk", "auth0", "nextauth", "firebase"].includes(tool.id),
+  const planningReview = useMemo(() => {
+    const requiredCategories = getOrderedCategories(
+      projectMapping,
+      toolCategories,
+    ).filter((category) =>
+      isCategoryRequired(category.id, projectMapping, category.required),
     );
-    const hasData = selectedTools.some((tool) =>
-      ["supabase", "postgres", "mongodb", "firebase"].includes(tool.id),
-    );
-    const hasMonitoring = selectedTools.some((tool) =>
-      ["sentry", "posthog", "vercel", "upstash"].includes(tool.id),
-    );
-    const hasDeploy = selectedTools.some((tool) =>
-      ["vercel", "netlify", "render", "railway", "digitalocean"].includes(
-        tool.id,
-      ),
-    );
-    const hasPayments = selectedTools.some((tool) =>
-      ["chapa", "telebirr", "stripe", "paypal"].includes(tool.id),
-    );
-    const hasMedia = selectedTools.some((tool) =>
-      ["cloudinary", "bunny", "imgix", "aws-s3"].includes(tool.id),
-    );
-
-    if (hasAuth) score += 14;
-    else
-      upgrades.push(
-        "Add authentication so users can securely sign in and manage accounts.",
+    const missingCategories = requiredCategories
+      .filter((category) => !selections[category.id])
+      .map(
+        (category) =>
+          toolCategories.find((item) => item.id === category.id)?.label ??
+          category.id,
       );
-
-    if (hasData) score += 12;
-    else
-      upgrades.push(
-        "Connect a reliable data layer for persistence and API storage.",
+    const notes = [...missingCategories.map((category) => `Choose a tool for the required ${category.toLowerCase()} layer.`)];
+    if (compatibilityWarnings.length > 0) {
+      notes.push(
+        `${compatibilityWarnings.length} known tool-combination note(s) need review.`,
       );
-
-    if (hasMonitoring) score += 10;
-    else upgrades.push("Add monitoring and analytics to catch issues earlier.");
-
-    if (hasDeploy) score += 8;
-    else upgrades.push("Prepare deployment with staging and rollback support.");
-
-    if (hasPayments) score += 8;
-    else if (
-      projectType?.id &&
-      ["saas", "ecommerce", "fintech"].includes(projectType.id)
-    ) {
-      upgrades.push("Add payments for real-world buying or billing flows.");
     }
-
-    if (hasMedia) score += 6;
-    else if (projectType?.id && ["ecommerce", "lms"].includes(projectType.id)) {
-      upgrades.push("Add media delivery for images, videos, and file uploads.");
+    if (!selectedTools.some((tool) => tool.category === "monitoring")) {
+      notes.push("Decide how to collect logs, errors, and service health signals.");
     }
-
-    if (score >= 85) {
-      return {
-        score: Math.min(100, score),
-        label: "Launch-ready",
-        upgrades:
-          upgrades.length > 0
-            ? upgrades.slice(0, 3)
-            : ["Keep the launch checklist tight and monitor feedback closely."],
-      };
+    if (!selectedTools.some((tool) => tool.category === "testing")) {
+      notes.push("Define tests for critical user flows and failure cases.");
     }
-
-    if (score >= 70) {
-      return {
-        score: Math.min(100, score),
-        label: "Almost ready",
-        upgrades:
-          upgrades.length > 0
-            ? upgrades.slice(0, 4)
-            : ["Polish the last operational details before go-live."],
-      };
-    }
-
     return {
-      score: Math.min(100, score),
-      label: "Needs refinement",
-      upgrades:
-        upgrades.length > 0
-          ? upgrades.slice(0, 5)
-          : ["Add the core operational layers before launch."],
+      label: notes.length ? `${notes.length} planning item(s)` : "No known rule gaps",
+      notes:
+        notes.length > 0
+          ? notes
+          : ["No known category or compatibility gaps; this is not a production verification."],
     };
-  }, [projectType, selectedTools]);
+  }, [compatibilityWarnings, projectMapping, selectedTools, selections]);
 
   const launchTimeline = useMemo(() => {
     const projectLabel = projectType?.label || "your product";
@@ -748,91 +698,67 @@ export function ToolDetails({
   }, [selectedCount, selectedTools]);
 
   const scenarioRecommendations = useMemo(() => {
-    const paymentEnabled = selectedTools.some(
-      (tool) => tool.id === "chapa" || tool.id === "telebirr",
-    );
-    const mediaEnabled = selectedTools.some(
-      (tool) => tool.id === "bunny" || tool.id === "cloudinary",
-    );
-    const monitoringEnabled = selectedTools.some(
-      (tool) => tool.id === "sentry" || tool.id === "posthog",
-    );
-
     const scenarios = [
       {
         id: "mvp" as const,
         title: "Fast MVP",
         description: "Drive speed and simplicity for the first launch.",
-        fitScore: 90,
         priorities: [
           "Keep the flow focused on one clear user outcome.",
           "Use the lightest viable auth and data stack.",
           "Delay non-essential features until the first users validate the idea.",
         ],
-        recommendedTools: ["Next.js", "Supabase", "Vercel"],
       },
       {
         id: "growth" as const,
         title: "Growth-ready",
         description: "Prepare the stack for user growth and iteration.",
-        fitScore: 84,
         priorities: [
           "Add analytics and error monitoring early.",
           "Separate core services so the platform can scale cleanly.",
           "Create a repeatable deployment and rollback process.",
         ],
-        recommendedTools: ["PostHog", "Sentry", "Upstash"],
       },
       {
         id: "ethiopia" as const,
         title: "Ethiopia-ready",
         description:
           "Optimize for local payments, mobile-first usage, and delivery.",
-        fitScore: paymentEnabled && mediaEnabled ? 92 : 81,
         priorities: [
-          paymentEnabled
-            ? "Keep payment reconciliation and admin approval workflows clear."
-            : "Add a local payment method to support trust and conversion.",
-          mediaEnabled
-            ? "Keep media delivery fast and cache-friendly."
-            : "Add a CDN or media delivery layer for faster uploads and browsing.",
+          "Verify payment-provider availability, settlement, transaction fees, and reconciliation for your target market.",
+          "Test performance on representative mobile devices and local network conditions.",
           "Keep onboarding simple and mobile-optimized.",
         ],
-        recommendedTools: ["Chapa", "Telebirr", "Bunny.net"],
       },
       {
         id: "enterprise" as const,
         title: "Enterprise-grade",
         description:
           "Strengthen resilience, compliance, and long-term maintainability.",
-        fitScore: monitoringEnabled && selectedCount >= 4 ? 95 : 78,
         priorities: [
           "Introduce stronger observability and incident response practices.",
           "Protect data access with more deliberate security controls.",
           "Prepare a formal deployment and support workflow.",
         ],
-        recommendedTools: ["Sentry", "Auth0", "Railway"],
       },
     ];
 
     return scenarios;
-  }, [selectedCount, selectedTools]);
+  }, []);
 
   const aiSummary = useMemo(() => {
     const projectLabel = projectType?.label || "your product";
     const toolNames = selectedTools.map((tool) => tool.name).join(", ");
     const coreStrengths = [] as string[];
     const projectGoals = projectType?.businessFeatures.slice(0, 3) ?? [];
-    const projectNote = projectMapping?.note;
-    const missingRequiredCategories =
-      projectMapping?.forceRequiredCategories.filter(
-        (categoryId) => !selections[categoryId],
-      ) ?? [];
-    const missingCategoryNotes = missingRequiredCategories.map(
-      (categoryId) =>
-        toolCategories.find((cat) => cat.id === categoryId)?.label ||
-        categoryId,
-    );
+    const missingRequiredCategories = getOrderedCategories(
+      projectMapping,
+      toolCategories,
+    )
+      .filter((category) =>
+        isCategoryRequired(category.id, projectMapping, category.required),
+      )
+      .filter((category) => !selections[category.id]);
 
     if (selectedTools.length === 0 && primaryRecommendedStack) {
       coreStrengths.push(
@@ -840,37 +766,18 @@ export function ToolDetails({
       );
     }
 
+    if (selectedTools.some((tool) => tool.category === "frontend"))
+      coreStrengths.push("a selected frontend layer");
+    if (selectedTools.some((tool) => tool.category === "database"))
+      coreStrengths.push("a selected data layer");
     if (
-      selectedTools.some((tool) =>
-        ["nextjs", "react", "vite"].includes(tool.id),
-      )
-    ) {
-      coreStrengths.push("rapid frontend delivery");
-    }
-    if (
-      selectedTools.some((tool) =>
-        ["supabase", "firebase", "postgres", "mongodb"].includes(tool.id),
-      )
-    ) {
-      coreStrengths.push("a dependable data layer");
-    }
-    if (
-      selectedTools.some((tool) =>
-        ["vercel", "netlify", "railway", "render"].includes(tool.id),
-      )
-    ) {
-      coreStrengths.push("a streamlined deployment flow");
-    }
-    if (
-      selectedTools.some((tool) =>
-        ["chapa", "telebirr", "stripe", "paypal"].includes(tool.id),
-      )
-    ) {
-      coreStrengths.push("payment readiness");
-    }
-    if (selectedTools.some((tool) => ["sentry", "posthog"].includes(tool.id))) {
-      coreStrengths.push("good observability and analytics");
-    }
+      selectedTools.some((tool) => tool.category.startsWith("deploy_"))
+    )
+      coreStrengths.push("a selected deployment layer");
+    if (selectedTools.some((tool) => tool.category === "payment"))
+      coreStrengths.push("a selected payment integration");
+    if (selectedTools.some((tool) => tool.category === "monitoring"))
+      coreStrengths.push("a selected monitoring layer");
 
     const strengths =
       coreStrengths.length > 0
@@ -880,89 +787,49 @@ export function ToolDetails({
     const projectSummary = projectGoals.length
       ? `Focus on ${projectGoals.join(", ").toLowerCase()}.`
       : "Focus on the core value proposition first.";
-    const compatibilityValue = Math.max(
-      0,
-      100 -
-        compatibilityWarnings.reduce((total, warning) => {
-          if (warning.type === "error") return total + 20;
-          if (warning.type === "warning") return total + 10;
-          return total + 4;
-        }, 0),
-    );
-    const executiveScore = Math.max(
-      60,
-      Math.min(
-        95,
-        Math.round(
-          compatibilityValue * 0.4 +
-            launchReadiness.score * 0.35 +
-            (budgetPlan.tone === "good"
-              ? 92
-              : budgetPlan.tone === "warning"
-                ? 72
-                : 84) *
-              0.25,
-        ),
-      ),
-    );
-    const recommendation = `${projectLabel} can be launched with a modern stack anchored around ${toolNames || "your selected tools"}. The combination is well-positioned for fast iteration, with strengths in ${strengths.join(", ")}. ${projectSummary} The most effective path is to keep the first release focused on one high-value user outcome, validate it early, and expand only once the feedback confirms there is real demand.`;
-    const scoreLabel =
-      executiveScore >= 85
-        ? "High confidence"
-        : executiveScore >= 75
-          ? "Solid bet"
-          : "Needs tightening";
-    const strategicPosture =
-      executiveScore >= 85
-        ? "This is a strong launch candidate with room for quick iteration."
-        : executiveScore >= 75
-          ? "This is a practical path that can ship well with disciplined scope control."
-          : "This path can work, but the team should tighten the stack before investing heavily.";
+    const projectContext = projectMapping?.note
+      ? ` Project guidance: ${projectMapping.note}`
+      : "";
+    const recommendation = `Draft stack for ${projectLabel}: ${toolNames || "no tools selected yet"}. Selected tools suggest ${strengths.join(", ")}. ${projectSummary}${projectContext} This is planning guidance only; it does not verify implementation, security, deployment, or production performance.`;
     const watchouts = [
       compatibilityWarnings.length === 0
-        ? "Compatibility looks healthy and the selected tools should integrate cleanly."
+        ? "No known tool-combination conflicts were detected; this is not a full compatibility audit."
         : `${compatibilityWarnings.length} compatibility items still deserve attention.`,
       budgetPlan.tone === "warning"
-        ? "Budget pressure is present, so trim optional services early."
-        : "Budget posture is healthy enough to support a focused launch.",
-      launchReadiness.score < 80
-        ? "Launch readiness would benefit from a stronger support and monitoring setup."
-        : "Operational readiness is already moving in the right direction.",
-      ...(missingCategoryNotes.length > 0
-        ? [
-            `Missing required categories for this project: ${missingCategoryNotes.join(", ")}.`,
-          ]
-        : []),
+        ? "The catalogue upper range exceeds the budget target; verify current provider prices."
+        : "Cost ranges are catalogue-based and should be checked with providers.",
+      ...planningReview.notes,
     ];
 
     return {
-      headline: `An executive-ready foundation for ${projectLabel}`,
+      headline: `Stack planning summary for ${projectLabel}`,
       projectSummary,
       summary: recommendation,
-      score: executiveScore,
-      scoreLabel,
-      strategicPosture,
+      scopeStatement: "Planning summary; no runtime or security checks performed.",
       watchouts,
       highlights: [
         `Selected stack: ${toolNames || "No tools selected yet"}`,
-        `Estimated monthly spend: $${stackCost.totalMonthly.max}`,
+        selectedTools.length > 0
+          ? `Catalogue monthly range: $${stackCost.totalMonthly.min}–$${stackCost.totalMonthly.max}`
+          : "Monthly cost range is unavailable until tools are selected.",
         ...(projectGoals.length
           ? projectGoals.map((goal) => `Target outcome: ${goal.toLowerCase()}`)
           : []),
         compatibilityWarnings.length === 0
-          ? "Compatibility looks healthy."
+          ? "No known compatibility-rule conflicts."
           : `${compatibilityWarnings.length} compatibility review items remain.`,
       ],
       nextActions: [
-        "Validate the core experience with real users before adding more features.",
-        "Secure deployment, monitoring, and support workflows before launch.",
-        "Keep the first release narrow so the team can learn quickly and reduce risk.",
+        "Validate tool choices against project constraints and current provider documentation.",
+        "Review required categories, compatibility notes, access control, backups, and operational monitoring.",
+        "Confirm cost assumptions with current vendor pricing and expected workload.",
       ],
     };
   }, [
     budgetPlan.tone,
     compatibilityWarnings,
-    launchReadiness.score,
+    planningReview.notes,
+    projectMapping,
     projectType,
     selectedTools,
     stackCost.totalMonthly.max,
@@ -970,33 +837,33 @@ export function ToolDetails({
   ]);
 
   const strategyComparison = useMemo(() => {
-    const paymentReady = selectedTools.some((tool) =>
-      ["chapa", "telebirr", "stripe", "paypal"].includes(tool.id),
-    );
-    const scaleReady = selectedTools.some((tool) =>
-      ["sentry", "posthog", "upstash", "vercel", "railway"].includes(tool.id),
-    );
-    const localReady = selectedTools.some((tool) =>
-      ["chapa", "telebirr", "bunny"].includes(tool.id),
-    );
+    const highScaleTarget = [
+      "10000-100000",
+      "100000-plus",
+    ].includes(projectRequirements?.expectedUsers ?? "");
+    const localMarket = projectRequirements?.targetMarketCountry === "Ethiopia";
+    const recommendedId = localMarket
+      ? "ethiopia"
+      : budgetPlan.tone === "warning"
+        ? "lean"
+        : highScaleTarget
+          ? "scale"
+          : "current";
 
     return [
       {
         id: "current",
         title: "Current path",
-        score: aiSummary.score,
-        badge: aiSummary.scoreLabel,
+        badge: "Selected stack",
+        recommended: recommendedId === "current",
         summary: `Stay with the current stack and tighten execution around ${projectType?.label || "the product"}.`,
-        bestFor: "Teams that want a realistic launch path now.",
+        bestFor: "Teams reviewing the current tool selection.",
       },
       {
         id: "lean",
         title: "Lean MVP",
-        score: Math.min(
-          95,
-          aiSummary.score - (budgetPlan.tone === "warning" ? 6 : 2),
-        ),
-        badge: "Best for speed",
+        badge: "Budget scenario",
+        recommended: recommendedId === "lean",
         summary:
           "Reduce scope and keep the first release focused on the core win.",
         bestFor: "Founder-led launches and early validation.",
@@ -1004,11 +871,8 @@ export function ToolDetails({
       {
         id: "scale",
         title: "Scale-up path",
-        score: Math.min(
-          95,
-          scaleReady ? aiSummary.score + 4 : aiSummary.score + 1,
-        ),
-        badge: "Best for growth",
+        badge: "Growth scenario",
+        recommended: recommendedId === "scale",
         summary:
           "Add stronger monitoring and infrastructure discipline to support growth.",
         bestFor: "Products expected to expand quickly after launch.",
@@ -1016,25 +880,24 @@ export function ToolDetails({
       {
         id: "ethiopia",
         title: "Ethiopia-ready path",
-        score: Math.min(95, localReady ? aiSummary.score + 3 : aiSummary.score),
-        badge: "Best for local fit",
+        badge: "Regional scenario",
+        recommended: recommendedId === "ethiopia",
         summary:
           "Prioritize local payments, a mobile-first UX, and faster delivery for Ethiopian users.",
         bestFor: "Products where trust and local payment fit matter most.",
       },
     ];
   }, [
-    aiSummary.score,
-    aiSummary.scoreLabel,
     budgetPlan.tone,
     projectType?.label,
-    selectedTools,
+    projectRequirements?.expectedUsers,
+    projectRequirements?.targetMarketCountry,
   ]);
 
   const recommendedStrategy = useMemo(() => {
-    return strategyComparison.reduce(
-      (best, current) => (current.score > best.score ? current : best),
-      strategyComparison[0],
+    return (
+      strategyComparison.find((strategy) => strategy.recommended) ??
+      strategyComparison[0]
     );
   }, [strategyComparison]);
 
@@ -1044,7 +907,7 @@ export function ToolDetails({
       "",
       aiSummary.summary,
       "",
-      `Recommendation score: ${aiSummary.score}/100 (${aiSummary.scoreLabel})`,
+      aiSummary.scopeStatement,
       "",
       "## Highlights",
       ...aiSummary.highlights.map((item) => `- ${item}`),
@@ -1052,7 +915,7 @@ export function ToolDetails({
       "## Strategic options",
       ...strategyComparison.map(
         (option) =>
-          `- ${option.title} (${option.score}/100): ${option.summary}`,
+          `- ${option.title}${option.recommended ? " (recommended for current inputs)" : ""}: ${option.summary}`,
       ),
       "",
       "## Next actions",
@@ -1334,7 +1197,14 @@ export function ToolDetails({
   );
 
   const projectScoreAdjustments = useMemo(() => {
-    const requiredCategories = projectMapping?.forceRequiredCategories ?? [];
+    const requiredCategories = getOrderedCategories(
+      projectMapping,
+      toolCategories,
+    )
+      .filter((category) =>
+        isCategoryRequired(category.id, projectMapping, category.required),
+      )
+      .map((category) => category.id);
     const missingRequiredCategories = requiredCategories.filter(
       (categoryId) => !selections[categoryId],
     );
@@ -1757,36 +1627,11 @@ export function ToolDetails({
                   }}
                 >
                   <div>
-                    <h5>🚦 Launch readiness score</h5>
+                    <h5>Planning review</h5>
                     <div style={{ fontSize: "0.92rem", color: "var(--muted)" }}>
-                      {launchReadiness.label}
+                      {planningReview.label}
                     </div>
                   </div>
-                  <div style={{ fontSize: "1.7rem", fontWeight: 800 }}>
-                    {launchReadiness.score}/100
-                  </div>
-                </div>
-                <div
-                  style={{
-                    height: "8px",
-                    borderRadius: "999px",
-                    background: "rgba(255,255,255,0.1)",
-                    overflow: "hidden",
-                    marginTop: "0.8rem",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${launchReadiness.score}%`,
-                      height: "100%",
-                      background:
-                        launchReadiness.score >= 85
-                          ? "#22c55e"
-                          : launchReadiness.score >= 70
-                            ? "#38bdf8"
-                            : "#f4b24b",
-                    }}
-                  />
                 </div>
                 <div
                   style={{
@@ -1795,19 +1640,23 @@ export function ToolDetails({
                     gap: "0.45rem",
                   }}
                 >
-                  {launchReadiness.upgrades.map((upgrade) => (
+                  {planningReview.notes.map((note) => (
                     <div
-                      key={upgrade}
+                      key={note}
                       style={{
                         borderLeft: "3px solid #38bdf8",
                         paddingLeft: "0.7rem",
                         fontSize: "0.95rem",
                       }}
                     >
-                      {upgrade}
+                      {note}
                     </div>
                   ))}
                 </div>
+                <small style={{ color: "var(--muted)" }}>
+                  Planning guidance only; no deployment or runtime checks are
+                  performed.
+                </small>
               </div>
 
               <div
@@ -2142,30 +1991,11 @@ export function ToolDetails({
                           }}
                         >
                           <span style={{ fontWeight: 700 }}>
-                            Fit score: {scenario.fitScore}/100
+                            Scenario lens
                           </span>
-                          <div
-                            style={{
-                              height: "8px",
-                              width: "180px",
-                              borderRadius: "999px",
-                              background: "rgba(255,255,255,0.1)",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: `${scenario.fitScore}%`,
-                                height: "100%",
-                                background:
-                                  scenario.fitScore >= 90
-                                    ? "#22c55e"
-                                    : scenario.fitScore >= 80
-                                      ? "#38bdf8"
-                                      : "#f4b24b",
-                              }}
-                            />
-                          </div>
+                          <span style={{ color: "var(--muted)" }}>
+                            Planning example; no fit score
+                          </span>
                         </div>
                         <div style={{ display: "grid", gap: "0.5rem" }}>
                           {scenario.priorities.map((priority) => (
@@ -2184,7 +2014,7 @@ export function ToolDetails({
                           <div
                             style={{ fontWeight: 700, marginBottom: "0.35rem" }}
                           >
-                            Recommended tools
+                            Selected tools to review
                           </div>
                           <div
                             style={{
@@ -2193,18 +2023,22 @@ export function ToolDetails({
                               flexWrap: "wrap",
                             }}
                           >
-                            {scenario.recommendedTools.map((tool) => (
-                              <span
-                                key={tool}
-                                style={{
-                                  padding: "0.35rem 0.6rem",
-                                  borderRadius: "999px",
-                                  background: "rgba(255,255,255,0.06)",
-                                }}
-                              >
-                                {tool}
-                              </span>
-                            ))}
+                            {selectedTools.length > 0 ? (
+                              selectedTools.map((tool) => (
+                                <span
+                                  key={tool.id}
+                                  style={{
+                                    padding: "0.35rem 0.6rem",
+                                    borderRadius: "999px",
+                                    background: "rgba(255,255,255,0.06)",
+                                  }}
+                                >
+                                  {tool.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span>No tools selected yet.</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2273,27 +2107,17 @@ export function ToolDetails({
                         color: "var(--muted)",
                       }}
                     >
-                      Recommendation score
+                      Decision summary
                     </div>
                     <div
                       style={{
-                        fontSize: "2rem",
-                        fontWeight: 800,
+                        fontSize: "1rem",
+                        fontWeight: 700,
                         lineHeight: 1.1,
                       }}
                     >
-                      {aiSummary.score}/100
+                      Planning only
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      padding: "0.55rem 0.8rem",
-                      borderRadius: "999px",
-                      background: "rgba(255,255,255,0.12)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {aiSummary.scoreLabel}
                   </div>
                 </div>
                 <h5 style={{ marginTop: "0.85rem", marginBottom: "0.35rem" }}>
@@ -2329,7 +2153,7 @@ export function ToolDetails({
                     Strategic posture
                   </div>
                   <div style={{ color: "var(--muted)", lineHeight: 1.5 }}>
-                    {aiSummary.strategicPosture}
+                    {aiSummary.scopeStatement}
                   </div>
                 </div>
                 <div
@@ -2439,11 +2263,6 @@ export function ToolDetails({
                             </div>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <div
-                              style={{ fontSize: "1.1rem", fontWeight: 800 }}
-                            >
-                              {option.score}/100
-                            </div>
                             <div
                               style={{
                                 color: "var(--muted)",
@@ -3068,41 +2887,34 @@ export function ToolDetails({
           (() => {
             const costData = stackCost;
             const warnings = checkCompatibility(Object.values(selections));
-            const totalScore = selectedTools.reduce((acc, t) => {
-              const score = getToolScore(t.id);
-              return acc + (score?.totalScore || 0);
-            }, 0);
-            const avgScore =
-              selectedTools.length > 0
-                ? (totalScore / selectedTools.length).toFixed(1)
-                : "0";
 
             return (
               <div className="details-section">
                 <h4>💰 Cost & Compatibility Analysis</h4>
                 <p className="details-subtitle">
-                  Estimated monthly infrastructure costs, compatibility checks,
-                  and quality scores for your selected stack.
+                  Catalogue-based price ranges and rule-based compatibility
+                  notes for the selected stack. These are not live quotes or
+                  runtime checks.
                 </p>
 
                 {/* Cost Summary */}
                 <div className="cost-summary-cards">
                   <div className="cost-card free">
-                    <span className="cost-card-label">Minimum Monthly</span>
+                    <span className="cost-card-label">Monthly lower range</span>
                     <span className="cost-card-value">
                       ${costData.totalMonthly.min}
                     </span>
                     <span className="cost-card-note">
-                      Using free tiers where possible
+                      Catalogue plan assumptions
                     </span>
                   </div>
                   <div className="cost-card paid">
-                    <span className="cost-card-label">Maximum Monthly</span>
+                    <span className="cost-card-label">Monthly upper range</span>
                     <span className="cost-card-value">
                       ${costData.totalMonthly.max}
                     </span>
                     <span className="cost-card-note">
-                      All tools on paid plans
+                      Not usage- or region-calculated
                     </span>
                   </div>
                   <div className="cost-card annual">
@@ -3111,31 +2923,43 @@ export function ToolDetails({
                       ${costData.totalAnnual.min}–${costData.totalAnnual.max}
                     </span>
                     <span className="cost-card-note">
-                      Estimated yearly cost
+                      Monthly range multiplied by 12
                     </span>
                   </div>
                   <div className="cost-card score">
-                    <span className="cost-card-label">Stack Quality Score</span>
-                    <span className="cost-card-value">{avgScore}/10</span>
+                    <span className="cost-card-label">Free-tier options</span>
+                    <span className="cost-card-value">
+                      {costData.hasFreeTierOptions ? "Listed" : "Not listed"}
+                    </span>
                     <span className="cost-card-note">
-                      Average across all tools
+                      Does not imply capacity is sufficient
                     </span>
                   </div>
                   <div
                     className="cost-card"
-                    style={{ borderColor: compatibilityScore.color }}
+                    style={{
+                      borderColor:
+                        warnings.length > 0
+                          ? "rgba(245, 158, 11, 0.5)"
+                          : "rgba(56, 189, 248, 0.5)",
+                    }}
                   >
-                    <span className="cost-card-label">Compatibility Grade</span>
+                    <span className="cost-card-label">
+                      Compatibility notes
+                    </span>
                     <span
                       className="cost-card-value"
-                      style={{ color: compatibilityScore.color }}
+                      style={{
+                        color:
+                          warnings.length > 0 ? "#f4b24b" : "#38bdf8",
+                      }}
                     >
-                      {compatibilityScore.label}
+                      {warnings.length}
                     </span>
                     <span className="cost-card-note">
                       {warnings.length === 0
-                        ? "No major issues detected"
-                        : `${warnings.length} checks to review`}
+                        ? "No known rule conflicts"
+                        : "Review the listed rule results"}
                     </span>
                   </div>
                 </div>
@@ -3334,7 +3158,7 @@ export function ToolDetails({
                   <div className="cost-table">
                     <div className="cost-table-header">
                       <span>Tool</span>
-                      <span>Free Tier</span>
+                      <span>Free/entry plan</span>
                       <span>Monthly Cost</span>
                       <span>Upgrade Trigger</span>
                     </div>
@@ -3348,7 +3172,7 @@ export function ToolDetails({
                           className={`cost-monthly ${b.monthlyCost.max === 0 ? "free" : ""}`}
                         >
                           {b.monthlyCost.min === 0 && b.monthlyCost.max === 0
-                            ? "Free"
+                            ? "No fixed fee modeled"
                             : `$${b.monthlyCost.min}–$${b.monthlyCost.max}/mo`}
                         </span>
                         <span className="cost-breakeven">
@@ -3359,19 +3183,20 @@ export function ToolDetails({
                   </div>
                 </div>
 
-                {/* Ethiopian Cost Note */}
+                {/* Regional pricing note */}
                 <div className="cost-ethiopian-section">
-                  <h5>🇪🇹 Ethiopian Cost Considerations</h5>
-                  <div className="ethiopian-cost-grid">
-                    {costData.breakdown.map((b) => (
-                      <div key={b.toolId} className="ethiopian-cost-item">
-                        <strong>
-                          {b.toolIcon} {b.toolName}
-                        </strong>
-                        <p>{b.ethiopianCostNote}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <h5>
+                    Regional pricing{" "}
+                    {projectRequirements?.targetMarketCountry
+                      ? `(${projectRequirements.targetMarketCountry})`
+                      : ""}
+                  </h5>
+                  <p>
+                    No regional price adjustment is applied. Verify current
+                    provider availability, taxes, payment fees, data transfer,
+                    and currency conversion for the target market.
+                  </p>
+                  <p>{costData.upgradePlanningNote}</p>
                 </div>
               </div>
             );
@@ -3537,8 +3362,9 @@ export function ToolDetails({
               >
                 <strong>Project fit alert:</strong> This project type needs
                 selections for{" "}
-                {projectScoreAdjustments.missingCategoryNotes.join(", ")} before
-                it can be production-ready.
+                {projectScoreAdjustments.missingCategoryNotes.join(", ")} for
+                this plan. These selections do not establish production
+                readiness.
               </div>
             )}
 

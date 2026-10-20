@@ -40,6 +40,7 @@ export {
 export {
   projectRequirementsDefaults,
   projectCategoryOptions,
+  getAdvisorProjectTypeId,
   targetPlatformOptions,
   targetUsersOptions,
   expectedUsersOptions,
@@ -74,6 +75,11 @@ export type {
   RequirementsAnalysisResult,
 } from "./types";
 export { analyzeProjectRequirements } from "./requirements-analyzer";
+export {
+  buildLocalProjectDescriptionAnalysis,
+  isProjectDescriptionAnalysis,
+} from "./project-description-analysis";
+export type { ProjectDescriptionAnalysis } from "./project-description-analysis";
 export { analyzeAndRecommend } from "./tech-recommendation-analyzer";
 export type {
   ConfidenceLevel,

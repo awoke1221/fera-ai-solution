@@ -9,47 +9,26 @@ export type DeploymentOption = {
 };
 
 export type DeploymentReadinessAssessment = {
-  overallScore: number;
   recommendedStrategy: string[];
-  readyForProduction: string[];
+  productionChecklist: string[];
   deploymentOptions: DeploymentOption[];
   riskNotes: string[];
   rolloutPlan: string[];
 };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
 
 export function buildDeploymentReadinessAssessment(
   requirements: ProjectRequirements,
 ): DeploymentReadinessAssessment {
   const featureSet = new Set(requirements.requiredFeatures);
 
-  const isHighScale =
-    requirements.expectedUsers === "10000-100000" ||
-    requirements.expectedUsers === "100000-plus";
   const hasPayments = featureSet.has("payments");
   const hasAI = featureSet.has("ai");
   const hasRealtime = featureSet.has("real-time-communication");
   const hasVideo = featureSet.has("video");
-  const mobileFirst = requirements.targetPlatforms.includes("mobile");
+  const isHighScale =
+    requirements.expectedUsers === "10000-100000" ||
+    requirements.expectedUsers === "100000-plus";
   const isEnterprise = requirements.targetUsers === "enterprise";
-
-  let score = 58;
-  if (hasPayments) score += 12;
-  if (hasAI) score += 8;
-  if (hasRealtime) score += 6;
-  if (hasVideo) score += 4;
-  if (mobileFirst) score += 5;
-  if (isEnterprise) score += 8;
-  if (isHighScale) score += 8;
-  if (requirements.budget === "free" || requirements.budget === "under-50")
-    score -= 10;
-  if (requirements.developerExperience === "beginner") score -= 6;
-  if (requirements.timeToLaunch === "under-2-weeks") score -= 8;
-
-  const overallScore = clamp(score, 25, 96);
 
   const recommendedStrategy = [
     "Use a production-ready hosting model with a managed app runtime, managed database, and a dedicated edge layer for static assets and caching.",
@@ -57,7 +36,28 @@ export function buildDeploymentReadinessAssessment(
     "Add CI/CD, automated health checks, and staged log aggregation before launch to ensure reliable deployment.",
   ];
 
-  const readyForProduction = [
+  if (hasPayments) {
+    recommendedStrategy.push(
+      "For payments, verify provider webhook signatures, idempotency, and retry handling before accepting live transactions.",
+    );
+  }
+  if (hasAI || hasVideo) {
+    recommendedStrategy.push(
+      "For AI or video workloads, plan request limits, asynchronous processing, and usage-based cost controls.",
+    );
+  }
+  if (hasRealtime) {
+    recommendedStrategy.push(
+      "For real-time features, test connection limits, authorization, reconnect behavior, and message fan-out under expected traffic.",
+    );
+  }
+  if (isHighScale || isEnterprise) {
+    recommendedStrategy.push(
+      "Given the stated audience or user volume, evaluate capacity limits, recovery objectives, and support coverage with the chosen providers.",
+    );
+  }
+
+  const productionChecklist = [
     "Production environment variables are isolated from local secrets and stored in a managed secret store.",
     "Health checks, rollback automation, and zero-downtime release process are configured.",
     "Database backups, retention policies, and restore testing are defined and validated.",
@@ -159,9 +159,8 @@ export function buildDeploymentReadinessAssessment(
   ];
 
   return {
-    overallScore,
     recommendedStrategy,
-    readyForProduction,
+    productionChecklist,
     deploymentOptions,
     riskNotes,
     rolloutPlan,

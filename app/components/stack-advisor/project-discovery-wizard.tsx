@@ -7,7 +7,10 @@ import {
   developmentPriorityOptions,
   discoveryWizardSteps,
   expectedUsersOptions,
+  getAdvisorProjectTypeId,
   projectCategoryOptions,
+  projectTypes,
+  isProjectDescriptionAnalysis,
   projectRequirementsDefaults,
   requiredFeatureOptions,
   targetPlatformOptions,
@@ -17,6 +20,7 @@ import {
   validateProjectRequirements,
 } from ".";
 import type {
+  ProjectDescriptionAnalysis,
   ProjectRequirements,
   ProjectRequirementsValidationErrors,
   RequiredFeature,
@@ -28,12 +32,18 @@ const STORAGE_KEY = "stack-advisor-discovery";
 interface ProjectDiscoveryWizardProps {
   initialRequirements?: ProjectRequirements | null;
   onRequirementsChange: (requirements: ProjectRequirements) => void;
+  onProjectTypeChange?: (projectTypeId: string | null) => void;
+  onProjectAnalysisChange?: (
+    analysis: ProjectDescriptionAnalysis | null,
+  ) => void;
   onComplete?: () => void;
 }
 
 export function ProjectDiscoveryWizard({
   initialRequirements,
   onRequirementsChange,
+  onProjectTypeChange,
+  onProjectAnalysisChange,
   onComplete,
 }: ProjectDiscoveryWizardProps) {
   const [draft, setDraft] = useState<ProjectRequirements>(
@@ -42,6 +52,16 @@ export function ProjectDiscoveryWizard({
   const [stepIndex, setStepIndex] = useState(0);
   const [errors, setErrors] = useState<ProjectRequirementsValidationErrors>({});
   const [isHydrated, setIsHydrated] = useState(false);
+  const [projectAnalysis, setProjectAnalysis] =
+    useState<ProjectDescriptionAnalysis | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<
+    "idle" | "analyzing" | "error"
+  >("idle");
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisAttempt, setAnalysisAttempt] = useState(0);
+  const [analyzedDescription, setAnalyzedDescription] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -75,6 +95,89 @@ export function ProjectDiscoveryWizard({
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   }, [draft, isHydrated]);
 
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const description = draft.projectDescription.trim();
+    if (description.length < 20) {
+      setProjectAnalysis(null);
+      setAnalyzedDescription(null);
+      setAnalysisStatus("idle");
+      setAnalysisError(null);
+      return;
+    }
+    if (description === analyzedDescription && projectAnalysis) return;
+
+    setProjectAnalysis(null);
+    setAnalysisError(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setAnalysisStatus("analyzing");
+
+      try {
+        const response = await fetch("/api/ai-stack-recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({ projectDescription: description }),
+        });
+        if (!response.ok) {
+          const result = (await response.json()) as { error?: string };
+          throw new Error(result.error || "Project analysis failed.");
+        }
+
+        const result = (await response.json()) as {
+          type?: string;
+          analysis?: unknown;
+        };
+        if (
+          result.type !== "project-analysis" ||
+          !isProjectDescriptionAnalysis(result.analysis)
+        ) {
+          throw new Error("The project analysis response was invalid.");
+        }
+
+        const analysis: ProjectDescriptionAnalysis = {
+          ...result.analysis,
+          source:
+            "source" in result.analysis && result.analysis.source === "ai"
+              ? "ai"
+              : "local",
+        };
+        setProjectAnalysis(analysis);
+        onProjectAnalysisChange?.(analysis);
+        setAnalyzedDescription(description);
+        setAnalysisStatus("idle");
+        setDraft((previous) => ({
+          ...previous,
+          projectCategory: analysis.projectCategory,
+          requiredFeatures: analysis.requiredFeatures,
+          targetPlatforms: analysis.targetPlatforms,
+        }));
+        onProjectTypeChange?.(analysis.projectType);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setAnalysisStatus("error");
+        setAnalysisError(
+          error instanceof Error ? error.message : "Project analysis failed.",
+        );
+      }
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [
+    analyzedDescription,
+    draft.projectDescription,
+    isHydrated,
+    analysisAttempt,
+    onProjectAnalysisChange,
+    onProjectTypeChange,
+    projectAnalysis,
+  ]);
+
   const totalSteps = discoveryWizardSteps.length;
   const currentStep = discoveryWizardSteps[stepIndex];
   const isFinalStep = stepIndex === totalSteps - 1;
@@ -98,6 +201,12 @@ export function ProjectDiscoveryWizard({
     field: K,
     value: ProjectRequirements[K],
   ) => {
+    if (field === "projectDescription") {
+      setProjectAnalysis(null);
+      setAnalyzedDescription(null);
+      onProjectAnalysisChange?.(null);
+      onProjectTypeChange?.(null);
+    }
     setDraft((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
@@ -131,8 +240,10 @@ export function ProjectDiscoveryWizard({
         currentErrors.projectName = "Project name is required.";
       if (!draft.projectDescription.trim())
         currentErrors.projectDescription = "Project description is required.";
-      if (!draft.projectCategory)
-        currentErrors.projectCategory = "Select a project category.";
+      if (!projectAnalysis)
+        currentErrors.projectDescription =
+          analysisError ||
+          "Describe your project in at least 20 characters and wait for the analysis.";
     }
 
     if (currentStep.id === "audience") {
@@ -156,9 +267,6 @@ export function ProjectDiscoveryWizard({
     }
 
     if (currentStep.id === "features") {
-      if (!draft.requiredFeatures.length)
-        currentErrors.requiredFeatures =
-          "Select at least one required feature.";
       if (!draft.targetMarketCountry.trim())
         currentErrors.targetMarketCountry =
           "Target market or country is required.";
@@ -218,6 +326,7 @@ export function ProjectDiscoveryWizard({
               <textarea
                 aria-invalid={Boolean(errors.projectDescription)}
                 rows={5}
+                maxLength={6000}
                 value={draft.projectDescription}
                 onChange={(event) =>
                   updateField("projectDescription", event.target.value)
@@ -230,23 +339,85 @@ export function ProjectDiscoveryWizard({
             </label>
 
             <div className="field-group full-width">
-              <span>Project category</span>
-              <div className="option-grid compact">
-                {projectCategoryOptions.map((option) => (
+              <span>AI project analysis</span>
+              {analysisStatus === "analyzing" ? (
+                <div className="stack-ai-project-analysis" role="status">
+                  <strong>Analyzing your project description…</strong>
+                  <p>
+                    Identifying the closest project type and the features your
+                    product actually needs.
+                  </p>
+                </div>
+              ) : projectAnalysis ? (
+                <div className="stack-ai-project-analysis" role="status">
+                  <div className="stack-ai-project-analysis-heading">
+                    <strong>
+                      {projectTypes.find(
+                        (project) => project.id === projectAnalysis.projectType,
+                      )?.label ?? "Recommended project type"}
+                    </strong>
+                    <span>
+                      {projectAnalysis.source === "ai"
+                        ? "AI analyzed"
+                        : "Local suggestion"}
+                    </span>
+                  </div>
+                  <p>{projectAnalysis.summary}</p>
+                  <small>{projectAnalysis.rationale}</small>
+                  <div className="stack-ai-feature-suggestions">
+                    {projectAnalysis.requiredFeatures.map((feature) => (
+                      <span key={feature}>
+                        {requiredFeatureOptions.find(
+                          (option) => option.value === feature,
+                        )?.label ?? feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : analysisStatus === "error" ? (
+                <div className="stack-ai-project-analysis error" role="alert">
+                  <strong>Project analysis could not finish.</strong>
+                  <p>{analysisError}</p>
+                  <small>
+                    Edit the description to retry, or check your connection
+                    and membership session.
+                  </small>
                   <button
-                    key={option.value}
                     type="button"
-                    className={
-                      "option-pill " +
-                      (draft.projectCategory === option.value ? "selected" : "")
-                    }
-                    onClick={() => updateField("projectCategory", option.value)}
-                    aria-pressed={draft.projectCategory === option.value}
+                    className="btn"
+                    onClick={() => setAnalysisAttempt((attempt) => attempt + 1)}
                   >
-                    {option.label}
+                    Retry analysis
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="stack-ai-project-analysis">
+                  <strong>AI will identify one best-fit project type</strong>
+                  <p>
+                    Add more detail—at least 20 characters—to get tailored
+                    project and feature suggestions.
+                  </p>
+                </div>
+              )}
+              <label className="field-group stack-ai-category-override">
+                <span>Correct the category if needed</span>
+                <select
+                  value={draft.projectCategory}
+                  onChange={(event) => {
+                    const category = event.target
+                      .value as ProjectRequirements["projectCategory"];
+                    updateField("projectCategory", category);
+                    onProjectAnalysisChange?.(null);
+                    onProjectTypeChange?.(getAdvisorProjectTypeId(category));
+                  }}
+                >
+                  {projectCategoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {errors.projectCategory && (
                 <small>{errors.projectCategory}</small>
               )}

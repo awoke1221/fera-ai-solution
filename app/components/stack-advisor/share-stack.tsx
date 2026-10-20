@@ -20,7 +20,12 @@ export function decodeSelections(
   try {
     const json = decodeURIComponent(atob(encoded));
     const parsed = JSON.parse(json);
-    if (typeof parsed === "object" && parsed !== null) {
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed) &&
+      Object.values(parsed).every((value) => typeof value === "string")
+    ) {
       return parsed as Record<string, string>;
     }
     return null;
@@ -29,11 +34,19 @@ export function decodeSelections(
   }
 }
 
-export function buildShareUrl(selections: Record<string, string>): string {
+export function buildShareUrl(
+  selections: Record<string, string>,
+  projectId?: string | null,
+): string {
   const encoded = encodeSelections(selections);
   if (!encoded) return window.location.href;
   const url = new URL(window.location.href);
   url.searchParams.set("stack", encoded);
+  if (projectId) {
+    url.searchParams.set("project", projectId);
+  } else {
+    url.searchParams.delete("project");
+  }
   return url.toString();
 }
 
@@ -48,16 +61,17 @@ export function getSelectionsFromUrl(): Record<string, string> | null {
 // ─── Share Button Component ────────────────────────────
 interface ShareStackProps {
   selections: Record<string, string>;
+  projectId?: string | null;
 }
 
-export function ShareStack({ selections }: ShareStackProps) {
+export function ShareStack({ selections, projectId }: ShareStackProps) {
   const [copied, setCopied] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const hasSelections = Object.keys(selections).length > 0;
 
   const handleShare = useCallback(() => {
-    const url = buildShareUrl(selections);
+    const url = buildShareUrl(selections, projectId);
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -83,7 +97,7 @@ export function ShareStack({ selections }: ShareStackProps) {
           setTimeout(() => setCopied(false), 300);
         }, 2500);
       });
-  }, [selections]);
+  }, [projectId, selections]);
 
   if (!hasSelections) return null;
 

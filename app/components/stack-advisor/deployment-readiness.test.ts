@@ -22,6 +22,7 @@ const baseRequirements: ProjectRequirements = {
     "payments",
     "analytics",
     "notifications",
+    "real-time-communication",
   ],
   targetMarketCountry: "Ethiopia",
   expectedGrowth: "Strong regional growth with multiple sales channels",
@@ -31,9 +32,11 @@ const baseRequirements: ProjectRequirements = {
 test("buildDeploymentReadinessAssessment produces structured deployment guidance", () => {
   const report = buildDeploymentReadinessAssessment(baseRequirements);
 
-  assert.ok(report.overallScore >= 0 && report.overallScore <= 100);
   assert.ok(report.recommendedStrategy.length > 0);
-  assert.ok(report.readyForProduction.length > 0);
+  assert.ok(report.productionChecklist.length > 0);
+  assert.ok(
+    report.recommendedStrategy.some((item) => item.includes("webhook")),
+  );
   assert.ok(report.deploymentOptions.length >= 3);
   assert.ok(
     report.deploymentOptions.every(

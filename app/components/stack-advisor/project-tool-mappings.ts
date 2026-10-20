@@ -553,6 +553,126 @@ export const projectToolMappings: ProjectToolMapping[] = [
       },
     },
   },
+  {
+    projectType: "ai-app",
+    note: "AI products need a clear model integration layer, data access boundaries, usage controls, and evaluation before scaling.",
+    forceRequiredCategories: ["monitoring", "testing"],
+    hideCategories: ["payment", "mobile"],
+    categoryOrder: [
+      "frontend",
+      "backend",
+      "database",
+      "auth",
+      "search",
+      "cache",
+      "monitoring",
+      "testing",
+      "deploy_frontend",
+      "deploy_backend",
+      "cicd",
+      "storage",
+      "email",
+      "css_ui",
+      "state_mgmt",
+    ],
+    categoryPriorities: {
+      backend: {
+        reason:
+          "AI calls and sensitive model credentials belong behind a controlled server-side API.",
+        prioritize: ["python_fastapi", "nextjs_api", "node"],
+        hide: [],
+        ethiopianPriority: [],
+      },
+      search: {
+        reason:
+          "Retrieval or semantic search may be required when the AI product answers from private project data.",
+        prioritize: ["meilisearch", "algolia", "typesense"],
+        hide: [],
+        ethiopianPriority: [],
+      },
+      monitoring: {
+        reason:
+          "AI products should monitor errors, latency, usage, and model spend.",
+        prioritize: ["sentry", "posthog"],
+        hide: [],
+        ethiopianPriority: ["posthog"],
+      },
+    },
+  },
+  {
+    projectType: "mobile-app",
+    note: "Mobile products need an app framework, a reliable API, push or email notifications, and release/testing workflows.",
+    forceRequiredCategories: ["mobile", "testing"],
+    hideCategories: ["deploy_frontend", "css_ui"],
+    categoryOrder: [
+      "mobile",
+      "backend",
+      "database",
+      "auth",
+      "storage",
+      "email",
+      "payment",
+      "testing",
+      "monitoring",
+      "deploy_backend",
+      "cicd",
+      "cache",
+      "search",
+      "state_mgmt",
+    ],
+    categoryPriorities: {
+      mobile: {
+        reason:
+          "Choose a native or cross-platform framework based on team skills and required device capabilities.",
+        prioritize: ["react_native", "flutter"],
+        hide: [],
+        ethiopianPriority: [],
+      },
+      backend: {
+        reason:
+          "A managed API backend keeps mobile clients thin and lets you update business rules without app-store releases.",
+        prioritize: ["node", "python_fastapi", "nextjs_api"],
+        hide: [],
+        ethiopianPriority: [],
+      },
+    },
+  },
+  {
+    projectType: "api-backend",
+    note: "Backend services prioritize stable API contracts, data integrity, authentication, testing, and production observability.",
+    forceRequiredCategories: ["testing", "monitoring"],
+    hideCategories: ["frontend", "deploy_frontend", "css_ui", "state_mgmt", "mobile"],
+    categoryOrder: [
+      "backend",
+      "database",
+      "auth",
+      "cache",
+      "search",
+      "storage",
+      "testing",
+      "monitoring",
+      "deploy_backend",
+      "cicd",
+      "email",
+      "payment",
+    ],
+    categoryPriorities: {
+      backend: {
+        reason:
+          "Backend frameworks are prioritized by the need for typed, documented, maintainable APIs.",
+        prioritize: ["python_fastapi", "node", "django"],
+        hide: [],
+        ethiopianPriority: [],
+      },
+      database: {
+        reason:
+          "Relational databases are prioritized for transaction integrity and flexible service integrations.",
+        prioritize: ["postgresql", "supabase_db", "neon"],
+        hide: [],
+        ethiopianPriority: ["postgresql"],
+      },
+    },
+  },
 ];
 
 /** Helper: get the mapping for a given project type ID */

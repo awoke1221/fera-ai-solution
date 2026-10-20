@@ -1,12 +1,15 @@
 // ─── AI Stack Recommendation API ───────────────────────
 // POST /api/ai-stack-recommend
-// Two modes:
+// Modes:
 // 1. Structured Mode: If projectRequirements + requirementsAnalysis provided,
 //    returns deterministic typed StructuredTechStackRecommendation
-// 2. Chat Mode: If message provided, uses DeepSeek for conversational advice
+// 2. Project Analysis Mode: If projectDescription is provided, uses AI to
+//    classify the product and recommend a validated stack direction
+// 3. Chat Mode: If message provided, uses DeepSeek for conversational advice
 //
 // Environment:
-//   DEEPSEEK_API_KEY  — required in .env.local for chat mode
+//   DEEPSEEK_API_KEY  — enables AI analysis and chat; local suggestions are
+//                       returned transparently if unavailable
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
@@ -15,6 +18,17 @@ import type {
   ProjectRequirements,
   RequirementsAnalysisResult,
 } from "@/app/components/stack-advisor";
+import {
+  buildLocalProjectDescriptionAnalysis,
+  isProjectDescriptionAnalysis,
+  projectCategoryOptions,
+  requiredFeatureOptions,
+  targetPlatformOptions,
+  toolCategories,
+  tools,
+  type ProjectDescriptionAnalysis,
+} from "@/app/components/stack-advisor";
+import { projectTypes } from "@/app/components/stack-advisor/project-types";
 import { analyzeAndRecommend } from "@/app/components/stack-advisor/tech-recommendation-analyzer";
 import {
   RecommendationValidator,
@@ -32,6 +46,72 @@ const API_URL = "https://api.deepseek.com/v1/chat/completions";
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 
+async function analyzeProjectDescription(
+  description: string,
+): Promise<ProjectDescriptionAnalysis> {
+  const fallback = buildLocalProjectDescriptionAnalysis(description);
+  if (!DEEPSEEK_API_KEY) return fallback;
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        temperature: 0.2,
+        max_tokens: 900,
+        messages: [
+          {
+            role: "system",
+            content: [
+              "Analyze a software project description and return only one JSON object.",
+              "Choose exactly one projectCategory and one closest projectType from the allowed IDs.",
+              "Do not invent scope. Suggest only features clearly implied by the description; always include authentication only when user accounts are implied.",
+              "Recommend one tool per relevant stack category using the exact tool IDs from the catalogue. Do not recommend unrelated categories or tools not in the catalogue.",
+              `Allowed projectCategory values: ${projectCategoryOptions.map((option) => option.value).join(", ")}.`,
+              `Allowed projectType values: ${projectTypes.map((project) => `${project.id} (${project.label})`).join(", ")}.`,
+              `Allowed requiredFeatures values: ${requiredFeatureOptions.map((option) => option.value).join(", ")}.`,
+              `Allowed targetPlatforms values: ${targetPlatformOptions.map((option) => option.value).join(", ")}.`,
+              `Tool catalogue by category: ${toolCategories.map((category) => `${category.id}: ${tools.filter((tool) => tool.category === category.id).map((tool) => `${tool.id} (${tool.name})`).join(", ")}`).join("; ")}.`,
+              'JSON shape: {"projectCategory":"...","projectType":"...","summary":"...","rationale":"...","requiredFeatures":["..."],"targetPlatforms":["..."],"recommendedTools":{"frontend":"tool_id","database":"tool_id"},"recommendedToolReasons":{"frontend":"short reason","database":"short reason"},"confidence":"high|medium|low"}.',
+            ].join(" "),
+          },
+          { role: "user", content: description.slice(0, 6000) },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI provider returned status ${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    const content = payload.choices?.[0]?.message?.content;
+    const parsed =
+      typeof content === "string" ? parseAiJsonResponse(content) : null;
+
+    if (!isProjectDescriptionAnalysis(parsed)) {
+      throw new Error("AI project analysis response failed validation");
+    }
+
+    return {
+      ...parsed,
+      summary: parsed.summary.slice(0, 500),
+      rationale: parsed.rationale.slice(0, 500),
+      source: "ai",
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error("AI project description analysis failed:", reason);
+    return fallback;
+  }
+}
+
 const SYSTEM_PROMPT = `You are a senior tech stack advisor for the "Vibe Coder's Tech Stack Platform". Your role is to help developers choose the best combination of tools, frameworks, and services for their projects.
 
 AVAILABLE PROJECT TYPES:
@@ -45,6 +125,9 @@ AVAILABLE PROJECT TYPES:
 - Real Estate Platform — Property listings, virtual tours, agent mgmt
 - Content / Media Platform — CMS, video streaming, subscriptions
 - Booking / Reservation System — Reservations, availability, payments
+- AI Application — Assistants, intelligent workflows, retrieval, and AI usage controls
+- Mobile Application — Native or cross-platform iOS and Android products
+- API / Backend Service — Versioned APIs, integrations, and service operations
 
 AVAILABLE TOOLS BY CATEGORY:
 
@@ -140,6 +223,7 @@ export async function POST(request: Request) {
     | undefined;
   let projectRequirements: ProjectRequirements | undefined;
   let requirementsAnalysis: RequirementsAnalysisResult | undefined;
+  let projectDescription: string | undefined;
 
   try {
     const supabase = await createAdminClient();
@@ -174,7 +258,26 @@ export async function POST(request: Request) {
       conversation,
       projectRequirements,
       requirementsAnalysis,
+      projectDescription,
     } = await request.json());
+
+    if (typeof projectDescription === "string" && projectDescription.trim()) {
+      const description = projectDescription.trim();
+      if (description.length < 20) {
+        return NextResponse.json(
+          { error: "Describe your project in at least 20 characters." },
+          { status: 400 },
+        );
+      }
+      if (description.length > 6_000) {
+        return NextResponse.json(
+          { error: "Project description must be 6,000 characters or less." },
+          { status: 413 },
+        );
+      }
+      const analysis = await analyzeProjectDescription(description);
+      return NextResponse.json({ type: "project-analysis", analysis });
+    }
 
     // Mode 1: Structured Recommendation
     // If we have project requirements and analysis, generate deterministic structured recommendation
@@ -272,7 +375,24 @@ export async function POST(request: Request) {
       projectContext = `\nThe user's project type is: ${projectType}\n`;
     }
 
-    const userPrompt = `Project Type: ${projectType || "Not specified"}${selectionsContext}${projectContext}\n\nUser message: ${message || "What stack do you recommend for this project?"}`;
+    const requirementsContext = projectRequirements
+      ? [
+          "Project discovery details:",
+          `Name: ${projectRequirements.projectName}`,
+          `Description: ${projectRequirements.projectDescription}`,
+          `Category: ${projectRequirements.projectCategory}`,
+          `Platforms: ${Array.isArray(projectRequirements.targetPlatforms) ? projectRequirements.targetPlatforms.join(", ") : "Not specified"}`,
+          `Audience: ${projectRequirements.targetUsers}`,
+          `Expected users: ${projectRequirements.expectedUsers}`,
+          `Team size and experience: ${projectRequirements.teamSize}, ${projectRequirements.developerExperience}`,
+          `Priority, budget, and timeline: ${projectRequirements.developmentPriority}, ${projectRequirements.budget}, ${projectRequirements.timeToLaunch}`,
+          `Required features: ${Array.isArray(projectRequirements.requiredFeatures) ? projectRequirements.requiredFeatures.join(", ") : "Not specified"}`,
+          `Target market: ${projectRequirements.targetMarketCountry}`,
+          `Growth expectation: ${projectRequirements.expectedGrowth}`,
+        ].join("\n")
+      : "";
+
+    const userPrompt = `Project Type: ${projectType || "Not specified"}${selectionsContext}${projectContext}${requirementsContext ? `\n\n${requirementsContext}` : ""}\n\nUser message: ${message || "What stack do you recommend for this project?"}`;
 
     const messages = [
       { role: "system", content: SYSTEM_PROMPT },

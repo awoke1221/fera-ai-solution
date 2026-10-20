@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { calculateCost } from "./cost-estimator";
 import { tools } from "./tools";
 
-test("calculateCost treats free tiers as insufficient for larger user volumes", () => {
+test("calculateCost keeps user-volume assumptions explicit and vendor-specific", () => {
   const supabaseDb = tools.find((tool) => tool.id === "supabase_db");
   assert.ok(supabaseDb, "Supabase DB tool exists");
 
@@ -13,15 +13,18 @@ test("calculateCost treats free tiers as insufficient for larger user volumes", 
     scale: "10000-100000",
   });
 
-  assert.equal(estimate.freeTierSufficient, false);
-  assert.match(estimate.monthsUntilPaid.toLowerCase(), /upgrade|paid|scale/);
+  assert.equal(estimate.hasFreeTierOptions, true);
+  assert.match(
+    estimate.upgradePlanningNote.toLowerCase(),
+    /validate service limits/,
+  );
   assert.match(
     estimate.recommendation.toLowerCase(),
-    /upgrade|scale|monthly|growth|free tier/i,
+    /catalogue|not a live quote/i,
   );
 });
 
-test("calculateCost stays conservative for small MVP scale", () => {
+test("calculateCost does not promise free-tier capacity at small project scale", () => {
   const supabaseDb = tools.find((tool) => tool.id === "supabase_db");
   assert.ok(supabaseDb, "Supabase DB tool exists");
 
@@ -30,9 +33,9 @@ test("calculateCost stays conservative for small MVP scale", () => {
     scale: "100-1000",
   });
 
-  assert.equal(estimate.freeTierSufficient, true);
+  assert.equal(estimate.hasFreeTierOptions, true);
   assert.match(
-    estimate.monthsUntilPaid.toLowerCase(),
-    /all tools free|n\/a|free/i,
+    estimate.upgradePlanningNote.toLowerCase(),
+    /does not convert users into requests/,
   );
 });

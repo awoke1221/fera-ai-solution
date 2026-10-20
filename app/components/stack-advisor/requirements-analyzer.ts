@@ -18,6 +18,10 @@ const projectCategoryLabels: Record<ProjectCategory, string> = {
   "internal-business": "Internal business application",
   portfolio: "Portfolio",
   "api-backend": "API / backend",
+  fintech: "Fintech",
+  healthcare: "Healthcare",
+  realestate: "Real estate",
+  booking: "Booking / reservation",
   other: "Other",
 };
 

@@ -39,3 +39,13 @@ test("buildCloudDeploymentRecommendation provides a structured provider strategy
     recommendation.decisionMatrix.some((item) => item.metric.length > 0),
   );
 });
+
+test("cloud recommendation prioritizes the selected deployment provider", () => {
+  const recommendation = buildCloudDeploymentRecommendation(
+    baseRequirements,
+    ["vercel", "railway"],
+  );
+
+  assert.equal(recommendation.primaryProvider[0], "Vercel");
+  assert.match(recommendation.primaryProvider[1], /already in your selected/);
+});

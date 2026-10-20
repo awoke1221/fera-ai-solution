@@ -32,8 +32,38 @@ export const projectCategoryOptions = [
   { value: "internal-business", label: "Internal business application" },
   { value: "portfolio", label: "Portfolio" },
   { value: "api-backend", label: "API / backend" },
+  { value: "fintech", label: "Fintech" },
+  { value: "healthcare", label: "Healthcare" },
+  { value: "realestate", label: "Real estate" },
+  { value: "booking", label: "Booking / reservation" },
   { value: "other", label: "Other" },
 ] as const;
+
+export function getAdvisorProjectTypeId(
+  category: ProjectRequirements["projectCategory"],
+): string | null {
+  const projectTypesByCategory: Partial<
+    Record<ProjectRequirements["projectCategory"], string>
+  > = {
+    saas: "saas",
+    ecommerce: "ecommerce",
+    lms: "lms",
+    marketplace: "ecommerce",
+    social: "social",
+    "mobile-app": "mobile-app",
+    "ai-app": "ai-app",
+    "internal-business": "erp",
+    portfolio: "content",
+    "api-backend": "api-backend",
+    fintech: "fintech",
+    healthcare: "healthcare",
+    realestate: "realestate",
+    booking: "booking",
+    other: "saas",
+  };
+
+  return projectTypesByCategory[category] ?? null;
+}
 
 export const targetPlatformOptions = [
   { value: "web", label: "Web" },
@@ -183,10 +213,6 @@ export function validateProjectRequirements(
 
   if (!requirements.timeToLaunch) {
     errors.timeToLaunch = "Select your launch target.";
-  }
-
-  if (!requirements.requiredFeatures.length) {
-    errors.requiredFeatures = "Select at least one required feature.";
   }
 
   if (!requirements.targetMarketCountry.trim()) {

@@ -6,23 +6,31 @@ import {
   generateDeploymentChecklist,
   selectDeploymentPattern,
 } from "./cloud-deployment-advanced";
-import type { ProjectRequirements } from "./types";
+import type { ProjectRequirements, ToolOption } from "./types";
 
 interface CloudDeploymentAdvancedPanelProps {
   projectRequirements: ProjectRequirements | null;
+  selectedTools: ToolOption[];
 }
 
 export function CloudDeploymentAdvancedPanel({
   projectRequirements,
+  selectedTools,
 }: CloudDeploymentAdvancedPanelProps) {
   const analysis = useMemo(() => {
     if (!projectRequirements) return null;
     return {
-      costComparison: buildCloudCostComparison(projectRequirements),
-      deploymentPattern: selectDeploymentPattern(projectRequirements),
+      costComparison: buildCloudCostComparison(
+        projectRequirements,
+        selectedTools.map((tool) => tool.id),
+      ),
+      deploymentPattern: selectDeploymentPattern(
+        projectRequirements,
+        selectedTools.map((tool) => tool.id),
+      ),
       checklist: generateDeploymentChecklist(projectRequirements),
     };
-  }, [projectRequirements]);
+  }, [projectRequirements, selectedTools]);
 
   if (!analysis || !projectRequirements) {
     return (
@@ -43,6 +51,17 @@ export function CloudDeploymentAdvancedPanel({
 
   return (
     <div className="stack-adv-shell">
+      <div className="stack-adv-note">
+        <strong>Planning context:</strong>{" "}
+        {projectRequirements.projectName || "Unnamed project"};{" "}
+        {projectRequirements.projectCategory}; expected users{" "}
+        {projectRequirements.expectedUsers}; selected tools:{" "}
+        {selectedTools.length
+          ? selectedTools.map((tool) => tool.name).join(", ")
+          : "none yet"}
+        . Architecture and cost entries are reference guidance, not measured
+        deployments or quotes.
+      </div>
       <div className="stack-adv-header-shell">
         <div className="stack-adv-header-row">
           <div>
@@ -54,6 +73,11 @@ export function CloudDeploymentAdvancedPanel({
             </h3>
           </div>
         </div>
+        <p className="stack-adv-note">
+          Provider costs require workload-specific calculations. Roadmap phases
+          and risk labels are planning prompts, not delivery dates or a completed
+          risk assessment.
+        </p>
       </div>
 
       <div className="stack-adv-card">
@@ -216,7 +240,7 @@ export function CloudDeploymentAdvancedPanel({
               </div>
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>
-                  Rollout window
+                  Suggested milestone
                 </div>
                 <div style={{ color: "var(--muted)" }}>
                   {entry.rolloutWindow}

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { getAdvisorProjectTypeId } from "./project-requirements";
 import { analyzeProjectRequirements } from "./requirements-analyzer";
 import type { ProjectRequirements } from "./types";
 
@@ -21,6 +22,13 @@ const baseRequirements: ProjectRequirements = {
   expectedGrowth: "Strong regional adoption",
   existingTechnologyPreferences: "Next.js + Supabase",
 };
+
+test("maps discovered project categories to Stack Advisor strategies", () => {
+  assert.equal(getAdvisorProjectTypeId("marketplace"), "ecommerce");
+  assert.equal(getAdvisorProjectTypeId("internal-business"), "erp");
+  assert.equal(getAdvisorProjectTypeId("ai-app"), "ai-app");
+  assert.equal(getAdvisorProjectTypeId("healthcare"), "healthcare");
+});
 
 test("detects LMS-specific functional requirements", () => {
   const result = analyzeProjectRequirements(baseRequirements);

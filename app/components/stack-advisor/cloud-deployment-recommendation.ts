@@ -25,6 +25,7 @@ export type CloudDeploymentRecommendation = {
 
 export function buildCloudDeploymentRecommendation(
   requirements: ProjectRequirements,
+  selectedToolIds: string[] = [],
 ): CloudDeploymentRecommendation {
   const features = new Set(requirements.requiredFeatures);
   const isEnterprise = requirements.targetUsers === "enterprise";
@@ -36,8 +37,23 @@ export function buildCloudDeploymentRecommendation(
   const hasUploads = features.has("file-uploads");
   const hasRealtime = features.has("real-time-communication");
 
-  const primaryProvider =
-    isEnterprise || isHighScale || hasAI || hasBackgroundJobs
+  const selectedProviderByTool: Record<string, string> = {
+    vercel: "Vercel",
+    netlify: "Netlify",
+    railway: "Railway",
+    render: "Render",
+    docker_vps: "Docker on VPS",
+  };
+  const selectedProvider = selectedToolIds
+    .map((toolId) => selectedProviderByTool[toolId])
+    .find(Boolean);
+  const primaryProvider = selectedProvider
+    ? [
+        selectedProvider,
+        `${selectedProvider} is already in your selected deployment tools. Confirm its runtime, region, service limits, and operational needs against this project before committing.`,
+        "Use the provider's current documentation and pricing tools to validate the deployment design.",
+      ]
+    : isEnterprise || isHighScale || hasAI || hasBackgroundJobs
       ? [
           "AWS",
           "AWS is the strongest fit for a serious production deployment because it offers mature managed services, security controls, global scale, and enterprise-grade operating patterns.",
@@ -66,7 +82,7 @@ export function buildCloudDeploymentRecommendation(
       ],
       idealFor:
         "Large SaaS products, enterprise systems, regulated workloads, and multi-service backends",
-      monthlyCostBand: "$300–$3,000+ depending on scale and services",
+      monthlyCostBand: "Requires workload-specific pricing",
     },
     {
       provider: "Azure",
@@ -82,7 +98,7 @@ export function buildCloudDeploymentRecommendation(
       ],
       idealFor:
         "Corporate internal tools, enterprise user bases, and hybrid or Microsoft-centric environments",
-      monthlyCostBand: "$250–$2,500+",
+      monthlyCostBand: "Requires workload-specific pricing",
     },
     {
       provider: "Google Cloud",
@@ -98,7 +114,7 @@ export function buildCloudDeploymentRecommendation(
       ],
       idealFor:
         "AI-driven products, analytical platforms, and data-rich customer experiences",
-      monthlyCostBand: "$200–$2,200+",
+      monthlyCostBand: "Requires workload-specific pricing",
     },
     {
       provider: "Vercel / Managed App Platforms",
@@ -114,15 +130,15 @@ export function buildCloudDeploymentRecommendation(
       ],
       idealFor:
         "MVPs, growth-stage SaaS products, and teams that want zero-friction delivery",
-      monthlyCostBand: "$0–$500+ depending on usage and scale",
+      monthlyCostBand: "Requires workload-specific pricing",
     },
   ];
 
   const costSummary = [
-    "Cost should be treated as a design decision, not an afterthought; platform choice directly affects long-term operating cost.",
-    "Managed platforms reduce up-front operational cost but can become more expensive as scale, edge traffic, and custom services increase.",
-    "Enterprise and regulated products should allocate budget for protection layers, backups, access control, and active monitoring.",
-    "AI and media-heavy workloads should reserve explicit budget for queue processing, storage, and throughput management.",
+    "Provider costs are not estimated here: discovery does not define regions, service sizes, retention, traffic, or data transfer.",
+    "Use each provider's current pricing calculator with the selected services, region, and expected workload before committing to a budget.",
+    "Include backups, egress, logs, monitoring, support, taxes, and currency conversion in any comparison.",
+    "AI and media-heavy workloads need explicit usage and throughput assumptions to produce a meaningful estimate.",
   ];
 
   const decisionMatrix = [

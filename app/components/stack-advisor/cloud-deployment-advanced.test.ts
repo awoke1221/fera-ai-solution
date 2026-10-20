@@ -71,3 +71,16 @@ test("advanced cloud guidance returns structured cost, pattern, and checklist da
   assert.ok(checklist.includes("Production deployment checklist"));
   assert.ok(checklist.includes("Security and access"));
 });
+
+test("advanced cloud plan uses the selected provider in its rollout board", () => {
+  const pattern = selectDeploymentPattern(baseRequirements, [
+    "vercel",
+    "railway",
+  ]);
+
+  assert.ok(
+    pattern.decisionBoard.every(
+      (entry) => entry.targetProvider === "Vercel",
+    ),
+  );
+});

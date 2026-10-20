@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   projectTypes,
   recommendedStacks,
@@ -12,16 +12,97 @@ import {
   getOrderedCategories,
   isCategoryRequired,
   sortToolsForProject,
+  analyzeProjectRequirements,
+  analyzeAndRecommend,
+  checkCompatibility,
+  type ProjectRequirements,
+  type ProjectDescriptionAnalysis,
+  type TechRecommendation,
 } from ".";
 
 // ─── Props ──────────────────────────────────────────────
 interface ToolSelectorProps {
+  selectedProjectId?: string | null;
+  selectedSelections?: Record<string, string>;
+  projectRequirements?: ProjectRequirements | null;
+  projectAnalysis?: ProjectDescriptionAnalysis | null;
   onSelectionsChange: (selections: Record<string, string>) => void;
   onProjectChange?: (projectId: string | null) => void;
 }
 
+function findMatchingRecommendation(
+  categoryId: string,
+  recommendations: TechRecommendation[],
+  candidates: ToolOption[],
+): { tool: ToolOption; reason: string } | null {
+  const recommendationCategory = categoryId.startsWith("deploy_")
+    ? "deployment"
+    : categoryId;
+  const recommendation = recommendations.find(
+    (item) => item.category === recommendationCategory,
+  );
+  if (!recommendation) return null;
+
+  const normalizedTechnology =
+    `${recommendation.provider ?? ""} ${recommendation.technology}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  const tool = candidates.find((candidate) => {
+    const normalizedName = candidate.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    return (
+      normalizedTechnology.includes(normalizedName) ||
+      normalizedName.includes(normalizedTechnology)
+    );
+  });
+
+  return tool ? { tool, reason: recommendation.whyRecommended } : null;
+}
+
+function getRequirementsReason(
+  categoryId: string,
+  requirements: ProjectRequirements,
+): string {
+  if (categoryId === "payment" && requirements.requiredFeatures.includes("payments")) {
+    return `Payments are a required feature for this ${requirements.projectCategory} project.`;
+  }
+  if (
+    categoryId === "storage" &&
+    (requirements.requiredFeatures.includes("video") ||
+      requirements.requiredFeatures.includes("file-uploads"))
+  ) {
+    return requirements.requiredFeatures.includes("video")
+      ? "Video delivery is required, so media performance and bandwidth costs matter."
+      : "Your project needs file uploads, so access controls and storage costs matter.";
+  }
+  if (categoryId === "email" && requirements.requiredFeatures.includes("notifications")) {
+    return "Notifications are required, so transactional email is part of the launch stack.";
+  }
+  if (
+    categoryId === "cache" &&
+    ["10000-100000", "100000-plus"].includes(requirements.expectedUsers)
+  ) {
+    return `The expected audience (${requirements.expectedUsers} users) makes caching worth planning early.`;
+  }
+  if (categoryId === "search" && requirements.requiredFeatures.includes("search")) {
+    return "Search is a stated product requirement, so this layer supports discovery and retrieval.";
+  }
+  if (requirements.developerExperience === "beginner") {
+    return "This option is favored for a simpler setup that is easier for a beginner team to maintain.";
+  }
+  if (requirements.developmentPriority === "lowest-cost") {
+    return "This option is favored because your priority is keeping operating costs low.";
+  }
+  return `This option is the strongest fit for your ${requirements.projectCategory} project and its ${requirements.developmentPriority} priority.`;
+}
+
 // ─── Component ──────────────────────────────────────────
 export function ToolSelector({
+  selectedProjectId,
+  selectedSelections,
+  projectRequirements,
+  projectAnalysis,
   onSelectionsChange,
   onProjectChange,
 }: ToolSelectorProps) {
@@ -34,6 +115,31 @@ export function ToolSelector({
   const [toolFilter, setToolFilter] = useState<
     "all" | "recommended" | "ethiopian"
   >("all");
+  const requirementsRecommendation = useMemo(() => {
+    if (!projectRequirements) return [];
+    return analyzeAndRecommend(
+      projectRequirements,
+      analyzeProjectRequirements(projectRequirements),
+    ).recommendedStack;
+  }, [projectRequirements]);
+
+  useEffect(() => {
+    const project =
+      projectTypes.find((item) => item.id === selectedProjectId) ?? null;
+    setSelectedProject(project);
+    setActiveCategory(
+      project
+        ? (getOrderedCategories(
+            getProjectMapping(project.id),
+            toolCategories,
+          )[0]?.id ?? null)
+        : null,
+    );
+  }, [selectedProjectId]);
+
+  useEffect(() => {
+    setSelections(selectedSelections ?? {});
+  }, [selectedSelections]);
 
   // ─── Dynamic category/tool filtering ────────────────
   const projectMapping = useMemo(
@@ -65,7 +171,9 @@ export function ToolSelector({
   const handleProjectSelect = (project: ProjectType) => {
     setSelectedProject(project);
     setSelections({});
-    const firstVisible = filteredCategories[0]?.id || null;
+    const firstVisible =
+      getOrderedCategories(getProjectMapping(project.id), toolCategories)[0]
+        ?.id ?? null;
     setActiveCategory(firstVisible);
     onSelectionsChange({});
     onProjectChange?.(project.id);
@@ -164,8 +272,24 @@ export function ToolSelector({
   const setRecommendedTool = () => {
     if (!activeCatData) return;
 
+    const activeAnalysis = projectAnalysis;
+    const aiRecommendedTool =
+      activeAnalysis && activeAnalysis.projectType === selectedProject?.id
+        ? activeCatTools.find(
+            (tool) =>
+              tool.id === activeAnalysis.recommendedTools[activeCatData.id],
+          )
+        : undefined;
+    const contextualRecommendation = findMatchingRecommendation(
+      activeCatData.id,
+      requirementsRecommendation,
+      activeCatTools,
+    );
     const preferred =
-      activeCatTools.find((tool) => tool.recommended) ?? activeCatTools[0];
+      aiRecommendedTool ??
+      contextualRecommendation?.tool ??
+      activeCatTools.find((tool) => tool.recommended) ??
+      activeCatTools[0];
     if (!preferred) return;
     handleToolSelect(activeCatData.id, preferred.id);
   };
@@ -180,10 +304,62 @@ export function ToolSelector({
   };
 
   const selectionsCount = Object.keys(selections).length;
-  const visibleCount = filteredCategories.length;
+  const requiredCategories = filteredCategories.filter((category) =>
+    getCategoryRequired(category.id),
+  );
+  const selectedRequiredCount = requiredCategories.filter(
+    (category) => Boolean(selections[category.id]),
+  ).length;
+  const requiredRemaining = Math.max(
+    requiredCategories.length - selectedRequiredCount,
+    0,
+  );
   const progressPct =
-    visibleCount > 0 ? (selectionsCount / visibleCount) * 100 : 0;
-  const compatibilityWarnings = projectMapping ? [] : [];
+    requiredCategories.length > 0
+      ? (selectedRequiredCount / requiredCategories.length) * 100
+      : 0;
+  const compatibilityWarnings = checkCompatibility(
+    Object.values(selections),
+  );
+  const activeRecommendation = activeCatData
+    ? (() => {
+        const aiSuggestedToolId =
+          projectAnalysis &&
+          projectAnalysis.projectType === selectedProject?.id
+            ? projectAnalysis.recommendedTools[activeCatData.id]
+            : undefined;
+        const aiSuggestedTool = activeCatTools.find(
+          (tool) => tool.id === aiSuggestedToolId,
+        );
+        if (aiSuggestedTool) {
+          return {
+            tool: aiSuggestedTool,
+            reason:
+              projectAnalysis?.source === "ai"
+                ? projectAnalysis.recommendedToolReasons[activeCatData.id] ??
+                  projectAnalysis.rationale
+                : "Selected as the best available fit for the analyzed project.",
+          };
+        }
+        return findMatchingRecommendation(
+          activeCatData.id,
+          requirementsRecommendation,
+          activeCatTools,
+        );
+      })()
+    : null;
+  const guidanceTool =
+    activeRecommendation?.tool ??
+    activeCatTools.find((tool) => tool.recommended) ??
+    activeCatTools[0];
+  const guidanceReason = activeRecommendation?.reason
+    ? activeRecommendation.reason
+    : projectRequirements && activeCatData
+      ? getRequirementsReason(activeCatData.id, projectRequirements)
+      : projectMapping && activeCatData
+        ? (projectMapping.categoryPriorities[activeCatData.id]?.reason ??
+          `A recommended ${activeCatData.label.toLowerCase()} option for ${selectedProject?.label ?? "your project"}.`)
+        : "A recommended option based on the selected project type.";
 
   // If no project selected, show project type grid
   if (!selectedProject) {
@@ -314,11 +490,37 @@ export function ToolSelector({
             <span className={projectMapping ? "done" : ""}>
               Project strategy loaded
             </span>
-            <span className={compatibilityWarnings.length === 0 ? "done" : ""}>
-              Compatibility reviewed
+            <span
+              className={
+                compatibilityWarnings.length === 0 ? "done" : "review"
+              }
+            >
+              {compatibilityWarnings.length === 0
+                ? "No known conflicts"
+                : `${compatibilityWarnings.length} compatibility notes`}
             </span>
           </div>
         </div>
+        {compatibilityWarnings.length > 0 && (
+          <div className="stack-compatibility-notes" role="status">
+            {compatibilityWarnings.map((warning) => (
+              <div
+                key={`${warning.tools.join("-")}-${warning.message}`}
+                className={`stack-compatibility-note ${warning.type}`}
+              >
+                <strong>
+                  {warning.type === "error"
+                    ? "Review required"
+                    : warning.type === "warning"
+                      ? "Potential conflict"
+                      : "Compatibility note"}
+                </strong>
+                <p>{warning.message}</p>
+                <small>{warning.recommendation}</small>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="stack-selector-progress">
           <div className="progress-bar">
@@ -328,7 +530,8 @@ export function ToolSelector({
             />
           </div>
           <span className="progress-text">
-            {selectionsCount} / {visibleCount} categories selected
+            {selectedRequiredCount} / {requiredCategories.length} required
+            categories selected
           </span>
         </div>
 
@@ -342,7 +545,8 @@ export function ToolSelector({
             <span className="summary-label">Selected layers</span>
             <strong>{selectionsCount}</strong>
             <small>
-              {Math.max(visibleCount - selectionsCount, 0)} remaining
+              {requiredRemaining} required{" "}
+              {requiredRemaining === 1 ? "layer" : "layers"} remaining
             </small>
           </div>
           <div className="stack-summary-card">
@@ -407,6 +611,32 @@ export function ToolSelector({
                   <span className="optional-badge-inline">Optional</span>
                 )}
               </div>
+
+              {guidanceTool && (
+                <div className="stack-advisor-guidance" role="status">
+                  <div>
+                    <strong>
+                      {projectRequirements
+                        ? "Project-aware stack recommendation"
+                        : "Recommended stack option"}
+                    </strong>
+                    <p>
+                      {guidanceTool.icon} {guidanceTool.name} — {guidanceReason}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn solid"
+                    onClick={() =>
+                      handleToolSelect(activeCatData.id, guidanceTool.id)
+                    }
+                  >
+                    {selections[activeCatData.id] === guidanceTool.id
+                      ? "Selected"
+                      : "Use recommendation"}
+                  </button>
+                </div>
+              )}
 
               <div className="stack-tool-toolbar">
                 <label className="stack-search-field">
@@ -554,7 +784,7 @@ export function ToolSelector({
                   {filteredCategories.findIndex(
                     (c) => c.id === activeCategory,
                   ) + 1}{" "}
-                  / {visibleCount}
+                  / {filteredCategories.length}
                 </span>
                 <button
                   className="btn solid"

@@ -2,19 +2,24 @@
 
 import { useMemo } from "react";
 import { buildCloudDeploymentRecommendation } from "./cloud-deployment-recommendation";
-import type { ProjectRequirements } from "./types";
+import type { ProjectRequirements, ToolOption } from "./types";
 
 interface CloudDeploymentPanelProps {
   projectRequirements: ProjectRequirements | null;
+  selectedTools: ToolOption[];
 }
 
 export function CloudDeploymentPanel({
   projectRequirements,
+  selectedTools,
 }: CloudDeploymentPanelProps) {
   const recommendation = useMemo(() => {
     if (!projectRequirements) return null;
-    return buildCloudDeploymentRecommendation(projectRequirements);
-  }, [projectRequirements]);
+    return buildCloudDeploymentRecommendation(
+      projectRequirements,
+      selectedTools.map((tool) => tool.id),
+    );
+  }, [projectRequirements, selectedTools]);
 
   if (!recommendation || !projectRequirements) {
     return (
@@ -35,6 +40,16 @@ export function CloudDeploymentPanel({
 
   return (
     <div className="stack-adv-shell">
+      <div className="stack-adv-note">
+        <strong>Planning context:</strong>{" "}
+        {projectRequirements.projectName || "Unnamed project"};{" "}
+        {projectRequirements.projectCategory}; expected users{" "}
+        {projectRequirements.expectedUsers}; selected tools:{" "}
+        {selectedTools.length
+          ? selectedTools.map((tool) => tool.name).join(", ")
+          : "none yet"}
+        . Provider fit is guidance, not a cloud configuration or cost quote.
+      </div>
       <div className="stack-adv-header-shell">
         <div className="stack-adv-header-row">
           <div>

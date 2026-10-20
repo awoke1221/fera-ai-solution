@@ -2,14 +2,16 @@
 
 import { useMemo } from "react";
 import { buildDeploymentReadinessAssessment } from "./deployment-readiness";
-import type { ProjectRequirements } from "./types";
+import type { ProjectRequirements, ToolOption } from "./types";
 
 interface DeploymentReadinessPanelProps {
   projectRequirements: ProjectRequirements | null;
+  selectedTools: ToolOption[];
 }
 
 export function DeploymentReadinessPanel({
   projectRequirements,
+  selectedTools,
 }: DeploymentReadinessPanelProps) {
   const assessment = useMemo(() => {
     if (!projectRequirements) {
@@ -36,15 +38,17 @@ export function DeploymentReadinessPanel({
     );
   }
 
-  const readinessTone =
-    assessment.overallScore >= 80
-      ? "Strong production readiness"
-      : assessment.overallScore >= 60
-        ? "Good foundation with hardening needed"
-        : "Needs architecture hardening before launch";
-
   return (
     <div className="stack-adv-shell">
+      <div className="stack-adv-note">
+        <strong>Planning context:</strong>{" "}
+        {projectRequirements.projectName || "Unnamed project"} for{" "}
+        {projectRequirements.expectedUsers} expected users. Selected tools:{" "}
+        {selectedTools.length
+          ? selectedTools.map((tool) => tool.name).join(", ")
+          : "none yet"}
+        . Checklist items are suggestions, not verified controls.
+      </div>
       <div className="stack-adv-header-shell">
         <div className="stack-adv-header-row">
           <div>
@@ -57,11 +61,9 @@ export function DeploymentReadinessPanel({
           </div>
 
           <div className="stack-adv-kpi">
-            <div className="stack-adv-kpi-label">Readiness score</div>
-            <div className="stack-adv-kpi-value">
-              {assessment.overallScore}/100
-            </div>
-            <div className="stack-adv-kpi-state">{readinessTone}</div>
+            <div className="stack-adv-kpi-label">Assessment</div>
+            <div className="stack-adv-kpi-value">Planning</div>
+            <div className="stack-adv-kpi-state">No live checks run</div>
           </div>
         </div>
       </div>
@@ -80,13 +82,18 @@ export function DeploymentReadinessPanel({
 
         <div className="stack-adv-card">
           <h4 className="stack-adv-section-title">
-            Ready for production checklist
+            Production checklist
           </h4>
           <ul className="stack-adv-list">
-            {assessment.readyForProduction.map((item) => (
+            {assessment.productionChecklist.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
+          <p className="stack-adv-note">
+            These are suggested checks, not verified project results. No
+            deployment, source code, cloud account, or runtime has been
+            inspected.
+          </p>
         </div>
       </div>
 

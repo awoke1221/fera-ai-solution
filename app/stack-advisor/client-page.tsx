@@ -113,8 +113,14 @@ const CloudDeploymentAdvancedPanel = dynamic(
 import {
   tools,
   projectTypes,
+  toolCategories,
   calculateCost,
   checkCompatibility,
+  getProjectMapping,
+  getOrderedCategories,
+  isCategoryRequired,
+  type ProjectDescriptionAnalysis,
+  type ToolOption,
 } from "../components/stack-advisor";
 
 export function StackAdvisorClient() {
@@ -124,6 +130,9 @@ export function StackAdvisorClient() {
   );
   const [projectRequirements, setProjectRequirements] =
     useState<ProjectRequirements | null>(null);
+  const [projectAnalysis, setProjectAnalysis] =
+    useState<ProjectDescriptionAnalysis | null>(null);
+  const [hasRestoredUrlState, setHasRestoredUrlState] = useState(false);
   const [activeView, setActiveView] = useState<
     | "discover"
     | "select"
@@ -146,16 +155,50 @@ export function StackAdvisorClient() {
     [],
   );
 
+  const handleProjectTypeChange = useCallback(
+    (projectTypeId: string | null) => {
+      if (selectedProjectId !== projectTypeId) {
+        setSelections({});
+      }
+      setSelectedProjectId(projectTypeId);
+    },
+    [selectedProjectId],
+  );
+
   // ─── Restore selections from URL on mount ────────────
   useEffect(() => {
     const restored = getSelectionsFromUrl();
-    if (restored && Object.keys(restored).length > 0) {
-      setSelections(restored);
+    const params = new URLSearchParams(window.location.search);
+    const validSelections = Object.fromEntries(
+      Object.entries(restored ?? {}).filter(([categoryId, toolId]) =>
+        tools.some(
+          (tool) => tool.id === toolId && tool.category === categoryId,
+        ),
+      ),
+    );
+    const querySelections = Object.fromEntries(
+      Array.from(params.entries()).filter(([categoryId, toolId]) =>
+        tools.some(
+          (tool) => tool.id === toolId && tool.category === categoryId,
+        ),
+      ),
+    );
+    const projectId = params.get("project");
+
+    if (projectId && projectTypes.some((project) => project.id === projectId)) {
+      setSelectedProjectId(projectId);
     }
+
+    setSelections(
+      Object.keys(validSelections).length > 0
+        ? validSelections
+        : querySelections,
+    );
+    setHasRestoredUrlState(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !hasRestoredUrlState) return;
 
     const params = new URLSearchParams();
     if (selectedProjectId) {
@@ -170,7 +213,7 @@ export function StackAdvisorClient() {
 
     const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
     window.history.replaceState({}, "", nextUrl);
-  }, [selectedProjectId, selections]);
+  }, [hasRestoredUrlState, selectedProjectId, selections]);
 
   const hasSelections = Object.keys(selections).length > 0;
 
@@ -183,7 +226,7 @@ export function StackAdvisorClient() {
   const selectedTools = useMemo(() => {
     return Object.values(selections)
       .map((toolId) => tools.find((tool) => tool.id === toolId))
-      .filter(Boolean);
+      .filter((tool): tool is ToolOption => Boolean(tool));
   }, [selections]);
 
   const compatibilityWarnings = useMemo(
@@ -192,34 +235,56 @@ export function StackAdvisorClient() {
   );
 
   const costEstimate = useMemo(
-    () =>
-      calculateCost(selectedTools as any[], projectRequirements ?? undefined),
+    () => calculateCost(selectedTools, projectRequirements ?? undefined),
     [projectRequirements, selectedTools],
+  );
+
+  const requiredCategories = useMemo(() => {
+    if (!selectedProjectId) return [];
+    const mapping = getProjectMapping(selectedProjectId);
+    return getOrderedCategories(mapping, toolCategories).filter((category) =>
+      isCategoryRequired(category.id, mapping, category.required),
+    );
+  }, [selectedProjectId]);
+
+  const completedRequiredCategories = requiredCategories.filter(
+    (category) => Boolean(selections[category.id]),
+  ).length;
+  const blockingCompatibilityWarnings = compatibilityWarnings.filter(
+    (warning) => warning.type !== "info",
   );
 
   const recommendedNextStep = useMemo(() => {
     if (compatibilityWarnings.length > 0) {
       return compatibilityWarnings[0].recommendation;
     }
-    if (selectedTools.length > 0) {
-      return "Add production monitoring, staging deployment, and a backup plan to harden the stack.";
+    const nextRequiredCategory = requiredCategories.find(
+      (category) => !selections[category.id],
+    );
+    if (nextRequiredCategory) {
+      const label =
+        toolCategories.find((category) => category.id === nextRequiredCategory.id)
+          ?.label ?? nextRequiredCategory.id;
+      return `Choose a tool for the required ${label.toLowerCase()} layer.`;
     }
-    return "Start by choosing a project type and your core frontend, backend, and database tools.";
-  }, [compatibilityWarnings, selectedTools]);
-
-  const readinessScore = useMemo(() => {
-    const base = selectedTools.length * 10;
-    const compatibilityBonus = compatibilityWarnings.length === 0 ? 25 : 10;
-    const projectBonus = projectRequirements ? 20 : 5;
-    return Math.min(98, Math.max(30, base + compatibilityBonus + projectBonus));
-  }, [compatibilityWarnings, projectRequirements, selectedTools]);
+    if (selectedTools.length > 0) {
+      return "Review deployment, monitoring, backups, and security for your specific launch.";
+    }
+    return "Describe your project to get a focused recommendation, then review the required stack layers.";
+  }, [compatibilityWarnings, requiredCategories, selections, selectedTools]);
 
   const stackKpis = [
     {
-      label: "Launch readiness",
-      value: `${Math.round(readinessScore)}%`,
-      trend: compatibilityWarnings.length === 0 ? "Healthy" : "Needs review",
-      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+      label: "Required coverage",
+      value: selectedProjectId
+        ? `${completedRequiredCategories}/${requiredCategories.length}`
+        : "Not set",
+      trend: selectedProjectId ? "Selected layers only" : "Choose a project",
+      tone:
+        selectedProjectId &&
+        completedRequiredCategories === requiredCategories.length
+          ? "success"
+          : "warning",
     },
     {
       label: "Tools selected",
@@ -230,25 +295,36 @@ export function StackAdvisorClient() {
     {
       label: "Compatibility",
       value: `${compatibilityWarnings.length}`,
-      trend: compatibilityWarnings.length === 0 ? "Aligned" : "Checks open",
-      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+      trend:
+        blockingCompatibilityWarnings.length > 0
+          ? "Review needed"
+          : compatibilityWarnings.length > 0
+            ? "Informational notes"
+            : "No rule conflicts found",
+      tone: blockingCompatibilityWarnings.length > 0 ? "warning" : "info",
     },
     {
       label: "Est. monthly spend",
-      value: `$${costEstimate.totalMonthly.max}`,
-      trend: costEstimate.totalMonthly.max < 500 ? "Lean" : "Scaled",
-      tone: costEstimate.totalMonthly.max < 500 ? "success" : "info",
+      value:
+        selectedTools.length > 0
+          ? `$${costEstimate.totalMonthly.min}–$${costEstimate.totalMonthly.max}`
+          : "Select tools",
+      trend:
+        selectedTools.length > 0
+          ? "Planning estimate"
+          : "No cost inputs yet",
+      tone: selectedTools.length > 0 ? "info" : "neutral",
     },
   ];
 
   const statusBlocks = [
     {
-      title: "Architecture health",
+      title: "Compatibility review",
       detail:
         compatibilityWarnings.length === 0
-          ? "Core dependencies are aligned and ready for rollout."
-          : "Some compatibility issues need to be resolved before production.",
-      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+          ? "No conflicts were found by the advisor's rules; this is not a runtime or security audit."
+          : `${compatibilityWarnings.length} rule-based compatibility note(s) need review.`,
+      tone: blockingCompatibilityWarnings.length > 0 ? "warning" : "info",
     },
     {
       title: "Delivery focus",
@@ -262,43 +338,55 @@ export function StackAdvisorClient() {
         : "No project type selected yet.",
       tone: selectedProject ? "success" : "neutral",
     },
+    {
+      title: "Assessment scope",
+      detail:
+        "This workspace is a planning aid. It does not inspect a deployed service or verify production readiness.",
+      tone: "neutral",
+    },
   ];
 
   const strategyScorecards = [
     {
       label: "Product fit",
-      value: selectedProject ? "High" : "Pending",
+      value: projectAnalysis
+        ? projectAnalysis.source === "ai"
+          ? "AI analyzed"
+          : "Local suggestion"
+        : selectedProject
+          ? "Project selected"
+          : "Pending",
       note: selectedProject
-        ? `${selectedProject.label} matches the recommended architecture.`
-        : "Choose a project type to unlock stack guidance.",
-      tone: selectedProject ? "success" : "neutral",
+        ? `${selectedProject.label} is the current focus; verify the recommendation against your constraints.`
+        : "Describe the project or choose a project type to start.",
+      tone: projectAnalysis?.source === "ai" ? "success" : "neutral",
     },
     {
-      label: "Operational readiness",
-      value: compatibilityWarnings.length === 0 ? "Strong" : "Review",
-      note:
-        compatibilityWarnings.length === 0
-          ? "Integration risk is low and the stack is stable."
-          : "Resolve the current compatibility issues before launch.",
-      tone: compatibilityWarnings.length === 0 ? "success" : "warning",
+      label: "Required layers",
+      value: selectedProjectId
+        ? `${completedRequiredCategories}/${requiredCategories.length}`
+        : "Not assessed",
+      note: "Selection coverage only; deployment and operational checks are not run here.",
+      tone:
+        selectedProjectId &&
+        completedRequiredCategories === requiredCategories.length
+          ? "success"
+          : "warning",
     },
     {
-      label: "Delivery speed",
-      value: selectedTools.length >= 4 ? "Fast" : "Lean",
+      label: "Compatibility rules",
+      value: blockingCompatibilityWarnings.length
+        ? `${blockingCompatibilityWarnings.length} to review`
+        : "No blockers found",
       note:
-        selectedTools.length >= 4
-          ? "The stack is ready to ship with a clear production path."
-          : "The stack is still being shaped toward launch readiness.",
-      tone: selectedTools.length >= 4 ? "info" : "neutral",
+        "Automated checks cover known tool combinations, not the full architecture or implementation.",
+      tone: blockingCompatibilityWarnings.length > 0 ? "warning" : "info",
     },
     {
-      label: "Scale confidence",
-      value: readinessScore > 75 ? "Confident" : "Watchlist",
-      note:
-        readinessScore > 75
-          ? "The system is positioned for a structured growth phase."
-          : "More operational guardrails would reduce launch risk.",
-      tone: readinessScore > 75 ? "success" : "warning",
+      label: "Scale input",
+      value: projectRequirements?.expectedUsers ?? "Not specified",
+      note: "Cost guidance uses the selected scale and published planning assumptions.",
+      tone: projectRequirements ? "info" : "neutral",
     },
   ];
 
@@ -324,10 +412,14 @@ export function StackAdvisorClient() {
             </div>
             <div className="stack-project-summary-cost-wrap">
               <div className="stack-project-summary-cost-label">
-                Estimated cost
+                  {selectedTools.length > 0
+                    ? "Estimated monthly range"
+                    : "Monthly estimate"}
               </div>
               <div className="stack-project-summary-cost">
-                ${costEstimate.totalMonthly.max}/mo
+                  {selectedTools.length > 0
+                    ? `$${costEstimate.totalMonthly.min}–$${costEstimate.totalMonthly.max}/mo`
+                    : "Select tools to estimate"}
               </div>
             </div>
           </div>
@@ -360,9 +452,13 @@ export function StackAdvisorClient() {
               : "Choose a project type"}
           </strong>
           <small>
-            {selectedProject
-              ? "Architecture is tuned toward the right launch pattern."
-              : "Select a direction to unlock the best stack strategy."}
+            {projectAnalysis
+              ? projectAnalysis.source === "ai"
+                ? `AI analysis: ${projectAnalysis.confidence} confidence; review assumptions.`
+                : "Local rules suggested this project type; review the match."
+              : selectedProject
+                ? "Review this project choice against your actual constraints."
+                : "Describe a project or choose a direction to start."}
           </small>
         </div>
 
@@ -371,15 +467,15 @@ export function StackAdvisorClient() {
           <strong>{compatibilityWarnings.length} signals</strong>
           <small>
             {compatibilityWarnings.length > 0
-              ? "Review the warnings before moving to production."
-              : "Your current stack is well-aligned and stable."}
+              ? "Rule-based notes only; review them before deciding."
+              : "No known tool conflicts were detected; this is not a full audit."}
           </small>
         </div>
 
         <div className="stack-intel-card">
           <span className="stack-intel-label">Next move</span>
           <strong>
-            {selectedTools.length > 0 ? "Harden the stack" : "Define the stack"}
+            {selectedTools.length > 0 ? "Continue review" : "Define the stack"}
           </strong>
           <small>{recommendedNextStep}</small>
         </div>
@@ -389,7 +485,7 @@ export function StackAdvisorClient() {
         <div className="stack-dashboard-kpis">
           <div className="stack-panel-header">
             <span>Executive overview</span>
-            <span className="stack-pill success">Operational</span>
+            <span className="stack-pill neutral">Planning</span>
           </div>
           <div className="stack-kpi-grid">
             {stackKpis.map((kpi) => (
@@ -404,8 +500,8 @@ export function StackAdvisorClient() {
 
         <div className="stack-status-panel">
           <div className="stack-panel-header">
-            <span>Operational status</span>
-            <span className="stack-pill info">Live</span>
+            <span>Planning status</span>
+            <span className="stack-pill info">Not a live health check</span>
           </div>
           <div className="stack-status-list">
             {statusBlocks.map((block) => (
@@ -532,12 +628,18 @@ export function StackAdvisorClient() {
         <ProjectDiscoveryWizard
           initialRequirements={projectRequirements}
           onRequirementsChange={setProjectRequirements}
+          onProjectTypeChange={handleProjectTypeChange}
+          onProjectAnalysisChange={setProjectAnalysis}
           onComplete={() => setActiveView("select")}
         />
       </div>
 
       <div style={{ display: activeView === "select" ? "block" : "none" }}>
         <ToolSelector
+          selectedProjectId={selectedProjectId}
+          selectedSelections={selections}
+          projectRequirements={projectRequirements}
+          projectAnalysis={projectAnalysis}
           onSelectionsChange={handleSelectionsChange}
           onProjectChange={setSelectedProjectId}
         />
@@ -552,16 +654,23 @@ export function StackAdvisorClient() {
       )}
 
       {activeView === "deploy" && (
-        <DeploymentReadinessPanel projectRequirements={projectRequirements} />
+        <DeploymentReadinessPanel
+          projectRequirements={projectRequirements}
+          selectedTools={selectedTools}
+        />
       )}
 
       {activeView === "cloud" && (
-        <CloudDeploymentPanel projectRequirements={projectRequirements} />
+        <CloudDeploymentPanel
+          projectRequirements={projectRequirements}
+          selectedTools={selectedTools}
+        />
       )}
 
       {activeView === "advanced-cloud" && (
         <CloudDeploymentAdvancedPanel
           projectRequirements={projectRequirements}
+          selectedTools={selectedTools}
         />
       )}
 
@@ -571,6 +680,8 @@ export function StackAdvisorClient() {
         <ToolDetails
           selections={selections}
           selectedProjectType={selectedProjectId}
+          projectRequirements={projectRequirements}
+          onSelectionsChange={handleSelectionsChange}
         />
       )}
 
@@ -584,7 +695,12 @@ export function StackAdvisorClient() {
 
       {activeView === "compare" && <ToolComparison selections={selections} />}
 
-      {activeView === "cost" && <CostProjections selections={selections} />}
+      {activeView === "cost" && (
+        <CostProjections
+          selections={selections}
+          projectRequirements={projectRequirements}
+        />
+      )}
 
       {activeView === "scaffold" && <CodeScaffolding selections={selections} />}
 
@@ -618,7 +734,10 @@ export function StackAdvisorClient() {
             <button className="btn" onClick={() => setActiveView("details")}>
               📋 View Full Guide →
             </button>
-            <ShareStack selections={selections} />
+            <ShareStack
+              selections={selections}
+              projectId={selectedProjectId}
+            />
           </div>
         </div>
       )}

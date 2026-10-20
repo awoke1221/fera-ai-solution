@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { tools } from ".";
-import { calculateCost, type CostBreakdown } from "./cost-estimator";
+import { tools, type ProjectRequirements, type ToolOption } from ".";
+import { calculateCost } from "./cost-estimator";
+import { expectedUsersOptions } from "./project-requirements";
 
 // ─── Props ──────────────────────────────────────────────
 interface CostProjectionsProps {
   selections: Record<string, string>;
+  projectRequirements?: ProjectRequirements | null;
 }
 
 const MONTHS = [
@@ -25,7 +27,10 @@ const MONTHS = [
 ];
 
 // ─── Component ──────────────────────────────────────────
-export function CostProjections({ selections }: CostProjectionsProps) {
+export function CostProjections({
+  selections,
+  projectRequirements,
+}: CostProjectionsProps) {
   const [growthMultiplier, setGrowthMultiplier] = useState(1);
   const [chartMode, setChartMode] = useState<
     "monthly" | "annual" | "comparison"
@@ -34,12 +39,18 @@ export function CostProjections({ selections }: CostProjectionsProps) {
   const selectedTools = useMemo(() => {
     return Object.values(selections)
       .map((id) => tools.find((t) => t.id === id))
-      .filter(Boolean);
+      .filter((tool): tool is ToolOption => Boolean(tool));
   }, [selections]);
 
   const estimate = useMemo(
-    () => calculateCost(selectedTools as any[]),
-    [selectedTools],
+    () =>
+      calculateCost(
+        selectedTools,
+        projectRequirements
+          ? { expectedUsers: projectRequirements.expectedUsers }
+          : undefined,
+      ),
+    [projectRequirements, selectedTools],
   );
 
   // Generate 12-month projection data
@@ -53,82 +64,54 @@ export function CostProjections({ selections }: CostProjectionsProps) {
         month: MONTHS[i],
         min: Math.round(baseMin * growthFactor),
         max: Math.round(baseMax * growthFactor),
-        label: "M" + (i + 1),
+        growthFactor,
       };
     });
   }, [estimate, growthMultiplier]);
 
   // Comparison scenarios
   const comparisonData = useMemo(() => {
-    const freeTotal = estimate.breakdown.reduce(
+    const lowerEstimate = estimate.breakdown.reduce(
       (sum, b) => sum + b.monthlyCost.min,
       0,
     );
-    const hybridTotal = estimate.totalMonthly.max;
-    const proTotal = Math.round(hybridTotal * 1.3);
-    return { freeTotal, hybridTotal, proTotal };
+    const upperEstimate = estimate.totalMonthly.max;
+    const budgetWithReserve = Math.round(upperEstimate * 1.3);
+    return { lowerEstimate, upperEstimate, budgetWithReserve };
   }, [estimate]);
-
-  const advancedTemplates = useMemo(
-    () => [
-      {
-        name: "Lean MVP",
-        monthly: "$0–$35",
-        focus: "Validate the idea quickly.",
-        includes: [
-          "Free front-end hosting",
-          "Self-hosted or Supabase database",
-          "Core auth + email flow",
-        ],
-      },
-      {
-        name: "Growth Launch",
-        monthly: "$35–$120",
-        focus: "Support your first real user traction.",
-        includes: [
-          "Managed hosting + better observability",
-          "Dedicated DB + CDN + analytics",
-          "Production monitoring and backups",
-        ],
-      },
-      {
-        name: "Enterprise Ready",
-        monthly: "$120–$400+",
-        focus: "Scale into a serious product operation.",
-        includes: [
-          "Advanced compliance and SRE practices",
-          "Multi-region deployment and security",
-          "Higher-volume storage, queueing, and support",
-        ],
-      },
-    ],
-    [],
-  );
 
   const planningAssumptions = useMemo(
     () => [
       {
-        label: "Traffic profile",
-        value: "1k–10k users / month",
-        note: "Most early MVPs can stay under a very manageable monthly spend.",
+        label: "Expected users",
+        value:
+          expectedUsersOptions.find(
+            (option) =>
+              option.value === projectRequirements?.expectedUsers,
+          )?.label ?? "Not specified",
+        note: "Used as context only; user counts are not converted into requests, storage, or bandwidth.",
       },
       {
-        label: "Cost model",
-        value: "Free + usage-based",
-        note: "This stack keeps free tiers active before production growth hits.",
+        label: "Estimate basis",
+        value: `${selectedTools.length} selected tools`,
+        note: estimate.upgradePlanningNote,
       },
       {
-        label: "Operational guardrail",
-        value: "30% buffer",
-        note: "Reserve capacity for analytics, monitoring, storage, and extra traffic.",
+        label: "Budget reserve",
+        value: "30% planning buffer",
+        note: "A budgeting assumption applied to the upper estimate, not a vendor price or forecast.",
       },
       {
-        label: "Ethiopian fit",
-        value: "Self-host + local gateway",
-        note: "Local VPS and Chapa/Telebirr keep smart costs low and build trust.",
+        label: "Regional pricing",
+        value: "Verify with providers",
+        note: "Hosting availability, payment fees, currency conversion, and taxes vary by provider and country.",
       },
     ],
-    [],
+    [
+      estimate.upgradePlanningNote,
+      projectRequirements?.expectedUsers,
+      selectedTools.length,
+    ],
   );
 
   // Chart dimensions
@@ -141,7 +124,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
 
   const maxVal = Math.max(
     ...monthlyData.map((d) => d.max),
-    comparisonData.proTotal,
+    comparisonData.budgetWithReserve,
     50,
   );
   const yScale = (val: number) => barAreaH - (val / maxVal) * barAreaH + 5;
@@ -164,22 +147,23 @@ export function CostProjections({ selections }: CostProjectionsProps) {
       <div className="cp-header">
         <h4>&#x1f4ca; Cost Projection Dashboard</h4>
         <p>
-          Visualize your monthly infrastructure costs and compare pricing
-          scenarios.
+          Review catalogue-based cost ranges for the selected tools. The
+          12-month curve applies your growth multiplier linearly; it is an
+          illustrative scenario, not a traffic forecast or vendor quote.
         </p>
       </div>
 
       {/* Summary Cards */}
       <div className="cp-summary-cards">
         <div className="cp-card free">
-          <span className="cp-card-label">Monthly (Free Tier)</span>
+          <span className="cp-card-label">Monthly (Lower estimate)</span>
           <span className="cp-card-value">${estimate.totalMonthly.min}</span>
-          <span className="cp-card-note">Minimum with free tiers</span>
+          <span className="cp-card-note">Catalogue lower range</span>
         </div>
         <div className="cp-card paid">
-          <span className="cp-card-label">Monthly (Scaled)</span>
+          <span className="cp-card-label">Monthly (Upper estimate)</span>
           <span className="cp-card-value">${estimate.totalMonthly.max}</span>
-          <span className="cp-card-note">Estimated at scale</span>
+          <span className="cp-card-note">Catalogue upper range</span>
         </div>
         <div className="cp-card annual">
           <span className="cp-card-label">Annual Estimate</span>
@@ -187,41 +171,48 @@ export function CostProjections({ selections }: CostProjectionsProps) {
           <span className="cp-card-note">- ${estimate.totalAnnual.max}</span>
         </div>
         <div className="cp-card score">
-          <span className="cp-card-label">Ethiopian-Optimized</span>
+          <span className="cp-card-label">Budget with reserve</span>
           <span className="cp-card-value">
-            ${Math.round(estimate.totalMonthly.max * 0.7)}
+            ${comparisonData.budgetWithReserve}
           </span>
-          <span className="cp-card-note">~30% savings with local hosting</span>
+          <span className="cp-card-note">Upper estimate + 30% buffer</span>
         </div>
       </div>
 
       <div className="cp-advanced-layout">
         <div className="cp-advanced-panel">
           <div className="cp-panel-header">
-            <span>Advanced templates</span>
-            <span className="cp-pill">Planning</span>
+            <span>Selected stack cost inputs</span>
+            <span className="cp-pill">Current selection</span>
           </div>
           <div className="cp-template-grid">
-            {advancedTemplates.map((template) => (
-              <div key={template.name} className="cp-template-card">
-                <div className="cp-template-topline">
-                  <strong>{template.name}</strong>
-                  <span>{template.monthly}</span>
-                </div>
-                <p>{template.focus}</p>
-                <ul>
-                  {template.includes.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+            <div className="cp-template-card">
+              <div className="cp-template-topline">
+                <strong>
+                  {projectRequirements?.projectName || "Current stack"}
+                </strong>
+                <span>
+                  ${estimate.totalMonthly.min}–${estimate.totalMonthly.max}/mo
+                </span>
               </div>
-            ))}
+              <p>
+                Range is calculated from the selected tools and the scale input
+                when provided.
+              </p>
+              <ul>
+                {selectedTools.map((tool) => (
+                  <li key={tool.id}>
+                    {tool.name} ({tool.category.replace(/_/g, " ")})
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
         <div className="cp-advanced-panel">
           <div className="cp-panel-header">
-            <span>Planning assumptions</span>
+            <span>Estimate assumptions</span>
             <span className="cp-pill neutral">Model</span>
           </div>
           <div className="cp-assumptions-list">
@@ -315,7 +306,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
               const bw = Math.min(barW * 1.5, 20);
               return (
                 <g key={d.month}>
-                  {/* Min bar (free tier) */}
+                  {/* Lower estimate */}
                   <rect
                     x={x - bw / 2}
                     y={yMin}
@@ -326,7 +317,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
                     stroke="var(--teal)"
                     strokeWidth="1"
                   />
-                  {/* Max bar (scaled) */}
+                  {/* Upper estimate */}
                   <rect
                     x={x + bw / 2 + 2}
                     y={yMax}
@@ -379,7 +370,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
               fontSize="9"
               fontFamily="var(--mono)"
             >
-              Free Tier
+              Lower estimate
             </text>
             <rect
               x={chartW - 140}
@@ -398,7 +389,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
               fontSize="9"
               fontFamily="var(--mono)"
             >
-              Scaled
+              Upper estimate
             </text>
           </svg>
         </div>
@@ -408,7 +399,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
       {chartMode === "comparison" && (
         <div className="cp-compare-section">
           <div className="cp-compare-grid">
-            {/* Free tier scenario */}
+            {/* Lower estimate */}
             <div
               className="cp-compare-card"
               style={{ borderColor: "rgba(79,209,165,0.3)" }}
@@ -418,72 +409,69 @@ export function CostProjections({ selections }: CostProjectionsProps) {
                 style={{ background: "rgba(79,209,165,0.06)" }}
               >
                 <span className="cp-compare-icon">&#x1f381;</span>
-                <strong>All Free Tier</strong>
+                <strong>Lower estimate</strong>
               </div>
               <div className="cp-compare-body">
                 <span className="cp-compare-price">
-                  ${comparisonData.freeTotal}
+                  ${comparisonData.lowerEstimate}
                   <span className="cp-compare-period">/mo</span>
                 </span>
                 <span className="cp-compare-desc">
-                  Strictly free-tier limits. Best for MVPs and prototypes.
+                  Sum of catalogue lower ranges for the selected tools.
                 </span>
                 <ul className="cp-compare-list">
                   <li>
                     {
-                      estimate.breakdown.filter((b) => b.monthlyCost.max === 0)
+                      estimate.breakdown.filter((b) => b.monthlyCost.min === 0)
                         .length
                     }{" "}
-                    tools at $0
+                    tools with a $0 lower range
                   </li>
-                  <li>No monthly commitments</li>
-                  <li>Ideal for early-stage Ethiopian startups</li>
+                  <li>Actual usage may exceed the lower range</li>
+                  <li>Check each provider's current pricing</li>
                 </ul>
               </div>
             </div>
 
-            {/* Hybrid scenario */}
+            {/* Upper estimate */}
             <div
               className="cp-compare-card cp-compare-popular"
               style={{ borderColor: "rgba(244,178,75,0.3)" }}
             >
-              <div className="cp-compare-popular-badge">
-                &#9733; Recommended
-              </div>
               <div
                 className="cp-compare-card-head"
                 style={{ background: "rgba(244,178,75,0.06)" }}
               >
                 <span className="cp-compare-icon">&#x2696;&#xfe0f;</span>
-                <strong>Hybrid (Current)</strong>
+                <strong>Upper estimate</strong>
               </div>
               <div className="cp-compare-body">
                 <span className="cp-compare-price">
-                  ${comparisonData.hybridTotal}
+                  ${comparisonData.upperEstimate}
                   <span className="cp-compare-period">/mo</span>
                 </span>
                 <span className="cp-compare-desc">
-                  Your current selection with realistic scaling.
+                  Sum of catalogue upper ranges for the selected tools.
                 </span>
                 <ul className="cp-compare-list">
-                  <li>Mix of free and paid tools</li>
+                  <li>Usage and plan assumptions vary by provider</li>
                   <li>
                     {
                       estimate.breakdown.filter((b) => b.monthlyCost.max > 0)
                         .length
                     }{" "}
-                    paid tools included
+                    tools with a non-zero upper range
                   </li>
                   <li>
-                    {estimate.freeTierSufficient
-                      ? "Free tier sufficient for launch"
-                      : "May need upgrades at scale"}
+                    {estimate.hasFreeTierOptions
+                      ? "Some selected tools may have free-tier options"
+                      : "No selected tool has a free option listed"}
                   </li>
                 </ul>
               </div>
             </div>
 
-            {/* Pro scenario */}
+            {/* Budget with reserve */}
             <div
               className="cp-compare-card"
               style={{ borderColor: "rgba(11,127,212,0.3)" }}
@@ -493,20 +481,20 @@ export function CostProjections({ selections }: CostProjectionsProps) {
                 style={{ background: "rgba(11,127,212,0.06)" }}
               >
                 <span className="cp-compare-icon">&#x1f680;</span>
-                <strong>All Pro</strong>
+                <strong>Budget with reserve</strong>
               </div>
               <div className="cp-compare-body">
                 <span className="cp-compare-price">
-                  ${comparisonData.proTotal}
+                  ${comparisonData.budgetWithReserve}
                   <span className="cp-compare-period">/mo</span>
                 </span>
                 <span className="cp-compare-desc">
-                  Everything at maximum tier with 30% buffer.
+                  Upper estimate with a planning-only contingency.
                 </span>
                 <ul className="cp-compare-list">
-                  <li>All tools at premium tiers</li>
-                  <li>Enterprise-grade scalability</li>
-                  <li>Best for production at scale</li>
+                  <li>Includes a 30% budget reserve</li>
+                  <li>Not a quoted provider plan</li>
+                  <li>Adjust the reserve to your risk tolerance</li>
                 </ul>
               </div>
             </div>
@@ -516,22 +504,22 @@ export function CostProjections({ selections }: CostProjectionsProps) {
           <div className="cp-bar-chart">
             {[
               {
-                label: "Free Tier",
-                value: comparisonData.freeTotal,
+                label: "Lower estimate",
+                value: comparisonData.lowerEstimate,
                 color: "var(--teal)",
-                max: comparisonData.proTotal,
+                max: comparisonData.budgetWithReserve,
               },
               {
-                label: "Hybrid",
-                value: comparisonData.hybridTotal,
+                label: "Upper estimate",
+                value: comparisonData.upperEstimate,
                 color: "var(--amber)",
-                max: comparisonData.proTotal,
+                max: comparisonData.budgetWithReserve,
               },
               {
-                label: "Pro",
-                value: comparisonData.proTotal,
+                label: "With reserve",
+                value: comparisonData.budgetWithReserve,
                 color: "#0b7fd4",
-                max: comparisonData.proTotal,
+                max: comparisonData.budgetWithReserve,
               },
             ].map((item) => (
               <div key={item.label} className="cp-bar-row">
@@ -552,14 +540,13 @@ export function CostProjections({ selections }: CostProjectionsProps) {
         </div>
       )}
 
-      {/* Ethiopian Cost Note */}
+      {/* Regional cost note */}
       <div className="cp-ethiopian-note">
-        <strong>&#x1f1ea;&#x1f1f9; Ethiopian Cost Optimization</strong>
+        <strong>Regional pricing note</strong>
         <p>
-          Running your stack on Ethiopian VPS providers (Habesha Host, Ethio
-          Telecom) can reduce hosting costs by ~30-50%. Chapa and Telebirr have
-          no monthly fees — only per-transaction. Self-hosted PostgreSQL and
-          Redis eliminate subscription costs entirely.
+          No regional discount is assumed. Compare current provider prices,
+          availability, transaction fees, taxes, data-transfer costs, and
+          currency conversion before choosing a hosting or payment provider.
         </p>
       </div>
 
@@ -569,9 +556,9 @@ export function CostProjections({ selections }: CostProjectionsProps) {
         <div className="cp-table">
           <div className="cp-tr cp-tr-header">
             <span className="cp-td">Month</span>
-            <span className="cp-td">Free Tier</span>
-            <span className="cp-td">Scaled</span>
-            <span className="cp-td">Growth Factor</span>
+            <span className="cp-td">Lower estimate</span>
+            <span className="cp-td">Upper estimate</span>
+            <span className="cp-td">Scenario factor</span>
           </div>
           {monthlyData.map((d) => (
             <div key={d.month} className="cp-tr">
@@ -579,7 +566,7 @@ export function CostProjections({ selections }: CostProjectionsProps) {
               <span className="cp-td cp-green">${d.min}</span>
               <span className="cp-td cp-amber">${d.max}</span>
               <span className="cp-td">
-                {Math.round((d.max / estimate.totalMonthly.max) * 100)}%
+                {d.growthFactor.toFixed(2)}x
               </span>
             </div>
           ))}

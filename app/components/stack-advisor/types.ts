@@ -128,6 +128,10 @@ export type ProjectCategory =
   | "internal-business"
   | "portfolio"
   | "api-backend"
+  | "fintech"
+  | "healthcare"
+  | "realestate"
+  | "booking"
   | "other";
 
 export type TargetPlatform = "web" | "mobile" | "desktop" | "api" | "multiple";
