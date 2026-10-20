@@ -81,6 +81,7 @@ export {
 } from "./project-description-analysis";
 export type { ProjectDescriptionAnalysis } from "./project-description-analysis";
 export { analyzeAndRecommend } from "./tech-recommendation-analyzer";
+export { getNextUnselectedCategory } from "./stack-selection-flow";
 export type {
   ConfidenceLevel,
   RecommendationTier,

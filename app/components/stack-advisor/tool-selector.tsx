@@ -15,6 +15,7 @@ import {
   analyzeProjectRequirements,
   analyzeAndRecommend,
   checkCompatibility,
+  getNextUnselectedCategory,
   type ProjectRequirements,
   type ProjectDescriptionAnalysis,
   type TechRecommendation,
@@ -183,6 +184,16 @@ export function ToolSelector({
     const newSelections = { ...selections, [categoryId]: toolId };
     setSelections(newSelections);
     onSelectionsChange(newSelections);
+    const nextCategory = getNextUnselectedCategory(
+      filteredCategories,
+      newSelections,
+      categoryId,
+    );
+    if (nextCategory) {
+      setActiveCategory(nextCategory);
+      setToolQuery("");
+      setToolFilter("all");
+    }
   };
 
   const resetAll = () => {
@@ -446,6 +457,20 @@ export function ToolSelector({
           </div>
         )}
 
+        {projectAnalysis?.projectType === selectedProject.id && (
+          <div className="stack-project-analysis-context">
+            <div className="stack-project-analysis-label">
+              {projectAnalysis.source === "ai"
+                ? "Recommendations from AI project analysis"
+                : "Recommendations from local project analysis"}
+              {" · "}
+              {projectAnalysis.confidence} confidence
+            </div>
+            <p>{projectAnalysis.summary}</p>
+            <small>{projectAnalysis.rationale}</small>
+          </div>
+        )}
+
         {projectMapping && (
           <div className="project-advanced-summary">
             <p>
@@ -616,9 +641,13 @@ export function ToolSelector({
                 <div className="stack-advisor-guidance" role="status">
                   <div>
                     <strong>
-                      {projectRequirements
-                        ? "Project-aware stack recommendation"
-                        : "Recommended stack option"}
+                      {projectAnalysis?.projectType === selectedProject.id
+                        ? projectAnalysis.source === "ai"
+                          ? "AI recommendation for this project"
+                          : "Project-description suggestion"
+                        : projectRequirements
+                          ? "Requirements-based recommendation"
+                          : "Recommended stack option"}
                     </strong>
                     <p>
                       {guidanceTool.icon} {guidanceTool.name} — {guidanceReason}

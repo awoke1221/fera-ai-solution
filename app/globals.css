@@ -4175,6 +4175,36 @@ nav.wrap {
   color: var(--text-secondary);
 }
 
+.stack-project-analysis-context {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 246, 255, 0.94),
+    rgba(255, 255, 255, 0.94)
+  );
+}
+
+.stack-project-analysis-label {
+  color: var(--brand-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stack-project-analysis-context p {
+  margin: 0;
+  color: var(--text);
+}
+
+.stack-project-analysis-context small {
+  color: var(--text-secondary);
+}
+
 .stack-selector-progress {
   display: grid;
   gap: 8px;
@@ -4363,6 +4393,207 @@ nav.wrap {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.55;
+}
+
+.stack-advisor-hero .stack-hero-badges span {
+  border-color: rgba(14, 116, 144, 0.16);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
+}
+
+.stack-advisor-workspace {
+  --advisor-ink: #142033;
+  --advisor-muted: #5d6b7d;
+  --advisor-line: rgba(51, 65, 85, 0.12);
+  --advisor-accent: #087e8b;
+  padding: clamp(24px, 4vw, 48px) 0 76px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(14, 165, 233, 0.055), transparent 38rem),
+    linear-gradient(180deg, #f8fafc 0%, #f3f6fa 100%);
+}
+
+.stack-advisor-workspace .stack-advisor-container {
+  gap: 18px;
+  padding-top: 0;
+}
+
+.stack-advisor-workspace .stack-discovery-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.stack-advisor-workspace .stack-project-summary-panel,
+.stack-advisor-workspace .stack-strategy-board,
+.stack-advisor-workspace .stack-dashboard-kpis,
+.stack-advisor-workspace .stack-status-panel,
+.stack-advisor-workspace .stack-intel-card,
+.stack-advisor-workspace .stack-selector-header,
+.stack-advisor-workspace .project-discovery-shell,
+.stack-advisor-workspace .ai-recommend-container,
+.stack-advisor-workspace .comparison-container,
+.stack-advisor-workspace .cp-container,
+.stack-advisor-workspace .scaffold-container,
+.stack-advisor-workspace .stack-details-panel,
+.stack-advisor-workspace .arch-diagram-container {
+  border-color: var(--advisor-line);
+  box-shadow:
+    0 14px 34px rgba(15, 23, 42, 0.055),
+    0 2px 6px rgba(15, 23, 42, 0.025);
+}
+
+.stack-advisor-workspace .stack-project-summary-panel {
+  border-radius: 24px;
+}
+
+.stack-advisor-workspace .stack-intel-card,
+.stack-advisor-workspace .stack-score-card,
+.stack-advisor-workspace .stack-kpi-card,
+.stack-advisor-workspace .stack-status-item,
+.stack-advisor-workspace .stack-summary-card,
+.stack-advisor-workspace .stack-category-sidebar,
+.stack-advisor-workspace .stack-tool-card,
+.stack-advisor-workspace .stack-project-card,
+.stack-advisor-workspace .project-discovery-panel {
+  border-color: var(--advisor-line);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.035);
+}
+
+.stack-advisor-workspace .stack-intel-label,
+.stack-advisor-workspace .stack-project-summary-kicker,
+.stack-advisor-workspace .stack-project-guidance-kicker,
+.stack-advisor-workspace .stack-project-analysis-label,
+.stack-advisor-workspace .discovery-current-step-label,
+.stack-advisor-workspace .summary-label {
+  color: var(--advisor-accent);
+}
+
+.stack-advisor-workspace .stack-view-context {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 4px 2px 0;
+}
+
+.stack-advisor-workspace .stack-view-context-kicker {
+  color: var(--advisor-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.stack-advisor-workspace .stack-view-context h2 {
+  margin: 7px 0 5px;
+  color: var(--advisor-ink);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.stack-advisor-workspace .stack-view-context p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--advisor-muted);
+  line-height: 1.65;
+}
+
+.stack-advisor-workspace .stack-view-context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.stack-advisor-workspace .stack-view-context-meta span {
+  padding: 8px 11px;
+  border: 1px solid var(--advisor-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stack-advisor-workspace .stack-view-switcher {
+  flex-wrap: nowrap;
+  gap: 7px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(8, 126, 139, 0.35) transparent;
+  padding: 9px;
+  border-color: var(--advisor-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+}
+
+.stack-advisor-workspace .stack-view-btn {
+  flex: 0 0 auto;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #5d6b7d;
+  white-space: nowrap;
+}
+
+.stack-advisor-workspace .stack-view-btn:hover {
+  border-color: rgba(8, 126, 139, 0.16);
+  background: rgba(8, 126, 139, 0.055);
+  color: #075e68;
+  transform: none;
+}
+
+.stack-advisor-workspace .stack-view-btn.active {
+  border-color: rgba(8, 126, 139, 0.2);
+  background: linear-gradient(135deg, #e6f5f4, #eef6fb);
+  color: #075e68;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.stack-advisor-workspace :is(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid rgba(8, 126, 139, 0.4);
+  outline-offset: 3px;
+}
+
+.stack-advisor-workspace :is(input, textarea, select) {
+  border-color: rgba(51, 65, 85, 0.18);
+}
+
+.stack-advisor-workspace .stack-tool-card:hover,
+.stack-advisor-workspace .stack-project-card:hover {
+  border-color: rgba(8, 126, 139, 0.28);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 680px) {
+  .stack-advisor-workspace {
+    padding-top: 22px;
+    padding-bottom: 48px;
+  }
+
+  .stack-advisor-workspace .stack-view-context {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stack-advisor-workspace .stack-view-context-meta {
+    justify-content: flex-start;
+  }
+
+  .stack-advisor-workspace .stack-view-switcher {
+    top: 8px;
+    margin-inline: -2px;
+  }
+
+  .stack-advisor-workspace .stack-view-btn {
+    font-size: 0.73rem;
+    padding: 9px 11px;
+  }
 }
 
 .stack-tool-toolbar {

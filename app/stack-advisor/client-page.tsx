@@ -133,6 +133,7 @@ export function StackAdvisorClient() {
   const [projectAnalysis, setProjectAnalysis] =
     useState<ProjectDescriptionAnalysis | null>(null);
   const [hasRestoredUrlState, setHasRestoredUrlState] = useState(false);
+  const [showWelcomeHero, setShowWelcomeHero] = useState(true);
   const [activeView, setActiveView] = useState<
     | "discover"
     | "select"
@@ -147,6 +148,12 @@ export function StackAdvisorClient() {
     | "cost"
     | "scaffold"
   >("discover");
+
+  useEffect(() => {
+    if (activeView !== "discover") {
+      setShowWelcomeHero(false);
+    }
+  }, [activeView]);
 
   const handleSelectionsChange = useCallback(
     (newSelections: Record<string, string>) => {
@@ -390,8 +397,118 @@ export function StackAdvisorClient() {
     },
   ];
 
+  const viewContext: Record<
+    typeof activeView,
+    { title: string; description: string }
+  > = {
+    discover: {
+      title: "Project discovery",
+      description: "Describe the product and constraints to shape a focused stack plan.",
+    },
+    select: {
+      title: "Select tools",
+      description: "Choose compatible technologies one layer at a time, guided by your project needs.",
+    },
+    insights: {
+      title: "Advanced insights",
+      description: "Review project-aware trade-offs and planning signals for the selected stack.",
+    },
+    deploy: {
+      title: "Deployment readiness",
+      description: "Use a practical checklist to plan launch work; this is not a live production check.",
+    },
+    cloud: {
+      title: "Cloud strategy",
+      description: "Compare hosting approaches against the tools and requirements in your plan.",
+    },
+    "advanced-cloud": {
+      title: "Advanced cloud plan",
+      description: "Explore a deeper deployment plan and validate assumptions with your team.",
+    },
+    diagram: {
+      title: "Architecture diagram",
+      description: "See how the selected tools fit together across your application layers.",
+    },
+    details: {
+      title: "Detailed guide",
+      description: "Review implementation notes, setup guidance, and considerations for each tool.",
+    },
+    ai: {
+      title: "AI recommendations",
+      description: "Explore recommendations shaped by your project description and selected tools.",
+    },
+    compare: {
+      title: "Compare tools",
+      description: "Compare the tools in your current stack before making a decision.",
+    },
+    cost: {
+      title: "Cost planning",
+      description: "Review assumption-based estimates; actual prices depend on usage and provider plans.",
+    },
+    scaffold: {
+      title: "Code scaffold",
+      description: "Generate a starting template to review and adapt for your specific project.",
+    },
+  };
+
   return (
-    <div className="stack-advisor-container">
+    <>
+      {showWelcomeHero && (
+        <section className="page-hero stack-advisor-hero">
+          <div className="wrap stack-hero-layout">
+            <div className="stack-hero-copy">
+              <div className="eyebrow">Premium Strategy Tool</div>
+              <h1 className="h-display">
+                Stack <span className="gradient-text">Advisor</span>
+              </h1>
+              <p className="lead">
+                Design a sharper architecture, compare the right technologies,
+                and get a project-specific stack recommendation tailored to
+                your team, budget, and market context.
+              </p>
+              <div className="stack-hero-badges">
+                <span>AI recommendations</span>
+                <span>Architecture diagrams</span>
+                <span>Cost planning</span>
+              </div>
+            </div>
+
+            <div className="stack-hero-panel">
+              <div className="stack-hero-panel-label">
+                Stack planning workspace
+              </div>
+              <div className="stack-hero-panel-metric">
+                <strong>AI</strong>
+                <span>guided project-specific recommendations</span>
+              </div>
+              <div className="stack-hero-panel-grid">
+                <div>
+                  <small>Guidance</small>
+                  <strong>Project-aware</strong>
+                </div>
+                <div>
+                  <small>Workflow</small>
+                  <strong>Step by step</strong>
+                </div>
+                <div>
+                  <small>Architecture</small>
+                  <strong>Visualized</strong>
+                </div>
+                <div>
+                  <small>Costs</small>
+                  <strong>Estimated</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="stack-advisor-workspace" style={{ borderBottom: "none" }}>
+        <div className="wrap">
+          <div className="stack-advisor-container">
+      {activeView === "discover" && (
+        <div className="stack-discovery-overview">
       {(projectRequirements || hasSelections || selectedProject) && (
         <div className="stack-project-summary-panel">
           <div className="stack-project-summary-overlay" />
@@ -532,96 +649,134 @@ export function StackAdvisorClient() {
           ))}
         </div>
       </div>
+        </div>
+      )}
+
+      {activeView !== "discover" && (
+        <header className="stack-view-context">
+          <div>
+            <span className="stack-view-context-kicker">Stack Advisor workspace</span>
+            <h2>{viewContext[activeView].title}</h2>
+            <p>{viewContext[activeView].description}</p>
+          </div>
+          <div className="stack-view-context-meta">
+            {selectedProject && (
+              <span>{selectedProject.icon} {selectedProject.label}</span>
+            )}
+            <span>{selectedTools.length} {selectedTools.length === 1 ? "tool" : "tools"} selected</span>
+          </div>
+        </header>
+      )}
 
       {/* View Switcher — AI is always available */}
-      <div className="stack-view-switcher">
-        {!hasSelections && activeView === "select" ? null : (
+      <nav className="stack-view-switcher" aria-label="Stack Advisor workspace views">
+        <button
+          type="button"
+          aria-pressed={activeView === "discover"}
+          className={`stack-view-btn ${activeView === "discover" ? "active" : ""}`}
+          onClick={() => setActiveView("discover")}
+        >
+          🧭 Discovery
+        </button>
+        <button
+          type="button"
+          aria-pressed={activeView === "select"}
+          className={`stack-view-btn ${activeView === "select" ? "active" : ""}`}
+          onClick={() => setActiveView("select")}
+        >
+          🛠️ Select Tools
+        </button>
+        {hasSelections && (
           <>
             <button
-              className={`stack-view-btn ${activeView === "discover" ? "active" : ""}`}
-              onClick={() => setActiveView("discover")}
+              type="button"
+              aria-pressed={activeView === "insights"}
+              className={`stack-view-btn ${activeView === "insights" ? "active" : ""}`}
+              onClick={() => setActiveView("insights")}
             >
-              🧭 Discovery
+              🧠 Advanced Insights
             </button>
             <button
-              className={`stack-view-btn ${activeView === "select" ? "active" : ""}`}
-              onClick={() => setActiveView("select")}
+              type="button"
+              aria-pressed={activeView === "deploy"}
+              className={`stack-view-btn ${activeView === "deploy" ? "active" : ""}`}
+              onClick={() => setActiveView("deploy")}
             >
-              🛠️ Select Tools
+              🚀 Deployment Readiness
             </button>
-            {hasSelections && (
-              <>
-                <button
-                  className={`stack-view-btn ${activeView === "insights" ? "active" : ""}`}
-                  onClick={() => setActiveView("insights")}
-                >
-                  🧠 Advanced Insights
-                </button>
-                <button
-                  className={`stack-view-btn ${activeView === "deploy" ? "active" : ""}`}
-                  onClick={() => setActiveView("deploy")}
-                >
-                  🚀 Deployment Readiness
-                </button>
-                <button
-                  className={`stack-view-btn ${activeView === "cloud" ? "active" : ""}`}
-                  onClick={() => setActiveView("cloud")}
-                >
-                  ☁️ Cloud Strategy
-                </button>
-                <button
-                  className={`stack-view-btn ${activeView === "advanced-cloud" ? "active" : ""}`}
-                  onClick={() => setActiveView("advanced-cloud")}
-                >
-                  🧠 Advanced Cloud Plan
-                </button>
-                <button
-                  className={`stack-view-btn ${activeView === "diagram" ? "active" : ""}`}
-                  onClick={() => setActiveView("diagram")}
-                >
-                  📐 Architecture Diagram
-                </button>
-                <button
-                  className={`stack-view-btn ${activeView === "details" ? "active" : ""}`}
-                  onClick={() => setActiveView("details")}
-                >
-                  📋 Detailed Guide
-                </button>
-              </>
-            )}
             <button
-              className={`stack-view-btn ${activeView === "ai" ? "active" : ""}`}
-              onClick={() => setActiveView("ai")}
+              type="button"
+              aria-pressed={activeView === "cloud"}
+              className={`stack-view-btn ${activeView === "cloud" ? "active" : ""}`}
+              onClick={() => setActiveView("cloud")}
             >
-              🤖 AI Recommend
+              ☁️ Cloud Strategy
             </button>
-            {hasSelections && (
-              <button
-                className={`stack-view-btn ${activeView === "compare" ? "active" : ""}`}
-                onClick={() => setActiveView("compare")}
-              >
-                ⚖️ Compare
-              </button>
-            )}
-            {hasSelections && (
-              <button
-                className={`stack-view-btn ${activeView === "cost" ? "active" : ""}`}
-                onClick={() => setActiveView("cost")}
-              >
-                📊 Costs
-              </button>
-            )}
-            {hasSelections && (
-              <button
-                className={`stack-view-btn ${activeView === "scaffold" ? "active" : ""}`}
-                onClick={() => setActiveView("scaffold")}
-              >
-                📦 Scaffold
-              </button>
-            )}
+            <button
+              type="button"
+              aria-pressed={activeView === "advanced-cloud"}
+              className={`stack-view-btn ${activeView === "advanced-cloud" ? "active" : ""}`}
+              onClick={() => setActiveView("advanced-cloud")}
+            >
+              🧠 Advanced Cloud Plan
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeView === "diagram"}
+              className={`stack-view-btn ${activeView === "diagram" ? "active" : ""}`}
+              onClick={() => setActiveView("diagram")}
+            >
+              📐 Architecture Diagram
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeView === "details"}
+              className={`stack-view-btn ${activeView === "details" ? "active" : ""}`}
+              onClick={() => setActiveView("details")}
+            >
+              📋 Detailed Guide
+            </button>
           </>
         )}
-      </div>
+        <button
+          type="button"
+          aria-pressed={activeView === "ai"}
+          className={`stack-view-btn ${activeView === "ai" ? "active" : ""}`}
+          onClick={() => setActiveView("ai")}
+        >
+          🤖 AI Recommend
+        </button>
+        {hasSelections && (
+          <button
+            type="button"
+            aria-pressed={activeView === "compare"}
+            className={`stack-view-btn ${activeView === "compare" ? "active" : ""}`}
+            onClick={() => setActiveView("compare")}
+          >
+            ⚖️ Compare
+          </button>
+        )}
+        {hasSelections && (
+          <button
+            type="button"
+            aria-pressed={activeView === "cost"}
+            className={`stack-view-btn ${activeView === "cost" ? "active" : ""}`}
+            onClick={() => setActiveView("cost")}
+          >
+            📊 Costs
+          </button>
+        )}
+        {hasSelections && (
+          <button
+            type="button"
+            aria-pressed={activeView === "scaffold"}
+            className={`stack-view-btn ${activeView === "scaffold" ? "active" : ""}`}
+            onClick={() => setActiveView("scaffold")}
+          >
+            📦 Scaffold
+          </button>
+        )}
+      </nav>
 
       {/* Content based on active view — keep all mounted to preserve state */}
       <div style={{ display: activeView === "discover" ? "block" : "none" }}>
@@ -741,6 +896,9 @@ export function StackAdvisorClient() {
           </div>
         </div>
       )}
-    </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
