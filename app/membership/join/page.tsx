@@ -15,6 +15,18 @@ import type { MembershipPlan } from "@/lib/types";
 const localPlanSlug = "local-stack-guides";
 const diasporaPlanSlug = "diaspora-stack-guides";
 
+type PendingPayment = {
+  id: string;
+  plan_id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  created_at: string;
+  status?: string;
+  admin_notes?: string | null;
+  membership_plans?: { name?: string } | null;
+};
+
 function formatPlanPrice(plan: MembershipPlan | null) {
   if (!plan) return "";
 
@@ -64,6 +76,11 @@ function JoinContent() {
   const [paymentStatus, setPaymentStatus] = useState<
     "pending" | "approved" | "rejected" | null
   >(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(
+    null,
+  );
+  const [latestPaymentRecord, setLatestPaymentRecord] =
+    useState<PendingPayment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [approvalPolling, setApprovalPolling] = useState(false);
 
@@ -105,9 +122,24 @@ function JoinContent() {
       setPlans(plansData.plans || []);
 
       const latestStatus = statusData.latestPayment?.status;
-      if (latestStatus === "pending" || latestStatus === "rejected") {
+      setLatestPaymentRecord(statusData.latestPayment ?? null);
+      const pending =
+        statusData.pendingPayment ||
+        statusData.paymentRequests?.find(
+          (payment: PendingPayment & { status: string }) =>
+            payment.status === "pending",
+        );
+
+      if (pending) {
+        setPendingPayment(pending);
+        setPaymentStatus("pending");
+        setSubmitted(true);
+      } else if (latestStatus === "rejected") {
+        setPendingPayment(null);
         setPaymentStatus(latestStatus);
         setSubmitted(true);
+      } else {
+        setPendingPayment(null);
       }
 
       if (statusData.hasPremium || membership) {
@@ -152,14 +184,13 @@ function JoinContent() {
   useEffect(() => {
     if (!submitted) return;
 
-    const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
-
-    if (isPayPal) {
+    if (paymentStatus === "approved") {
       const redirectTimer = window.setTimeout(() => {
         router.push("/stack-advisor");
       }, 3500);
       return () => window.clearTimeout(redirectTimer);
     }
+    if (paymentStatus !== "pending") return;
 
     setApprovalPolling(true);
 
@@ -169,6 +200,7 @@ function JoinContent() {
           cache: "no-store",
         });
         const data = await res.json();
+        setLatestPaymentRecord(data.latestPayment ?? null);
 
         if (res.ok && data.hasPremium) {
           setPaymentStatus("approved");
@@ -177,7 +209,18 @@ function JoinContent() {
           return true;
         }
 
-        if (data.latestPayment?.status === "rejected") {
+        const pending =
+          data.pendingPayment ||
+          data.paymentRequests?.find(
+            (payment: PendingPayment & { status: string }) =>
+              payment.status === "pending",
+          );
+        if (pending) {
+          setPendingPayment(pending);
+        }
+
+        if (!pending && data.latestPayment?.status === "rejected") {
+          setPendingPayment(null);
           setPaymentStatus("rejected");
           setApprovalPolling(false);
           return true;
@@ -195,7 +238,7 @@ function JoinContent() {
       window.clearInterval(intervalId);
       setApprovalPolling(false);
     };
-  }, [submitted, paymentMethod, profile?.region, router]);
+  }, [submitted, paymentStatus, router, fetchUser]);
 
   const handleAuthSuccess = () => {
     fetchUser(true).finally(() => fetchData());
@@ -220,7 +263,7 @@ function JoinContent() {
   };
 
   const handleSubmitPaymentRequest = async () => {
-    if (!plan || !screenshotUrl) return;
+    if (!plan || !screenshotUrl || pendingPayment) return;
 
     setSubmitting(true);
     setError(null);
@@ -241,9 +284,17 @@ function JoinContent() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.status === "pending") {
+          await fetchData();
+          setPaymentStatus("pending");
+          setSubmitted(true);
+          return;
+        }
         throw new Error(data.error || "Failed to submit payment request");
       }
 
+      setPendingPayment(data.paymentRequest);
+      setLatestPaymentRecord(data.paymentRequest);
       setPaymentStatus("pending");
       setSubmitted(true);
     } catch (err) {
@@ -256,7 +307,7 @@ function JoinContent() {
   };
 
   const handlePayPalApprove = async (orderID: string) => {
-    if (!plan) return;
+    if (!plan || pendingPayment) return;
 
     setSubmitting(true);
     setError(null);
@@ -288,6 +339,11 @@ function JoinContent() {
   };
 
   const handlePayPalCreateOrder = async (): Promise<string> => {
+    if (pendingPayment) {
+      throw new Error(
+        "A payment request is already under review. Please wait for a decision before paying again.",
+      );
+    }
     if (!plan) throw new Error("No plan selected");
 
     const res = await fetch("/api/membership/create-paypal-order", {
@@ -299,6 +355,11 @@ function JoinContent() {
     const data = await res.json();
 
     if (!res.ok) {
+      if (data.status === "pending") {
+        await fetchData();
+        setPaymentStatus("pending");
+        setSubmitted(true);
+      }
       throw new Error(data.error || "Failed to create PayPal order");
     }
 
@@ -318,60 +379,138 @@ function JoinContent() {
   }
 
   if (submitted) {
-    const isPayPal = paymentMethod === "paypal" || profile?.region === "global";
     const isRejected = paymentStatus === "rejected";
     const isPending = paymentStatus === "pending";
+    const paymentPlanName =
+      pendingPayment?.membership_plans?.name ||
+      plans.find((item) => item.id === pendingPayment?.plan_id)?.name ||
+      plan?.name ||
+      "Membership plan";
     return (
       <SiteShell>
         <div className="page-hero">
           <div className="wrap">
-            <div className={`eyebrow ${isRejected ? "status-rejected" : ""}`}>
+            <div
+              className={`eyebrow ${isRejected ? "status-rejected" : ""} ${
+                isPending ? "status-pending" : ""
+              }`}
+            >
               {isRejected
                 ? "Payment Rejected"
                 : isPending
-                  ? "Payment Pending"
+                  ? "Payment in progress"
                   : "Payment Approved"}
             </div>
             <h1 className="h-display">
               {isRejected
                 ? "Your payment was rejected"
                 : isPending
-                  ? "Your payment is pending review"
-                  : isPayPal
-                    ? "Payment approved! 🎉"
-                    : "Payment approved! 🎉"}
+                  ? "Your payment is under review"
+                  : "Payment approved! 🎉"}
             </h1>
+            <p className="lead">
+              {isPending
+                ? "Your payment has been received. Do not send another payment while this request is being reviewed."
+                : isRejected
+                  ? "Review the decision details and submit a new payment only if you still want to continue."
+                  : "Your paid membership is active. You can now open Stack Advisor."}
+            </p>
           </div>
         </div>
         <section>
           <div className="wrap">
-            <div className="join-success">
-              <div className="success-icon">{isPayPal ? "🎉" : "📸"}</div>
+            <div
+              className={`join-success join-payment-progress ${
+                isPending ? "pending" : ""
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              <div className="success-icon">
+                {isPending ? "⏳" : isRejected ? "↩" : "🎉"}
+              </div>
               <h2>
                 {isRejected
-                  ? "The admin rejected this payment request. You can review the details below and submit a new screenshot if needed."
+                  ? "The payment request was not approved."
                   : isPending
-                    ? "Your payment screenshot was received successfully. It is already in the admin review queue, so you do not need to submit it again."
+                    ? "Payment received — approval is in progress"
                     : "Your membership is approved and full Stack Advisor access is now active."}
               </h2>
               <p>
-                {isPayPal
-                  ? "You now have full premium access. Start exploring the Stack Guide now."
-                  : "An admin will review your payment within 24 hours. Once approved, your premium access will be activated automatically."}
+                {isRejected
+                  ? latestPaymentRecord?.admin_notes ||
+                    "You may review the payment details in your dashboard before submitting a new request."
+                  : isPending
+                    ? "Your request is in the review queue. We will update your membership dashboard when its status changes. Please do not pay again or submit another receipt."
+                    : "Your paid membership is active. You can now use all Stack Advisor features."}
               </p>
+              {pendingPayment && (
+                <>
+                  <div className="join-payment-progress-meta">
+                    <div>
+                      <span>Plan</span>
+                      <strong>{paymentPlanName}</strong>
+                    </div>
+                    <div>
+                      <span>Amount</span>
+                      <strong>
+                        {pendingPayment.amount} {pendingPayment.currency}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Method</span>
+                      <strong>{pendingPayment.payment_method.replace(/_/g, " ")}</strong>
+                    </div>
+                    <div>
+                      <span>Submitted</span>
+                      <strong>
+                        {new Intl.DateTimeFormat("en", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(pendingPayment.created_at))}
+                      </strong>
+                    </div>
+                  </div>
+                  <ol className="join-payment-steps">
+                    <li className="complete">
+                      <span>1</span>
+                      <div>
+                        <strong>Payment submitted</strong>
+                        <small>Receipt received</small>
+                      </div>
+                    </li>
+                    <li className="current">
+                      <span>2</span>
+                      <div>
+                        <strong>Admin review</strong>
+                        <small>In progress</small>
+                      </div>
+                    </li>
+                    <li>
+                      <span>3</span>
+                      <div>
+                        <strong>Stack Advisor access</strong>
+                        <small>Unlocks after approval</small>
+                      </div>
+                    </li>
+                  </ol>
+                </>
+              )}
               <div className="join-success-actions">
-                <button
-                  className="btn solid"
-                  onClick={() => router.push("/stack-advisor")}
-                >
-                  {isRejected ? "Submit a new request" : "Open Stack Advisor"}
-                </button>
-                {!isRejected && (
+                {!isPending && !isRejected && (
                   <button
-                    className="btn"
+                    className="btn solid"
+                    onClick={() => router.push("/stack-advisor")}
+                  >
+                    Open Stack Advisor
+                  </button>
+                )}
+                {(isPending || isRejected) && (
+                  <button
+                    className="btn solid"
                     onClick={() => router.push("/membership/dashboard")}
                   >
-                    View Dashboard
+                    View payment status
                   </button>
                 )}
               </div>
@@ -381,17 +520,18 @@ function JoinContent() {
                   onClick={() => {
                     setSubmitted(false);
                     setPaymentStatus(null);
+                    setPendingPayment(null);
                     setScreenshotUrl(null);
                     setError(null);
                   }}
                 >
-                  Return to payment form
+                  Submit a new payment
                 </button>
               )}
               {isPending && approvalPolling && (
                 <p className="form-message info">
-                  Waiting for admin approval... We will redirect you to premium
-                  content once your receipt is approved.
+                  Status refreshes automatically. Your payment will not be
+                  charged again while review is pending.
                 </p>
               )}
             </div>
@@ -563,6 +703,7 @@ function JoinContent() {
                     }}
                   >
                     <PayPalButtons
+                      disabled={submitting || Boolean(pendingPayment)}
                       style={{
                         layout: "vertical",
                         color: "gold",
@@ -688,7 +829,9 @@ function JoinContent() {
                   <button
                     className="btn solid join-submit-button"
                     onClick={handleSubmitPaymentRequest}
-                    disabled={submitting || !screenshotUrl}
+                    disabled={
+                      submitting || !screenshotUrl || Boolean(pendingPayment)
+                    }
                   >
                     {submitting
                       ? "Submitting..."

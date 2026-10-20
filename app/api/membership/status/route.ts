@@ -89,22 +89,30 @@ export async function GET() {
         .order("created_at", { ascending: false }),
     ]);
 
+    if (membershipResult.error || paymentsResult.error) {
+      return NextResponse.json(
+        { error: "Unable to load complete membership and payment status." },
+        { status: 500, headers: CACHE_HEADERS },
+      );
+    }
+
     const membership = membershipResult.data;
     const hasPremium = !!membership || (await isAdminUser(user));
     const paymentRequests = paymentsResult.data || [];
     const latestPayment = paymentRequests[0] || null;
+    const pendingPayment =
+      paymentRequests.find(
+        (payment: { status: string }) => payment.status === "pending",
+      ) || null;
 
     return NextResponse.json(
       {
         hasPremium,
-        hasPendingPayment:
-          latestPayment?.status === "pending" ||
-          paymentRequests.some(
-            (pr: { status: string }) => pr.status === "pending",
-          ),
+        hasPendingPayment: Boolean(pendingPayment),
         membership,
         profile,
         latestPayment,
+        pendingPayment,
         paymentRequests,
         user,
       },

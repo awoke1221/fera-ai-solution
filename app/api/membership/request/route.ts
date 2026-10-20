@@ -77,14 +77,25 @@ export async function POST(request: Request) {
 
     const writeClient = serviceClient;
 
-    const { data: existingRequest } = await (writeClient as any)
+    const { data: existingRequest, error: existingRequestError } = await (
+      writeClient as any
+    )
       .from("payment_requests")
       .select("id, status")
       .eq("user_id", user.id)
-      .in("status", ["pending", "approved"])
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (existingRequest?.status === "pending") {
+    if (existingRequestError) {
+      return NextResponse.json(
+        { error: "Unable to verify your existing payment requests." },
+        { status: 500 },
+      );
+    }
+
+    if (existingRequest) {
       return NextResponse.json(
         {
           error:
@@ -96,12 +107,27 @@ export async function POST(request: Request) {
       );
     }
 
-    if (existingRequest?.status === "approved") {
+    const { data: activeMembership, error: membershipError } = await (
+      writeClient as any
+    )
+      .from("memberships")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .gte("end_date", new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipError) {
       return NextResponse.json(
-        {
-          error: "Your membership is already approved and active.",
-          status: "approved",
-        },
+        { error: "Unable to verify your current membership." },
+        { status: 500 },
+      );
+    }
+
+    if (activeMembership) {
+      return NextResponse.json(
+        { error: "Your paid membership is already active.", status: "approved" },
         { status: 409 },
       );
     }
@@ -122,6 +148,16 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error:
+              "A payment request is already in progress. Please wait for its review.",
+            status: "pending",
+          },
+          { status: 409 },
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

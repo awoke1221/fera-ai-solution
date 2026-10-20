@@ -74,6 +74,61 @@ export async function POST(request: Request) {
       });
     }
 
+    const { data: pendingRequest, error: pendingError } = await (
+      serviceClient as any
+    )
+      .from("payment_requests")
+      .select("id, paypal_order_id")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pendingError) {
+      return NextResponse.json(
+        { error: "Unable to verify your existing payment requests." },
+        { status: 500 },
+      );
+    }
+
+    if (pendingRequest && pendingRequest.paypal_order_id !== orderID) {
+      return NextResponse.json(
+        {
+          error:
+            "A payment request is already under review. Please wait for a decision before paying again.",
+          status: "pending",
+          paymentRequestId: pendingRequest.id,
+        },
+        { status: 409 },
+      );
+    }
+
+    const { data: activeMembership, error: membershipError } = await (
+      serviceClient as any
+    )
+      .from("memberships")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .gte("end_date", new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: "Unable to verify your current membership." },
+        { status: 500 },
+      );
+    }
+
+    if (activeMembership) {
+      return NextResponse.json(
+        { error: "Your paid membership is already active." },
+        { status: 409 },
+      );
+    }
+
     const paypalClientId =
       process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
     const paypalSecret = process.env.PAYPAL_SECRET;
@@ -173,6 +228,21 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
+    }
+
+    if (existingRequest?.status === "pending") {
+      const activation = await activateMembershipForPayment(serviceClient, {
+        paymentRequestId: existingRequest.id,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: activation.already_activated
+          ? "Payment was already captured and membership activated."
+          : "Payment captured and membership activated!",
+        captureData,
+        paymentRequestId: existingRequest.id,
+      });
     }
 
     const { data: paymentRequest, error: insertError } = await (

@@ -49,6 +49,11 @@ const paymentStatusLabel = (status?: string) =>
         ? "Payment Pending"
         : status || "—";
 
+const formatAmount = (amount: number, currency?: string) =>
+  currency === "USD"
+    ? `$${Number(amount).toLocaleString("en-US")}`
+    : `${currency || ""} ${Number(amount).toLocaleString("en-US")}`.trim();
+
 // ── Component ─────────────────────────────────────────
 export default function MembershipDashboardPage() {
   const router = useRouter();
@@ -76,7 +81,8 @@ export default function MembershipDashboardPage() {
     if (!data) return;
 
     const isPendingPayment =
-      !data.membership && data.latestPayment?.status === "pending";
+      !data.membership &&
+      (data.hasPendingPayment || data.pendingPayment?.status === "pending");
 
     if (!isPendingPayment) return;
 
@@ -143,8 +149,41 @@ export default function MembershipDashboardPage() {
   }
 
   // ── Data ───────────────────────────────────────────
-  const { user, profile, membership, latestPayment, paymentRequests } = data;
+  const {
+    user,
+    profile,
+    membership,
+    latestPayment,
+    paymentRequests,
+  } = data;
+  const pendingPayment =
+    data.pendingPayment ||
+    paymentRequests?.find((payment: any) => payment.status === "pending") ||
+    null;
+  const lastPayment = pendingPayment || latestPayment;
+  const accessStatus = membership
+    ? "active"
+    : pendingPayment
+      ? "pending"
+      : latestPayment?.status === "rejected"
+        ? "rejected"
+        : "required";
   const daysRemaining = membership ? daysBetween(membership.end_date) : 0;
+  const membershipDurationDays = membership
+    ? Math.max(
+        1,
+        Math.ceil(
+          (new Date(membership.end_date).getTime() -
+            new Date(
+              membership.start_date || membership.created_at,
+            ).getTime()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      )
+    : 1;
+  const membershipProgress = membership
+    ? Math.min(100, Math.max(0, (daysRemaining / membershipDurationDays) * 100))
+    : 0;
   const memberSince = profile?.created_at || user.created_at;
   const avatarUrl =
     user?.user_metadata?.avatar_url || profile?.avatar_url || null;
@@ -168,10 +207,10 @@ export default function MembershipDashboardPage() {
         <div className="wrap">
           <div className="dash-page-head">
             <span className="eyebrow">Member portal</span>
-            <h1 className="h-display">Your premium dashboard</h1>
+            <h1 className="h-display">Account &amp; membership dashboard</h1>
             <p className="lead">
-              Track your subscription, active learning access, and next actions
-              from one place.
+              Track Stack Advisor plan access, payment review, and account
+              activity from one place.
             </p>
           </div>
           <div className="dash-profile-card">
@@ -230,11 +269,17 @@ export default function MembershipDashboardPage() {
                     ? "Global Region"
                     : "Local Region"}
                 </span>
-                {membership && (
-                  <span className="dash-profile-pill dash-profile-pill-paid">
-                    Paid User
-                  </span>
-                )}
+                <span
+                  className={`dash-profile-pill dash-profile-pill-${accessStatus}`}
+                >
+                  {accessStatus === "active"
+                    ? "Paid plan active"
+                    : accessStatus === "pending"
+                      ? "Payment in review"
+                      : accessStatus === "rejected"
+                        ? "Payment needs attention"
+                        : "Paid plan required"}
+                </span>
               </div>
             </div>
             <button
@@ -261,18 +306,197 @@ export default function MembershipDashboardPage() {
         </div>
       </div>
 
+      <section
+        className="dash-section dash-access-section"
+        id="membership-status"
+        aria-labelledby="dash-access-title"
+      >
+        <div className="wrap">
+          <div className={`dash-access-card ${accessStatus}`}>
+            <div className="dash-access-heading">
+              <div>
+                <span className="dash-access-kicker">Stack Advisor access</span>
+                <h2 id="dash-access-title">
+                  {accessStatus === "active"
+                    ? "Your paid plan is active"
+                    : accessStatus === "pending"
+                      ? "Payment review in progress"
+                      : accessStatus === "rejected"
+                        ? "Payment requires your attention"
+                        : "A paid plan is required"}
+                </h2>
+                <p>
+                  {accessStatus === "active"
+                    ? "Your membership is active. Open Stack Advisor to continue planning your project."
+                    : accessStatus === "pending"
+                      ? "We received your payment request. Please do not pay again or submit another receipt while it is under review."
+                      : accessStatus === "rejected"
+                        ? "Your latest payment request was not approved. Review any admin note below before submitting another payment."
+                        : "Stack Advisor is a paid membership feature. Choose a plan and submit payment to request access."}
+                </p>
+              </div>
+              <span className={`dash-access-status ${accessStatus}`}>
+                {accessStatus === "active"
+                  ? "Active"
+                  : accessStatus === "pending"
+                    ? "Under review"
+                    : accessStatus === "rejected"
+                      ? "Action required"
+                      : "Not subscribed"}
+              </span>
+            </div>
+
+            <ol className="dash-access-steps" aria-label="Membership progress">
+              <li
+                className={
+                  accessStatus === "required" ? "current" : "complete"
+                }
+              >
+                <span>1</span>
+                <div>
+                  <strong>Choose a plan</strong>
+                  <small>
+                    {accessStatus === "required"
+                      ? "Select the plan for your region"
+                      : lastPayment?.membership_plans?.name ||
+                        membership?.membership_plans?.name ||
+                        "Plan selected"}
+                  </small>
+                </div>
+              </li>
+              <li
+                className={
+                  accessStatus === "pending"
+                    ? "current"
+                    : accessStatus === "rejected"
+                      ? "attention"
+                      : accessStatus === "active"
+                        ? "complete"
+                        : ""
+                }
+              >
+                <span>2</span>
+                <div>
+                  <strong>Payment approval</strong>
+                  <small>
+                    {accessStatus === "pending"
+                      ? "Review is in progress"
+                      : accessStatus === "active"
+                        ? "Payment approved"
+                        : accessStatus === "rejected"
+                          ? "Review the decision"
+                          : "Submit payment for review"}
+                  </small>
+                </div>
+              </li>
+              <li
+                className={accessStatus === "active" ? "complete" : ""}
+              >
+                <span>3</span>
+                <div>
+                  <strong>Stack Advisor access</strong>
+                  <small>
+                    {accessStatus === "active"
+                      ? "Available until " + formatDate(membership.end_date)
+                      : "Available after plan approval"}
+                  </small>
+                </div>
+              </li>
+            </ol>
+
+            {lastPayment && (
+              <div className="dash-access-payment">
+                <div>
+                  <span>Latest payment</span>
+                  <strong>
+                    {formatAmount(lastPayment.amount, lastPayment.currency)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Method</span>
+                  <strong>{methodLabel(lastPayment.payment_method)}</strong>
+                </div>
+                <div>
+                  <span>Submitted</span>
+                  <strong>{formatDate(lastPayment.created_at)}</strong>
+                </div>
+                <div>
+                  <span>Payment status</span>
+                  <strong>{paymentStatusLabel(lastPayment.status)}</strong>
+                </div>
+                {lastPayment.admin_notes && (
+                  <div className="dash-access-note">
+                    <span>Review note</span>
+                    <strong>{lastPayment.admin_notes}</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="dash-access-actions">
+              {accessStatus === "active" ? (
+                <Link href="/stack-advisor" className="btn solid">
+                  Open Stack Advisor
+                </Link>
+              ) : accessStatus === "pending" ? (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={fetchStatus}
+                >
+                  Refresh payment status
+                </button>
+              ) : accessStatus === "rejected" && lastPayment?.plan_id ? (
+                <Link
+                  href={`/membership/join?plan=${lastPayment.plan_id}`}
+                  className="btn solid"
+                >
+                  Submit a new payment
+                </Link>
+              ) : (
+                <Link href="/membership" className="btn solid">
+                  View paid plans
+                </Link>
+              )}
+              {accessStatus === "pending" && (
+                <span>
+                  Your membership will activate after approval. No second
+                  payment is needed.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Stats Row ────────────────────────────── */}
       <section className="dash-section">
         <div className="wrap">
           <div className="dash-stats">
-            <div className={`dash-stat-card ${membership ? "active" : ""}`}>
-              <div className="dash-stat-icon">{membership ? "🌟" : "🔓"}</div>
+            <div
+              className={`dash-stat-card ${
+                accessStatus === "active"
+                  ? "active"
+                  : accessStatus === "pending"
+                    ? "pending"
+                    : "dim"
+              }`}
+            >
+              <div className="dash-stat-icon">
+                {accessStatus === "active"
+                  ? "🌟"
+                  : accessStatus === "pending"
+                    ? "⏳"
+                    : "🔒"}
+              </div>
               <div className="dash-stat-body">
-                <span className="dash-stat-label">Membership</span>
+                <span className="dash-stat-label">Stack Advisor plan</span>
                 <strong className="dash-stat-value">
                   {membership
                     ? membership.membership_plans?.name || "Premium"
-                    : "Free"}
+                    : accessStatus === "pending"
+                      ? "Under review"
+                      : "Paid plan required"}
                 </strong>
               </div>
             </div>
@@ -294,7 +518,9 @@ export default function MembershipDashboardPage() {
               <div className="dash-stat-body">
                 <span className="dash-stat-label">Last Payment</span>
                 <strong className="dash-stat-value">
-                  {latestPayment ? `$${latestPayment.amount}` : "None"}
+                  {lastPayment
+                    ? formatAmount(lastPayment.amount, lastPayment.currency)
+                    : "None"}
                 </strong>
               </div>
             </div>
@@ -336,7 +562,7 @@ export default function MembershipDashboardPage() {
                       <div
                         className="dash-progress-fill"
                         style={{
-                          width: `${Math.min(100, (daysRemaining / 365) * 100)}%`,
+                          width: `${membershipProgress}%`,
                         }}
                       />
                     </div>
@@ -381,11 +607,48 @@ export default function MembershipDashboardPage() {
                       Access Stack Guide →
                     </Link>
                   </div>
+                ) : pendingPayment ? (
+                  <div className="dash-card-body">
+                    <p className="dash-empty-text">
+                      Your payment for{" "}
+                      <strong>
+                        {pendingPayment.membership_plans?.name ||
+                          "the selected plan"}
+                      </strong>{" "}
+                      is being reviewed. Please do not submit another payment.
+                      Your paid Stack Advisor access will activate after
+                      approval.
+                    </p>
+                    <Link
+                      href="#membership-status"
+                      className="btn dash-card-action"
+                    >
+                      Track payment progress ↓
+                    </Link>
+                  </div>
+                ) : latestPayment?.status === "rejected" ? (
+                  <div className="dash-card-body">
+                    <p className="dash-empty-text">
+                      Your last payment request was rejected.
+                      {latestPayment.admin_notes
+                        ? ` Review note: ${latestPayment.admin_notes}`
+                        : " Review the payment details and submit a new request if you want to continue."}
+                    </p>
+                    {latestPayment.plan_id && (
+                      <Link
+                        href={`/membership/join?plan=${latestPayment.plan_id}`}
+                        className="btn solid dash-card-action"
+                      >
+                        Submit a new payment →
+                      </Link>
+                    )}
+                  </div>
                 ) : (
                   <div className="dash-card-body">
                     <p className="dash-empty-text">
-                      You don&apos;t have an active membership plan. Choose a
-                      plan that fits your needs and unlock premium content.
+                      Stack Advisor is a paid membership feature. Select a
+                      plan to request access; your paid features become
+                      available after approval.
                     </p>
                     <Link
                       href="/membership"
@@ -413,9 +676,11 @@ export default function MembershipDashboardPage() {
                       <thead>
                         <tr>
                           <th>Date</th>
+                          <th>Plan</th>
                           <th>Amount</th>
                           <th>Method</th>
                           <th>Status</th>
+                          <th>Review note</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -425,8 +690,9 @@ export default function MembershipDashboardPage() {
                               {formatDate(pr.created_at)}
                             </td>
                             <td>
-                              ${pr.amount} {pr.currency}
+                              {pr.membership_plans?.name || "Membership plan"}
                             </td>
+                            <td>{formatAmount(pr.amount, pr.currency)}</td>
                             <td>
                               <span className="dash-method-cell">
                                 <span>{methodIcon(pr.payment_method)}</span>
@@ -437,9 +703,10 @@ export default function MembershipDashboardPage() {
                               <span
                                 className={`dash-status-chip dash-status-${pr.status}`}
                               >
-                                {pr.status}
+                                {paymentStatusLabel(pr.status)}
                               </span>
                             </td>
+                            <td>{pr.admin_notes || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -464,11 +731,26 @@ export default function MembershipDashboardPage() {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="dash-card-body dash-card-body-compact">
-                  <Link href="/stack-advisor" className="dash-action-row">
+                  <Link
+                    href={
+                      membership
+                        ? "/stack-advisor"
+                        : pendingPayment
+                          ? "#membership-status"
+                          : "/membership"
+                    }
+                    className="dash-action-row"
+                  >
                     <span className="dash-action-icon">🧠</span>
                     <div>
                       <strong>Stack Advisor</strong>
-                      <small>Design your next technology stack</small>
+                      <small>
+                        {membership
+                          ? "Plan your next technology stack"
+                          : pendingPayment
+                            ? "Payment review in progress"
+                            : "Paid membership required"}
+                      </small>
                     </div>
                     <svg
                       className="dash-action-arrow"
@@ -482,24 +764,26 @@ export default function MembershipDashboardPage() {
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </Link>
-                  <Link href="/membership" className="dash-action-row">
-                    <span className="dash-action-icon">💎</span>
-                    <div>
-                      <strong>Upgrade Plan</strong>
-                      <small>Explore premium options</small>
-                    </div>
-                    <svg
-                      className="dash-action-arrow"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </Link>
+                  {!membership && !pendingPayment && (
+                    <Link href="/membership" className="dash-action-row">
+                      <span className="dash-action-icon">💎</span>
+                      <div>
+                        <strong>View paid plans</strong>
+                        <small>Choose a Stack Advisor membership</small>
+                      </div>
+                      <svg
+                        className="dash-action-arrow"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </Link>
+                  )}
                   <Link href="/contact" className="dash-action-row">
                     <span className="dash-action-icon">💬</span>
                     <div>
@@ -566,46 +850,53 @@ export default function MembershipDashboardPage() {
               <div className="dash-card">
                 <div className="dash-card-header">
                   <h3>Latest Payment</h3>
-                  {latestPayment && (
+                  {lastPayment && (
                     <span
-                      className={`dash-badge dash-badge-${latestPayment.status}`}
+                      className={`dash-badge dash-badge-${lastPayment.status}`}
                     >
-                      {paymentStatusLabel(latestPayment.status)}
+                      {paymentStatusLabel(lastPayment.status)}
                     </span>
                   )}
                 </div>
-                {latestPayment ? (
+                {lastPayment ? (
                   <div className="dash-card-body">
                     <div className="dash-payment-hero">
                       <span className="dash-payment-amount">
-                        ${latestPayment.amount}{" "}
-                        <small>{latestPayment.currency}</small>
+                        {formatAmount(lastPayment.amount, lastPayment.currency)}
                       </span>
                       <span className="dash-payment-method">
-                        {methodIcon(latestPayment.payment_method)}{" "}
-                        {methodLabel(latestPayment.payment_method)}
+                        {methodIcon(lastPayment.payment_method)}{" "}
+                        {methodLabel(lastPayment.payment_method)}
                       </span>
                     </div>
                     <div className="dash-meta-grid">
                       <div className="dash-membership-item">
                         <span className="dash-meta-label">Date</span>
                         <span className="dash-meta-value">
-                          {formatDate(latestPayment.created_at)}
+                          {formatDate(lastPayment.created_at)}
                         </span>
                       </div>
-                      {latestPayment.plan_name && (
+                      {lastPayment.membership_plans?.name && (
                         <div className="dash-membership-item">
                           <span className="dash-meta-label">Plan</span>
                           <span className="dash-meta-value">
-                            {latestPayment.plan_name}
+                            {lastPayment.membership_plans.name}
                           </span>
                         </div>
                       )}
-                      {latestPayment.admin_notes && (
+                      {lastPayment.admin_notes && (
                         <div className="dash-membership-item">
                           <span className="dash-meta-label">Notes</span>
                           <span className="dash-meta-value">
-                            {latestPayment.admin_notes}
+                            {lastPayment.admin_notes}
+                          </span>
+                        </div>
+                      )}
+                      {lastPayment.reviewed_at && (
+                        <div className="dash-membership-item">
+                          <span className="dash-meta-label">Reviewed</span>
+                          <span className="dash-meta-value">
+                            {formatDate(lastPayment.reviewed_at)}
                           </span>
                         </div>
                       )}
