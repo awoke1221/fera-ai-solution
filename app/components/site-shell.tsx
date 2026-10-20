@@ -638,21 +638,36 @@ export const SiteShell = memo(function SiteShell({
                   )}
                 </div>
               </>
-            ) : user === null ? (
-              <Link
-                href="/auth/signup"
-                prefetch={true}
-                className="btn solid nav-signup-link"
-                onMouseEnter={() => router.prefetch("/auth/signup")}
-                onFocus={() => router.prefetch("/auth/signup")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setOpenDropdown(null);
-                }}
-              >
-                Get Started
-              </Link>
-            ) : null}
+            ) : (
+              <div className="nav-auth-cluster">
+                <Link
+                  href="/auth/login"
+                  prefetch={true}
+                  className="nav-login-link"
+                  onMouseEnter={() => router.prefetch("/auth/login")}
+                  onFocus={() => router.prefetch("/auth/login")}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  prefetch={true}
+                  className="btn solid nav-signup-link"
+                  onMouseEnter={() => router.prefetch("/auth/signup")}
+                  onFocus={() => router.prefetch("/auth/signup")}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setOpenDropdown(null);
+                  }}
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
           </div>
 
           <button
