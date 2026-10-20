@@ -13,12 +13,40 @@ type RequireAuthProps = {
 export function RequireAuth({ children }: RequireAuthProps) {
   const user = useAuth((s) => s.user);
   const loading = useAuth((s) => s.loading);
+  const error = useAuth((s) => s.error);
   const fetchUser = useAuth((s) => s.fetchUser);
 
   useEffect(() => {
     // If user is still undefined (initial state), fetch the current session
-    if (user === undefined) fetchUser();
-  }, [user, fetchUser]);
+    if (user === undefined && !loading && !error) fetchUser();
+  }, [user, loading, error, fetchUser]);
+
+  if (user === undefined && error) {
+    return (
+      <div className="premium-gate">
+        <div className="premium-gate-shell">
+          <div className="premium-gate-content">
+            <div className="premium-gate-kicker">Session check</div>
+            <h3>We couldn&apos;t verify your sign-in</h3>
+            <p>
+              Your session has not been signed out. Retry the connection check
+              before signing in again.
+            </p>
+            <p role="alert">{error}</p>
+            <div className="premium-gate-actions">
+              <button
+                type="button"
+                className="btn solid"
+                onClick={() => fetchUser(true)}
+              >
+                Retry session check
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || user === undefined) {
     return (

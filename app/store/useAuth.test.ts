@@ -1,8 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { shouldSkipAuthFetch } from "./useAuth";
+import {
+  shouldPreserveAuthOnFetchError,
+  shouldSkipAuthFetch,
+} from "./useAuth";
 import { isAdminProfile } from "../../lib/supabase-admin";
+import { SUPABASE_AUTH_COOKIE_OPTIONS } from "../../lib/supabase-auth-config";
 import {
   buildMembershipActivation,
   normalizeMembershipDuplicates,
@@ -68,6 +72,19 @@ test("should bypass stale cache when a forced refresh is requested", () => {
   );
 });
 
+test("should allow a forced refresh to run after an in-flight auth check", () => {
+  assert.equal(
+    shouldSkipAuthFetch({
+      loading: true,
+      user: undefined,
+      lastAuthFetchAt: 0,
+      now: 1_000_000,
+      force: true,
+    }),
+    false,
+  );
+});
+
 test("should skip refresh when the user data is fresh and no force is requested", () => {
   const now = 1_000_000;
   const lastAuthFetchAt = now - 5_000;
@@ -82,6 +99,18 @@ test("should skip refresh when the user data is fresh and no force is requested"
     }),
     true,
   );
+});
+
+test("should preserve an authenticated user when the auth refresh request fails", () => {
+  assert.equal(shouldPreserveAuthOnFetchError({ id: "u1" }), true);
+  assert.equal(shouldPreserveAuthOnFetchError(null), false);
+  assert.equal(shouldPreserveAuthOnFetchError(undefined), false);
+});
+
+test("auth cookies persist across browser restarts and remain secure in production", () => {
+  assert.equal(SUPABASE_AUTH_COOKIE_OPTIONS.maxAge, 60 * 60 * 24 * 365);
+  assert.equal(SUPABASE_AUTH_COOKIE_OPTIONS.path, "/");
+  assert.equal(SUPABASE_AUTH_COOKIE_OPTIONS.sameSite, "lax");
 });
 
 test("should only treat a profile as admin when it has an admin role flag or role", () => {

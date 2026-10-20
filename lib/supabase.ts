@@ -1,5 +1,6 @@
 // ─── Supabase browser client ─────────────────────────
 import { createBrowserClient } from "@supabase/ssr";
+import { SUPABASE_AUTH_COOKIE_OPTIONS } from "./supabase-auth-config";
 
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -46,6 +47,7 @@ export function createClient() {
   }
 
   return createBrowserClient(supabaseUrl, supabaseKey, {
+    cookieOptions: SUPABASE_AUTH_COOKIE_OPTIONS,
     auth: {
       flowType: "pkce",
       persistSession: true,

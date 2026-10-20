@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { SUPABASE_AUTH_COOKIE_OPTIONS } from "@/lib/supabase-auth-config";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
       const cookieStore = await cookies();
 
       const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookieOptions: SUPABASE_AUTH_COOKIE_OPTIONS,
         cookies: {
           getAll() {
             return cookieStore.getAll();

@@ -18,10 +18,14 @@ export function shouldSkipAuthFetch({
   now: number;
   force?: boolean;
 }) {
-  if (loading) return true;
   if (force) return false;
+  if (loading) return true;
   if (user === undefined) return false;
   return now - lastAuthFetchAt < 30_000;
+}
+
+export function shouldPreserveAuthOnFetchError(user: User) {
+  return user !== undefined && user !== null;
 }
 
 let authFetchInFlight: Promise<void> | null = null;
@@ -40,7 +44,7 @@ type AuthState = {
   signOut: () => Promise<void>;
 };
 
-// Zustand store with devtools + persist. Keep the config minimal to avoid parser issues.
+// Auth tokens remain in Supabase-managed cookies rather than client storage.
 export const useAuth = create<AuthState>()(
   devtools(
     (set, get) => ({
@@ -70,11 +74,10 @@ export const useAuth = create<AuthState>()(
           return;
         }
 
-        if (authFetchInFlight) {
-          if (force) {
-            await authFetchInFlight;
-          }
-          return;
+        while (authFetchInFlight) {
+          const inFlight = authFetchInFlight;
+          await inFlight;
+          if (!force) return;
         }
 
         authFetchInFlight = (async () => {
@@ -97,9 +100,9 @@ export const useAuth = create<AuthState>()(
                 ? (err as any).message
                 : String(err);
             set({
-              user: null,
-              profile: null,
-              membership: null,
+              ...(!shouldPreserveAuthOnFetchError(get().user)
+                ? { user: undefined }
+                : {}),
               loading: false,
               error: message ?? "unknown",
             } as any);
@@ -114,9 +117,19 @@ export const useAuth = create<AuthState>()(
 
       signOut: async () => {
         try {
-          await fetch("/api/auth/logout", { method: "POST" });
-        } catch (e) {
-          // ignore
+          const response = await fetch("/api/auth/logout", { method: "POST" });
+          if (!response.ok) {
+            throw new Error("Unable to end the server session.");
+          }
+        } catch (error) {
+          lastAuthFetchAt = 0;
+          set({
+            loading: false,
+            error: "Unable to end the server session. Please try again.",
+          } as any);
+          throw error instanceof Error
+            ? error
+            : new Error("Unable to end the server session. Please try again.");
         }
         lastAuthFetchAt = 0;
         set({

@@ -59,7 +59,7 @@ export function AuthModal({
       onAuthSuccess();
       try {
         const fetchUser = useAuth.getState().fetchUser;
-        fetchUser && (await fetchUser());
+        fetchUser && (await fetchUser(true));
       } catch {
         // ignore
       }

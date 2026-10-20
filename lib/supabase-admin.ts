@@ -5,6 +5,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { SUPABASE_AUTH_COOKIE_OPTIONS } from "./supabase-auth-config";
 
 type ProfileRow = {
   id: string;
@@ -93,6 +94,7 @@ export async function createAdminClient() {
   const cookieStore = await cookies();
 
   return createServerClient(supabaseUrl, supabaseKey, {
+    cookieOptions: SUPABASE_AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return cookieStore.getAll();

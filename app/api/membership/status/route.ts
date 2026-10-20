@@ -23,7 +23,15 @@ export async function GET() {
     const supabase = await createAdminClient();
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
+
+    if (authError) {
+      return NextResponse.json(
+        { error: "Unable to verify the current session." },
+        { status: 503, headers: CACHE_HEADERS },
+      );
+    }
 
     if (!user) {
       return NextResponse.json(

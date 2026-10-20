@@ -3,6 +3,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_AUTH_COOKIE_OPTIONS } from "./lib/supabase-auth-config";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -13,6 +14,7 @@ export async function middleware(request: NextRequest) {
   // Skip Supabase operations if env vars are missing (dev/configured later)
   if (supabaseUrl && supabaseKey) {
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookieOptions: SUPABASE_AUTH_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return request.cookies.getAll();

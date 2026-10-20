@@ -8,7 +8,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { memo, useEffect, useState, useRef } from "react";
-import { createClient } from "@/lib/supabase";
 import useAuth from "../store/useAuth";
 import { isActivePath, shouldHideNav } from "./nav-utils";
 
@@ -112,6 +111,7 @@ export const SiteShell = memo(function SiteShell({
   const user = useAuth((s: any) => s.user);
   const profile = useAuth((s: any) => s.profile);
   const loading = useAuth((s: any) => s.loading);
+  const authError = useAuth((s: any) => s.error);
   const fetchUser = useAuth((s: any) => s.fetchUser);
   const pathname = usePathname();
   const router = useRouter();
@@ -123,10 +123,27 @@ export const SiteShell = memo(function SiteShell({
   }, [navHidden]);
 
   useEffect(() => {
-    if (user === undefined && !loading) {
+    if (user === undefined && !loading && !authError) {
       fetchUser();
     }
-  }, [user, loading, fetchUser]);
+  }, [user, loading, authError, fetchUser]);
+
+  useEffect(() => {
+    if (user !== undefined || loading || !authError) return;
+
+    const retryTimer = window.setTimeout(() => {
+      void fetchUser(true);
+    }, 10_000);
+    const retryOnFocus = () => {
+      void fetchUser(true);
+    };
+    window.addEventListener("focus", retryOnFocus);
+
+    return () => {
+      window.clearTimeout(retryTimer);
+      window.removeEventListener("focus", retryOnFocus);
+    };
+  }, [user, loading, authError, fetchUser]);
 
   useEffect(() => {
     setOpenDropdown(null);
@@ -263,15 +280,14 @@ export const SiteShell = memo(function SiteShell({
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      // update global store
       const signOut = useAuth.getState().signOut;
       await signOut();
       router.push("/");
       router.refresh();
-    } catch {
-      // ignore
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : "Unable to sign out.",
+      );
     }
   };
 
@@ -411,7 +427,7 @@ export const SiteShell = memo(function SiteShell({
               );
             })}
 
-            {!user && (
+            {user === null && (
               <Link
                 href="/stack-advisor"
                 prefetch={true}
@@ -622,7 +638,7 @@ export const SiteShell = memo(function SiteShell({
                   )}
                 </div>
               </>
-            ) : (
+            ) : user === null ? (
               <Link
                 href="/auth/signup"
                 prefetch={true}
@@ -636,7 +652,7 @@ export const SiteShell = memo(function SiteShell({
               >
                 Get Started
               </Link>
-            )}
+            ) : null}
           </div>
 
           <button
