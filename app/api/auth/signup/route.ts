@@ -32,6 +32,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       user: data.user,
+      authenticated: Boolean(data.session),
       message:
         "Account created! Please check your email to confirm your account.",
     });

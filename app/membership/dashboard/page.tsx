@@ -1,12 +1,12 @@
 // ─── Membership Dashboard Page ───────────────────────
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteShell } from "@/app/components/site-shell";
-import { AuthModal } from "@/app/components/auth-modal";
 import ZoomIntegration from "@/app/components/zoom-integration";
+import useAuth from "@/app/store/useAuth";
 
 // ── Helpers ───────────────────────────────────────────
 const formatDate = (d: string | number | Date) =>
@@ -59,23 +59,35 @@ export default function MembershipDashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/membership/status", { cache: "no-store" });
       const d = await res.json();
+      if (!res.ok) {
+        throw new Error(d?.error || "Unable to load your membership status.");
+      }
+      if (!d || typeof d !== "object" || !("user" in d)) {
+        throw new Error("The membership service returned an invalid response.");
+      }
       setData(d);
-    } catch {
-      setData(null);
+      setStatusError(null);
+    } catch (error) {
+      setStatusError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load your membership status.",
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    void fetchStatus();
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (!data) return;
@@ -86,16 +98,24 @@ export default function MembershipDashboardPage() {
 
     if (!isPendingPayment) return;
 
-    const intervalId = window.setInterval(fetchStatus, 5000);
+    const intervalId = window.setInterval(() => void fetchStatus(), 5000);
     return () => window.clearInterval(intervalId);
-  }, [data]);
-
-  const handleAuthSuccess = () => {
-    fetchStatus();
-  };
+  }, [data, fetchStatus]);
 
   const handleLogout = async () => {
-    router.push("/auth/login");
+    setSigningOut(true);
+    setStatusError(null);
+    try {
+      await useAuth.getState().signOut();
+      router.push("/auth/login");
+      router.refresh();
+    } catch (error) {
+      setStatusError(
+        error instanceof Error ? error.message : "Unable to sign out.",
+      );
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   // ── Loading State ─────────────────────────────────
@@ -117,6 +137,37 @@ export default function MembershipDashboardPage() {
     );
   }
 
+  if (!data && statusError) {
+    return (
+      <SiteShell>
+        <div className="premium-gate">
+          <div className="premium-gate-shell">
+            <div className="premium-gate-content">
+              <div className="premium-gate-kicker">Account status</div>
+              <h1 className="h-display">We couldn&apos;t load your dashboard</h1>
+              <p>
+                Your sign-in has not been changed. Retry to load your membership
+                and payment details.
+              </p>
+              <p role="alert">{statusError}</p>
+              <div className="premium-gate-actions">
+                <button
+                  className="btn solid"
+                  onClick={() => {
+                    setLoading(true);
+                    void fetchStatus();
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SiteShell>
+    );
+  }
+
   // ── Unauthenticated State ─────────────────────────
   if (!data?.user) {
     return (
@@ -130,20 +181,23 @@ export default function MembershipDashboardPage() {
                 Please sign in to view your membership dashboard and manage your
                 account.
               </p>
-              <button
-                className="btn solid dash-hero-btn"
-                onClick={() => setShowAuth(true)}
-              >
-                Sign In
-              </button>
+              <div className="premium-gate-actions">
+                <Link
+                  href="/auth/login?next=/membership/dashboard"
+                  className="btn solid dash-hero-btn"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup?next=/membership/dashboard"
+                  className="btn dash-hero-btn"
+                >
+                  Create account
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-        <AuthModal
-          isOpen={showAuth}
-          onClose={() => setShowAuth(false)}
-          onAuthSuccess={handleAuthSuccess}
-        />
       </SiteShell>
     );
   }
@@ -286,6 +340,8 @@ export default function MembershipDashboardPage() {
               className="dash-profile-logout"
               onClick={handleLogout}
               title="Sign out"
+              disabled={signingOut}
+              aria-label={signingOut ? "Signing out" : "Sign out"}
             >
               <svg
                 width="18"
@@ -305,6 +361,23 @@ export default function MembershipDashboardPage() {
           </div>
         </div>
       </div>
+
+      {statusError && (
+        <section className="dash-section" aria-label="Dashboard update warning">
+          <div className="wrap">
+            <div className="form-message error" role="alert">
+              {statusError}{" "}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => void fetchStatus()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section
         className="dash-section dash-access-section"

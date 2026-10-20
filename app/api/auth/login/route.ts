@@ -24,7 +24,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    return NextResponse.json({ user: data.user });
+    return NextResponse.json({
+      user: data.user,
+      authenticated: Boolean(data.session),
+    });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

@@ -11,6 +11,7 @@ type ProfileRow = {
   id: string;
   is_admin?: boolean | null;
   role?: "user" | "admin" | null;
+  region?: "local" | "global" | null;
 };
 
 // ── Service-role client (bypasses RLS) ──────────────
@@ -138,6 +139,11 @@ export async function ensureProfileForUser(
   const adminEmails = getConfiguredAdminEmails();
   const isBootstrapAdminEmail =
     normalizedEmail.length > 0 && adminEmails.includes(normalizedEmail);
+  const requestedRegion =
+    user.user_metadata?.region === "global" ||
+    user.user_metadata?.region === "local"
+      ? user.user_metadata.region
+      : null;
 
   let roleSupported = true;
   let profile: ProfileRow | null = null;
@@ -145,7 +151,7 @@ export async function ensureProfileForUser(
 
   const { data: existingProfile, error: initialError } = await serviceClient
     .from("profiles")
-    .select("id, is_admin, role")
+    .select("id, is_admin, role, region")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -157,7 +163,7 @@ export async function ensureProfileForUser(
       roleSupported = false;
       const fallback = await serviceClient
         .from("profiles")
-        .select("id, is_admin")
+        .select("id, is_admin, region")
         .eq("id", user.id)
         .maybeSingle();
       profile = fallback.data as ProfileRow | null;
@@ -176,20 +182,25 @@ export async function ensureProfileForUser(
   if (profile) {
     const shouldBeAdmin =
       isAdminProfile(profile) || (!profile.role && isBootstrapAdminEmail);
-    const updatePayload: Record<string, any> = { is_admin: shouldBeAdmin };
+    const updatePayload: Record<string, any> = {};
+    const desiredRole = shouldBeAdmin ? "admin" : profile.role || "user";
 
-    if (roleSupported) {
-      updatePayload.role = shouldBeAdmin ? "admin" : profile.role || "user";
+    if (profile.is_admin !== shouldBeAdmin) {
+      updatePayload.is_admin = shouldBeAdmin;
     }
-
-    if (shouldBeAdmin && !isAdminProfile(profile)) {
-      await (serviceClient.from("profiles") as any)
+    if (roleSupported && profile.role !== desiredRole) {
+      updatePayload.role = desiredRole;
+    }
+    if (requestedRegion && profile.region !== requestedRegion) {
+      updatePayload.region = requestedRegion;
+    }
+    if (Object.keys(updatePayload).length > 0) {
+      const { error: updateError } = await (serviceClient.from("profiles") as any)
         .update(updatePayload)
         .eq("id", user.id);
-    } else if (roleSupported && profile.role === null && !shouldBeAdmin) {
-      await (serviceClient.from("profiles") as any)
-        .update({ role: "user" })
-        .eq("id", user.id);
+      if (updateError) {
+        console.error("[auth/profile] Unable to update account profile:", updateError);
+      }
     }
     return profile;
   }
@@ -199,13 +210,14 @@ export async function ensureProfileForUser(
     user.user_metadata?.name ||
     user.email?.split("@")[0] ||
     null;
+  const region = user.user_metadata?.region === "global" ? "global" : "local";
 
   const insertPayload: Record<string, any> = {
     id: user.id,
     email: user.email || null,
     full_name: fullName,
     avatar_url: null,
-    region: "local",
+    region,
     is_admin: isBootstrapAdminEmail,
   };
 

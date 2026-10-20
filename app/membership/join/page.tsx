@@ -4,11 +4,10 @@
 import { Suspense } from "react";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { SiteShell } from "@/app/components/site-shell";
 import { PaymentUpload } from "@/app/components/payment-upload";
-import { AuthModal } from "@/app/components/auth-modal";
-import { RequireAuth } from "@/app/components/require-auth";
 import useAuth from "@/app/store/useAuth";
 import type { MembershipPlan } from "@/lib/types";
 
@@ -55,15 +54,18 @@ function JoinContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const planId = searchParams.get("plan");
+  const returnToJoin = `/membership/join${planId ? `?plan=${encodeURIComponent(planId)}` : ""}`;
+  const loginHref = `/auth/login?next=${encodeURIComponent(returnToJoin)}`;
+  const signupHref = `/auth/signup?next=${encodeURIComponent(returnToJoin)}`;
 
   const [plan, setPlan] = useState<MembershipPlan | null>(null);
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const user = useAuth((s: any) => s.user);
+  const authLoading = useAuth((s: any) => s.loading);
+  const authError = useAuth((s: any) => s.error);
   const profile = useAuth((s: any) => s.profile);
-  const membership = useAuth((s: any) => s.membership);
   const fetchUser = useAuth((s: any) => s.fetchUser);
-  const [showAuth, setShowAuth] = useState(false);
 
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState<
@@ -82,6 +84,7 @@ function JoinContent() {
   const [latestPaymentRecord, setLatestPaymentRecord] =
     useState<PendingPayment | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [approvalPolling, setApprovalPolling] = useState(false);
 
   useEffect(() => {
@@ -119,7 +122,31 @@ function JoinContent() {
       const plansData = await plansRes.json();
       const statusData = await statusRes.json();
 
+      if (!plansRes.ok) {
+        throw new Error(
+          plansData?.error || "Unable to load membership plans.",
+        );
+      }
+      if (!Array.isArray(plansData?.plans)) {
+        throw new Error("The membership service returned an invalid plan list.");
+      }
+      if (!statusRes.ok) {
+        throw new Error(
+          statusData?.error || "Unable to verify payment and membership status.",
+        );
+      }
+      if (
+        !statusData ||
+        typeof statusData.hasPremium !== "boolean" ||
+        !Array.isArray(statusData.paymentRequests)
+      ) {
+        throw new Error(
+          "The payment service returned an invalid status response.",
+        );
+      }
+
       setPlans(plansData.plans || []);
+      setLoadError(null);
 
       const latestStatus = statusData.latestPayment?.status;
       setLatestPaymentRecord(statusData.latestPayment ?? null);
@@ -142,7 +169,7 @@ function JoinContent() {
         setPendingPayment(null);
       }
 
-      if (statusData.hasPremium || membership) {
+      if (statusData.hasPremium || statusData.membership) {
         router.replace("/stack-advisor");
       }
 
@@ -157,29 +184,29 @@ function JoinContent() {
         );
         if (fallbackPlan) setPlan(fallbackPlan);
       }
-    } catch {
-      // ignore
+    } catch (fetchError) {
+      setLoadError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to load membership and payment status.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [planId, router, membership]);
+  }, [planId, router]);
 
   useEffect(() => {
-    // ensure auth store is loaded then fetch page data
     if (user === undefined) {
-      fetchUser()
-        .then(fetchData)
-        .catch(() => fetchData());
-    } else {
-      fetchData();
+      if (!authLoading && authError) {
+        setLoading(false);
+      } else if (!authLoading) {
+        void fetchUser();
+      }
+      return;
     }
-  }, [fetchData, user, fetchUser]);
 
-  useEffect(() => {
-    if (!loading && user && membership) {
-      router.replace("/stack-advisor");
-    }
-  }, [loading, user, membership, router]);
+    void fetchData();
+  }, [fetchData, user, authLoading, authError, fetchUser]);
 
   useEffect(() => {
     if (!submitted) return;
@@ -239,10 +266,6 @@ function JoinContent() {
       setApprovalPolling(false);
     };
   }, [submitted, paymentStatus, router, fetchUser]);
-
-  const handleAuthSuccess = () => {
-    fetchUser(true).finally(() => fetchData());
-  };
 
   const handlePlanSelect = (selectedPlan: MembershipPlan) => {
     setPlan(selectedPlan);
@@ -372,6 +395,66 @@ function JoinContent() {
         <div className="page-hero">
           <div className="wrap">
             <h1 className="h-display">Loading...</h1>
+          </div>
+        </div>
+      </SiteShell>
+    );
+  }
+
+  if (user === undefined && authError) {
+    return (
+      <SiteShell>
+        <div className="premium-gate">
+          <div className="premium-gate-shell">
+            <div className="premium-gate-content">
+              <div className="premium-gate-kicker">Session check</div>
+              <h1 className="h-display">We couldn&apos;t verify your account</h1>
+              <p>Your session has not been signed out. Retry before signing in again.</p>
+              <p role="alert">{authError}</p>
+              <div className="premium-gate-actions">
+                <button
+                  className="btn solid"
+                  onClick={async () => {
+                    setLoading(true);
+                    await fetchUser(true);
+                    await fetchData();
+                  }}
+                >
+                  Retry session check
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SiteShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SiteShell>
+        <div className="premium-gate">
+          <div className="premium-gate-shell">
+            <div className="premium-gate-content">
+              <div className="premium-gate-kicker">Membership status</div>
+              <h1 className="h-display">We couldn&apos;t load payment status</h1>
+              <p>
+                No payment can be submitted until we confirm your current plan
+                and any payment already in progress.
+              </p>
+              <p role="alert">{loadError}</p>
+              <div className="premium-gate-actions">
+                <button
+                  className="btn solid"
+                  onClick={() => {
+                    setLoading(true);
+                    void fetchData();
+                  }}
+                >
+                  Retry membership check
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </SiteShell>
@@ -560,17 +643,17 @@ function JoinContent() {
               <p>
                 Please sign in or create an account to proceed with payment.
               </p>
-              <button className="btn solid" onClick={() => setShowAuth(true)}>
-                Sign In / Create Account
-              </button>
+              <div className="premium-gate-actions">
+                <Link href={loginHref} className="btn solid">
+                  Sign In
+                </Link>
+                <Link href={signupHref} className="btn">
+                  Create account
+                </Link>
+              </div>
             </div>
           </div>
         </section>
-        <AuthModal
-          isOpen={showAuth}
-          onClose={() => setShowAuth(false)}
-          onAuthSuccess={handleAuthSuccess}
-        />
       </SiteShell>
     );
   }

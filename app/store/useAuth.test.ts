@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  getAuthFetchError,
   shouldPreserveAuthOnFetchError,
   shouldSkipAuthFetch,
 } from "./useAuth";
@@ -105,6 +106,17 @@ test("should preserve an authenticated user when the auth refresh request fails"
   assert.equal(shouldPreserveAuthOnFetchError({ id: "u1" }), true);
   assert.equal(shouldPreserveAuthOnFetchError(null), false);
   assert.equal(shouldPreserveAuthOnFetchError(undefined), false);
+});
+
+test("auth refresh errors preserve the server message", () => {
+  assert.equal(
+    getAuthFetchError(503, "Unable to verify your sign-in."),
+    "Unable to verify your sign-in.",
+  );
+  assert.equal(
+    getAuthFetchError(503),
+    "Unable to check your sign-in status (HTTP 503).",
+  );
 });
 
 test("auth cookies persist across browser restarts and remain secure in production", () => {

@@ -4,6 +4,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import useAuth from "../store/useAuth";
 
 type RequireAuthProps = {
@@ -15,6 +16,8 @@ export function RequireAuth({ children }: RequireAuthProps) {
   const loading = useAuth((s) => s.loading);
   const error = useAuth((s) => s.error);
   const fetchUser = useAuth((s) => s.fetchUser);
+  const pathname = usePathname();
+  const loginHref = `/auth/login?next=${encodeURIComponent(pathname || "/membership")}`;
 
   useEffect(() => {
     // If user is still undefined (initial state), fetch the current session
@@ -69,7 +72,7 @@ export function RequireAuth({ children }: RequireAuthProps) {
           membership features.
         </p>
         <div className="premium-gate-actions">
-          <Link href="/auth/login" className="btn solid">
+          <Link href={loginHref} className="btn solid">
             Sign In with Google
           </Link>
         </div>

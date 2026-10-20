@@ -6,9 +6,10 @@ import {
   createAdminClient,
   ensureProfileForUser,
   getAdminServiceClient,
-  isAdminUser,
 } from "@/lib/supabase-admin";
-import { normalizeMembershipDuplicates } from "@/lib/membership";
+import { getMembershipAccess } from "@/lib/membership-access";
+
+export const dynamic = "force-dynamic";
 
 // Avoid stale membership state so premium access updates immediately after approval.
 const CACHE_HEADERS = {
@@ -59,53 +60,36 @@ export async function GET() {
       profile = refreshedProfile.data;
     }
 
-    const serviceClient = getAdminServiceClient();
-
-    if (serviceClient) {
-      const { data: allMembershipRows } = await serviceClient
-        .from("memberships")
-        .select("id, user_id, is_active, end_date, created_at")
-        .eq("user_id", user.id)
-        .order("end_date", { ascending: false });
-
-      const { duplicateIds } = normalizeMembershipDuplicates(
-        allMembershipRows || [],
+    const access = await getMembershipAccess(user, supabase);
+    if (access.error) {
+      console.error(
+        "[membership/status] Failed to load active membership:",
+        access.error,
       );
-
-      if (duplicateIds.length > 0) {
-        await (serviceClient as any)
-          .from("memberships")
-          .update({ is_active: false })
-          .in("id", duplicateIds);
-      }
-    }
-
-    const membershipClient = serviceClient || supabase;
-
-    const [membershipResult, paymentsResult] = await Promise.all([
-      membershipClient
-        .from("memberships")
-        .select("*, membership_plans(id, name, slug)")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .gte("end_date", new Date().toISOString())
-        .maybeSingle(),
-      supabase
-        .from("payment_requests")
-        .select("*, membership_plans(name)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-    ]);
-
-    if (membershipResult.error || paymentsResult.error) {
       return NextResponse.json(
-        { error: "Unable to load complete membership and payment status." },
-        { status: 500, headers: CACHE_HEADERS },
+        { error: "Unable to verify your membership status right now." },
+        { status: 503, headers: CACHE_HEADERS },
       );
     }
 
-    const membership = membershipResult.data;
-    const hasPremium = !!membership || (await isAdminUser(user));
+    const paymentsClient = getAdminServiceClient() || supabase;
+    const paymentsResult = await paymentsClient
+      .from("payment_requests")
+      .select("*, membership_plans(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (paymentsResult.error) {
+      console.error(
+        "[membership/status] Failed to load payment history:",
+        paymentsResult.error,
+      );
+      return NextResponse.json(
+        { error: "Unable to load your payment history right now." },
+        { status: 503, headers: CACHE_HEADERS },
+      );
+    }
+
     const paymentRequests = paymentsResult.data || [];
     const latestPayment = paymentRequests[0] || null;
     const pendingPayment =
@@ -115,9 +99,9 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        hasPremium,
+        hasPremium: access.hasPremium,
         hasPendingPayment: Boolean(pendingPayment),
-        membership,
+        membership: access.membership,
         profile,
         latestPayment,
         pendingPayment,
@@ -126,10 +110,14 @@ export async function GET() {
       },
       { headers: CACHE_HEADERS },
     );
-  } catch {
+  } catch (error) {
+    console.error(
+      "[membership/status] Unexpected status lookup failure:",
+      error,
+    );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500, headers: CACHE_HEADERS },
     );
   }
 }

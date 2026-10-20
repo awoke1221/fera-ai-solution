@@ -60,7 +60,10 @@ export function PremiumGate({ hasPremium, user, children }: PremiumGateProps) {
               ))}
             </ul>
             <div className="premium-gate-actions">
-              <Link href="/auth/login?next=/membership" className="btn solid">
+              <Link
+                href="/auth/login?next=/stack-advisor"
+                className="btn solid"
+              >
                 Sign In with Google
               </Link>
             </div>

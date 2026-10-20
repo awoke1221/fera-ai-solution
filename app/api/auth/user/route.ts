@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import {
   createAdminClient,
   ensureProfileForUser,
-  getAdminServiceClient,
   isAdminUser,
 } from "@/lib/supabase-admin";
 
-// Avoid stale membership state so premium access updates immediately after approval.
+export const dynamic = "force-dynamic";
+
 const CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
   Pragma: "no-cache",
@@ -34,38 +34,40 @@ export async function GET() {
       return NextResponse.json({ user: null }, { headers: CACHE_HEADERS });
     }
 
-    const profileResult = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
+    let profile = null;
+    let adminStatus = false;
 
-    let profile = profileResult.data;
-
-    const ensuredProfile = await ensureProfileForUser(user);
-
-    if (!profile || ensuredProfile) {
-      const refreshedProfile = await supabase
+    try {
+      const profileResult = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
-      profile = refreshedProfile.data;
+      profile = profileResult.data;
+
+      const ensuredProfile = await ensureProfileForUser(user);
+      if (!profile || ensuredProfile) {
+        const refreshedProfile = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+        profile = refreshedProfile.data;
+      }
+    } catch (error) {
+      console.error("[auth/user] Unable to load the user profile:", error);
     }
 
-    const membershipClient = getAdminServiceClient() || supabase;
-    const membershipResult = await membershipClient
-      .from("memberships")
-      .select("*, membership_plans(name)")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .gte("end_date", new Date().toISOString())
-      .maybeSingle();
+    try {
+      adminStatus = await isAdminUser(user);
+    } catch (error) {
+      console.error("[auth/user] Unable to verify admin profile status:", error);
+    }
 
-    const adminStatus = await isAdminUser(user);
     if (profile) {
-      profile.is_admin = adminStatus;
-      profile.role = profile.role || (adminStatus ? "admin" : "user");
+      profile.is_admin = adminStatus || profile.is_admin === true;
+      profile.role =
+        profile.role || (profile.is_admin ? "admin" : "user");
     } else if (adminStatus) {
       profile = {
         id: user.id,
@@ -81,14 +83,14 @@ export async function GET() {
       {
         user,
         profile,
-        membership: membershipResult.data,
       },
       { headers: CACHE_HEADERS },
     );
-  } catch {
+  } catch (error) {
+    console.error("[auth/user] Unexpected session lookup failure:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500, headers: CACHE_HEADERS },
     );
   }
 }

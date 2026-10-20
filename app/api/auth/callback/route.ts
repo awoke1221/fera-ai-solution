@@ -6,10 +6,24 @@ import { SUPABASE_AUTH_COOKIE_OPTIONS } from "@/lib/supabase-auth-config";
 
 export const dynamic = "force-dynamic";
 
+function getSafeNextPath(value: string | null) {
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\") ||
+    /[\r\n]/.test(value)
+  ) {
+    return "/membership";
+  }
+
+  return value;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/membership";
+  const next = getSafeNextPath(searchParams.get("next"));
 
   // Use NEXT_PUBLIC_SITE_URL when set (production), otherwise derive from request.
   // Hard-code the production domain as a final fallback so users are never
@@ -61,7 +75,7 @@ export async function GET(request: Request) {
 
       if (!error) {
         // 307 preserves the redirect method and is faster than 302
-        const response = NextResponse.redirect(`${origin}${next}`, 307);
+        const response = NextResponse.redirect(new URL(next, origin), 307);
         // Hint the browser to prefetch the target page immediately
         response.headers.set("Cache-Control", "private, no-cache");
         return response;
